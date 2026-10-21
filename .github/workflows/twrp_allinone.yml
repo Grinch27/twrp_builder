@@ -73,6 +73,11 @@ jobs:
       - name: Resolve runner-image
         id: resolve
         uses: Grinch27/github-actions/.github/actions/resolve-runner-image@main
+      - name: Install job-scoped run_sudo for public initialization test
+        uses: Grinch27/github-actions/.github/actions/run-sudo@main
+      - name: Reproduce repo initialization with public inputs
+        timeout-minutes: 8
+        run: bash tests/repo_init_smoke.sh
 
   build:
     name: selene - bootimage - Ubuntu 22.04 Docker

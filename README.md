@@ -23,7 +23,7 @@ flowchart TD
 | 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j4` |
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；四任务、容器 14 GiB 内存 |
 | 磁盘检查 | 清理后至少 50 GiB；编译前至少 18 GiB；不足立即失败 |
-| 自动触发 | push / PR 仅静态检查；完整编译只接受 main 上的 workflow_dispatch |
+| 自动触发 | push / PR 运行静态检查和公开最小 repo 初始化测试；完整编译只接受 main 上的 workflow_dispatch |
 | 唯一手动输入 | `publish=false`；设为 true 明确允许公开镜像、静态报告和校验和 |
 
 源码预编译 JDK、Clang 等从锁定上游重新同步；不克隆整个 7.44 GiB Git 归档，不回放旧 `out`、Soong 测试禁用、稀疏片段或 `ALLOW_MISSING_DEPENDENCIES`。归档内 18 个 Release 大文件不作为这条干净路线的下载入口。
