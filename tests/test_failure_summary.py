@@ -16,6 +16,10 @@ MANIFEST = b'<manifest><project name="platform/bionic" revision="' + b'1' * 40 +
 
 
 class SummaryTests(unittest.TestCase):
+    def test_missing_ssh_is_a_host_dependency_failure(self):
+        result = summarize('fatal: ssh not installed', MANIFEST)
+        self.assertIn('MISSING_HOST_TOOL', result['categories'])
+
     def test_private_text_and_credentials_are_not_returned(self):
         raw = 'fatal: private config secret-value https://private.example/token?secret=abc HTTP 403'
         result = summarize(raw, MANIFEST)

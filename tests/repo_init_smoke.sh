@@ -9,7 +9,7 @@ set -euo pipefail
 
 if [[ "${1:-}" == container ]]; then
   run_sudo apt-get -qq update
-  run_sudo apt-get -yqq --no-install-recommends install ca-certificates curl git gnupg python3 util-linux
+  run_sudo apt-get -yqq --no-install-recommends install ca-certificates curl git gnupg openssh-client python3 util-linux
   groupadd --gid "${BUILDER_GID}" builder
   useradd --no-log-init --create-home --uid "${BUILDER_UID}" --gid "${BUILDER_GID}" builder
   exec runuser -u builder -- bash /builder/self/tests/repo_init_smoke.sh user

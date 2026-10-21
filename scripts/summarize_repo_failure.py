@@ -13,6 +13,7 @@ import re
 import xml.etree.ElementTree as ET
 
 RULES = {
+    'MISSING_HOST_TOOL': r'fatal:\s*(?:ssh|git|gpg|python3|curl) not installed|command not found',
     'REMOTE_NOT_FOUND': r'repository .*not found|repository not found|HTTP (?:error )?404',
     'AUTHENTICATION_REQUIRED': r'authentication failed|could not read Username|HTTP (?:error )?(?:401|403)',
     'REF_NOT_FOUND': r"couldn.t find remote ref|not our ref|invalid revision|revision .*not found|unable to resolve revision",
