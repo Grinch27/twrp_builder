@@ -55,7 +55,8 @@
 - 本地标准库边界测试：20 项通过，包含多组子案例；覆盖输入路径、覆盖拒绝、链接逃逸、下载身份、manifest 锁定及危险指令、boot/cpio/解压边界、错误 kernel/DTB/fstab 和未验证状态保留。
 - 新增 Python 可解析、全部 shell 通过 bash -n、工作流 YAML 可解析、手动触发与公开产物条件检查通过。
 - 实际归档 manifest 经新校验器通过：282 个项目、40 位锁定 revision、受限下载来源与路径。
-- actionlint 本地不可用；工作流已配置从官方 Release 下载并校验 v1.7.7 后检查实际工作流。其运行结果以 Actions 为准。
+- GitHub Actions [运行 39693140718](https://github.com/Grinch27/twrp_builder/actions/runs/39693140718) 已成功：在代码提交 `dadd8c3dcfcc9e50d5d99e0c129b4cfcbacf47a6` 上，20 项测试、actionlint v1.7.7、官方下载校验及共享 Runner 解析均通过。完整编译 job 为 skipped，不能将这条绿色记录称作 TWRP 编译成功。
+- 本轮连接不支持查询 Actions Secret 或发起 workflow_dispatch；`TWRP_SOURCE_TOKEN` 是否配置尚未核实。当前没有以其他身份或接口绕过该限制。
 - 完整 repo sync、Ubuntu 容器依赖安装、mka bootimage、真实 boot.img 静态验收：**NOT_EXECUTED**。
 - 新镜像启动、触摸、FBE、备份/恢复、动态分区/snapshot：**NOT_TESTED**。
 
