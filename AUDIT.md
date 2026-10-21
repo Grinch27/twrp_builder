@@ -70,6 +70,8 @@
 
 后续诊断证据：[带细分诊断的运行 39696022513](https://github.com/Grinch27/twrp_builder/actions/runs/39696022513) 确认失败位于 repo sync。随后[公开单项目复现 39696416740](https://github.com/Grinch27/twrp_builder/actions/runs/39696416740) 给出明确错误 `fatal: ssh not installed`。初始容器使用 APT --no-install-recommends，依赖清单漏掉 openssh-client；已在正式容器和公开 smoke test 中补齐，并增加该错误类别的回归测试。无需扩大 Token 权限或配置 SSH 密钥。
 
+修复提交 `f1b5fd7304cf8ac44f45e5db6b14db799f8893a5` 的 [CI 39696581000](https://github.com/Grinch27/twrp_builder/actions/runs/39696581000) 已通过 25 项单元测试、actionlint、公开 Repo 初始化与单项目实际同步；该次完整构建 job 为 skipped。之后才继续验证正式的 282 项源码路线。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 手动运行一次 publish=false 的完整任务；上限 350 分钟。任何输入、同步、容量、Soong 或静态验收失败即停止，不自动反复构建。

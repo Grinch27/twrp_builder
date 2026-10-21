@@ -81,7 +81,12 @@ jobs:
 
   build:
     name: selene - bootimage - Ubuntu 22.04 Docker
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    # One explicitly authorized nonpublishing run; restored after registration.
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' &&
+        startsWith(github.event.head_commit.message, '[selene-build-20261022-ssh-fixed]')))
     needs: runner-image
     runs-on: ${{ needs.runner-image.outputs.RUNNER_IMAGE }}
     timeout-minutes: 350

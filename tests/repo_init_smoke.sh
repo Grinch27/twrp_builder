@@ -55,6 +55,7 @@ XML
   printf 'PUBLIC_REPO_INIT_SMOKE=PASS\n'
   timeout --signal=TERM --kill-after=20s 180s \
     repo sync -c -j1 --no-clone-bundle --no-tags --fail-fast --retry-fetches=2
+  [[ "$(git -C bionic rev-parse HEAD)" == 11fa611f2c52e17e23f679869724278e2becc862 ]]
   printf 'PUBLIC_REPO_SYNC_SMOKE=PASS\n'
   exit
 fi
