@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "source": {
+    "repository": "Grinch27/twrp_selene",
+    "commit": "b0aef415d0a5eabf66663c8882d16e1e227381dd",
+    "manifest_projects": 282
+  },
+  "device": {
+    "repository": "hasan6034/recovery_device_xiaomi_selene",
+    "commit": "c77512445ab5be5908ddb3ca9c659e6b149c78de",
+    "path": "device/xiaomi/selene",
+    "upstream_files": 104,
+    "overlay_files": 4
+  },
+  "repo_tool": {
+    "version": "v2.54",
+    "commit": "97dc5c1bd9527c2abe2183b16a4b7ef037dc34a7",
+    "launcher_sha256": "6cba294d6218bbd4a1500598207b3979c752c7a122aef9429e4d7fef688833b5"
+  },
+  "build": {
+    "product": "twrp_selene-eng",
+    "target": "bootimage",
+    "jobs": 4,
+    "container": "ubuntu:22.04",
+    "max_image_bytes": 67108864
+  },
+  "files": [
+    {
+      "path": "default.xml",
+      "destination": "default.xml",
+      "blob": "8386f6e2898c835019d45d70d3b5540cd6b8e4c2",
+      "size": 64189
+    },
+    {
+      "path": "android/device/xiaomi/selene/BoardConfig.mk",
+      "destination": "overlay/device/xiaomi/selene/BoardConfig.mk",
+      "blob": "b08fdeef4de5039254de2b416e05d11023621f82",
+      "size": 5610
+    },
+    {
+      "path": "android/device/xiaomi/selene/recovery/root/first_stage_ramdisk/fstab.mt6768",
+      "destination": "overlay/device/xiaomi/selene/recovery/root/first_stage_ramdisk/fstab.mt6768",
+      "blob": "cdef5523a4bd4127b85a2d76ec2d35588a5eb68a",
+      "size": 7027
+    },
+    {
+      "path": "android/device/xiaomi/selene/recovery/root/system/etc/recovery.fstab",
+      "destination": "overlay/device/xiaomi/selene/recovery/root/system/etc/recovery.fstab",
+      "blob": "cdef5523a4bd4127b85a2d76ec2d35588a5eb68a",
+      "size": 7027
+    },
+    {
+      "path": "android/device/xiaomi/selene/rootdir/etc/fstab.mt6768.stock-v14",
+      "destination": "overlay/device/xiaomi/selene/rootdir/etc/fstab.mt6768.stock-v14",
+      "blob": "cdef5523a4bd4127b85a2d76ec2d35588a5eb68a",
+      "size": 7027
+    },
+    {
+      "path": "prebuilts/selene-stock-v14/SHA256SUMS",
+      "destination": "prebuilts/selene-stock-v14/SHA256SUMS",
+      "blob": "f181079fdf24939009c7b9154f2e2257250368d7",
+      "size": 308
+    },
+    {
+      "path": "prebuilts/selene-stock-v14/dtb/selene.dtb",
+      "destination": "prebuilts/selene-stock-v14/dtb/selene.dtb",
+      "blob": "54c87f7186835e067490dac843f5405f5fda45c8",
+      "size": 137447
+    },
+    {
+      "path": "prebuilts/selene-stock-v14/dtbo.img",
+      "destination": "prebuilts/selene-stock-v14/dtbo.img",
+      "blob": "7fd01a02ce1393e4986b7d048c62af5e0e339316",
+      "size": 276880
+    },
+    {
+      "path": "prebuilts/selene-stock-v14/fstab.mt6768",
+      "destination": "prebuilts/selene-stock-v14/fstab.mt6768",
+      "blob": "cdef5523a4bd4127b85a2d76ec2d35588a5eb68a",
+      "size": 7027
+    },
+    {
+      "path": "prebuilts/selene-stock-v14/kernel",
+      "destination": "prebuilts/selene-stock-v14/kernel",
+      "blob": "f50dd533d99b60b617e4e94d56b59a22448be57c",
+      "size": 10665542
+    }
+  ]
+}
