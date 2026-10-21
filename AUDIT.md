@@ -62,6 +62,12 @@
 
 ## 后续顺序与停止点
 
+2026-10-22 继续执行记录：用户确认已提供令牌权限并要求继续，已授权十个锁定输入在 GitHub runner 中处理。[首次完整运行 39694987634](https://github.com/Grinch27/twrp_builder/actions/runs/39694987634) 中，Secret 存在性、磁盘预检和全部输入下载/身份校验成功；清理后显示约 111 GiB 可用。容器依赖安装和 Repo launcher 下载校验已通过，随后在原先合并记录的 source_sync 阶段以 exit 1 停止，未进入编译，未发布产物。
+
+本次 GitHub 连接仍无 workflow_dispatch 工具，因此使用只匹配一次提交标记的临时条件启动该已获授权的非发布任务；运行登记后立即恢复原触发条件。不是权限不足，也没有读取或导出 Secret 值。
+
+[公开最小初始化测试 39695591966](https://github.com/Grinch27/twrp_builder/actions/runs/39695591966) 已成功，说明同一容器/Repo 版本能够完成非交互初始化。原失败原因尚未确定；现将 repo_initialization、repo_tool_verification、source_sync 分开记录，并增加不会回传原始日志的结构化摘要。新增四项摘要隐私边界测试，本地合计 24 项通过。完整原始日志没有上传，首次失败容器的日志不能从已结束的 runner 恢复。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 手动运行一次 publish=false 的完整任务；上限 350 分钟。任何输入、同步、容量、Soong 或静态验收失败即停止，不自动反复构建。

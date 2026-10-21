@@ -81,7 +81,12 @@ jobs:
 
   build:
     name: selene - bootimage - Ubuntu 22.04 Docker
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    # One explicitly authorized nonpublishing run; restored after registration.
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' &&
+        startsWith(github.event.head_commit.message, '[selene-build-20261022-diagnostics]')))
     needs: runner-image
     runs-on: ${{ needs.runner-image.outputs.RUNNER_IMAGE }}
     timeout-minutes: 350
@@ -115,7 +120,7 @@ jobs:
           export BUILDER_UID="$(id -u)" BUILDER_GID="$(id -g)"
           sudo_command="$(command -v run_sudo)"
           docker pull "${CONTAINER_IMAGE}"
-          if docker run --rm --init --cpus=4 --memory=14g --shm-size=2g \
+          docker run --rm --init --cpus=4 --memory=14g --shm-size=2g \
             --security-opt=no-new-privileges \
             --env BUILDER_UID --env BUILDER_GID \
             --env DEBIAN_FRONTEND --env DEBCONF_NONINTERACTIVE_SEEN \
@@ -126,13 +131,37 @@ jobs:
             --volume "${sudo_command}:/usr/local/bin/run_sudo:ro" \
             --workdir /builder/work "${CONTAINER_IMAGE}" \
             bash /builder/self/scripts/container.sh \
-            > "${BUILD_ROOT}/logs/container.log" 2>&1; then
+            > "${BUILD_ROOT}/logs/container.log" 2>&1 &
+          container_pid=$!
+          last_stage=''
+          while kill -0 "${container_pid}" 2>/dev/null; do
+            current_stage="$(/usr/bin/python3 - "${BUILD_ROOT}/output/status.json" <<'PY'
+          import json,sys
+          from pathlib import Path
+          try:
+              stage=json.loads(Path(sys.argv[1]).read_text()).get('stage')
+              allowed={'repo_tool','repo_initialization','repo_tool_verification','source_sync','checkout_verification','preflight','compile','static_validation','complete'}
+              if stage in allowed: print(stage)
+          except (OSError,ValueError):
+              pass
+          PY
+            )"
+            if [[ -n "${current_stage}" && "${current_stage}" != "${last_stage}" ]]; then
+              printf 'Build stage: %s\n' "${current_stage}"
+              last_stage="${current_stage}"
+            fi
+            sleep 15
+          done
+          if wait "${container_pid}"; then
             printf 'Build and static validation passed. Device functions are untested.\n'
           else
             result=$?
             printf 'Build failed (exit %s). Private compiler logs were retained only on the disposable runner.\n' "${result}" >&2
             if [[ -f "${BUILD_ROOT}/output/status.json" ]]; then
               cat "${BUILD_ROOT}/output/status.json"
+            fi
+            if [[ -f "${BUILD_ROOT}/output/source-error-summary.json" ]]; then
+              cat "${BUILD_ROOT}/output/source-error-summary.json"
             fi
             exit "${result}"
           fi

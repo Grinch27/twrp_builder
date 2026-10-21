@@ -11,9 +11,24 @@ SELF=/builder/self
 WORK=/builder/work
 stage=initialization
 mkdir -p "${WORK}/logs" "${WORK}/output"
+set_stage() {
+  stage="$1"
+  python3 - "${WORK}/output/status.json" "${stage}" <<'PY'
+import json,sys
+from pathlib import Path
+Path(sys.argv[1]).write_text(json.dumps({'stage':sys.argv[2]})+'\n')
+PY
+}
 finish() {
   local result=$?
   trap - EXIT
+  if ((result != 0)) && [[ -n "${phase_log:-}" && -f "${phase_log}" ]]; then
+    if ! python3 "${SELF}/scripts/summarize_repo_failure.py" \
+      --log "${phase_log}" --manifest "${WORK}/inputs/default.xml" \
+      --output "${WORK}/output/source-error-summary.json"; then
+      printf 'Structured repository diagnostics unavailable.\n' >&2
+    fi
+  fi
   python3 - "${WORK}/output/status.json" "${stage}" "${result}" <<'PY'
 import json,sys
 from pathlib import Path
@@ -32,7 +47,7 @@ print(d['version'],d['commit'],d['launcher_sha256'])
 PY
 )
 mkdir "${WORK}/bin" "${WORK}/manifest" "${WORK}/android" "${WORK}/tmp"
-stage=repo_tool
+set_stage repo_tool
 curl --fail --silent --show-error --location --retry 2 \
   "https://raw.githubusercontent.com/GerritCodeReview/git-repo/${repo_commit}/repo" \
   --output "${WORK}/bin/repo"
@@ -53,23 +68,29 @@ git -C "${WORK}/manifest" init --initial-branch=main --quiet
 git -C "${WORK}/manifest" add default.xml
 git -C "${WORK}/manifest" commit --quiet -m 'Use reviewed locked manifest'
 
-stage=source_sync
+set_stage repo_initialization
 cd "${WORK}/android"
-repo init --manifest-url="file://${WORK}/manifest" --manifest-branch=main \
+phase_log="${WORK}/logs/repo-init.log"
+timeout --signal=TERM --kill-after=30s 180s \
+  repo init --manifest-url="file://${WORK}/manifest" --manifest-branch=main \
   --manifest-name=default.xml --depth=1 --groups=all --no-clone-bundle \
-  --no-use-superproject --repo-rev="${repo_ref}"
+  --no-use-superproject --repo-rev="${repo_ref}" > "${phase_log}" 2>&1
+set_stage repo_tool_verification
 [[ "$(git -C .repo/repo rev-parse HEAD)" == "${repo_commit}" ]]
+set_stage source_sync
+phase_log="${WORK}/logs/repo-sync.log"
 timeout --signal=TERM --kill-after=60s 140m \
-  repo sync -c -j4 --no-clone-bundle --no-tags --fail-fast --retry-fetches=2
+  repo sync -c -j4 --no-clone-bundle --no-tags --fail-fast --retry-fetches=2 > "${phase_log}" 2>&1
+phase_log=
 
-stage=checkout_verification
+set_stage checkout_verification
 python3 "${SELF}/scripts/source_inputs.py" checkout \
   --manifest "${WORK}/inputs/default.xml" --source "${WORK}/android"
 [[ "$(git -C device/xiaomi/selene rev-parse HEAD)" == c77512445ab5be5908ddb3ca9c659e6b149c78de ]]
 cp -a "${WORK}/inputs/overlay/." "${WORK}/android/"
 cp -a "${WORK}/inputs/prebuilts" "${WORK}/prebuilts"
 
-stage=preflight
+set_stage preflight
 [[ "$(df --output=avail -B1 "${WORK}" | tail -n 1)" -ge 19327352832 ]]
 test -s prebuilts/jdk/jdk11/linux-x86/lib/modules
 test -s prebuilts/tools/common/m2/repository/com/android/support/test/monitor/1.0.2-alpha1/monitor-1.0.2-alpha1.aar
@@ -84,7 +105,7 @@ source build/envsetup.sh
 lunch twrp_selene-eng
 [[ "${TARGET_PRODUCT}" == twrp_selene && "${TARGET_BUILD_VARIANT}" == eng ]]
 
-stage=compile
+set_stage compile
 # mka is a shell function. The child shell explicitly reconstructs its environment.
 timeout --signal=TERM --kill-after=60s 160m bash -c '
   set -eo pipefail
@@ -93,7 +114,7 @@ timeout --signal=TERM --kill-after=60s 160m bash -c '
   mka bootimage -j4
 '
 
-stage=static_validation
+set_stage static_validation
 image="${OUT_DIR}/target/product/selene/boot.img"
 python3 external/avb/avbtool.py info_image --image "${image}"
 python3 external/avb/avbtool.py verify_image --image "${image}" \
@@ -104,4 +125,4 @@ python3 "${SELF}/scripts/verify_boot.py" --image "${image}" \
 cp "${image}" "${WORK}/output/boot.img"
 cd "${WORK}/output"
 sha256sum boot.img static-validation.json > SHA256SUMS
-stage=complete
+set_stage complete
