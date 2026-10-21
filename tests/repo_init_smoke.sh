@@ -2,9 +2,9 @@
 # Requirements: reproduce repo initialization with public, synthetic inputs only.
 # Ambiguity: the first private-input build failed before a compiler was invoked.
 # Research: expose the initialization error without publishing private build logs.
-# Optimization: no Android source sync; only the pinned repo tool and a tiny seed.
+# Optimization: sync one small public project, never the complete Android tree.
 # Risks: upstream availability and ephemeral container package installation.
-# Validation: exact repo tool revision and successful noninteractive initialization.
+# Validation: exact repo revision, noninteractive initialization and one-project sync.
 set -euo pipefail
 
 if [[ "${1:-}" == container ]]; then
@@ -53,6 +53,9 @@ XML
     --no-use-superproject --repo-rev="${repo_ref}" < /dev/null
   [[ "$(git -C .repo/repo rev-parse HEAD)" == "${repo_commit}" ]]
   printf 'PUBLIC_REPO_INIT_SMOKE=PASS\n'
+  timeout --signal=TERM --kill-after=20s 180s \
+    repo sync -c -j1 --no-clone-bundle --no-tags --fail-fast --retry-fetches=2
+  printf 'PUBLIC_REPO_SYNC_SMOKE=PASS\n'
   exit
 fi
 
