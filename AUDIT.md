@@ -136,13 +136,19 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 下一次补齐同标签的 external/google-benchmark@770b190cd0052a180fe161abad59b4cbdfd99d46、external/libusb@b103c6be096fc0f1b0114188430e3ff5d39fdc35、external/python/pybind11@960c6f3b4ca0b7ac3d6178bd76cbcb7687ad5173。官方同标签 manifest 确认 Pybind11 的实际路径在 external/python 下；三个完整项目共 604 个 Git 文件、4,680,973 bytes，实际模块及其 Blueprint 引用已核对，当前合计 378 项。没有增加绕过标志或改动原始输入。
 
+[原生 378 项运行 39795708159](https://github.com/Grinch27/twrp_builder/actions/runs/39795708159) 使用 `06f94090a2f11e51770b0d8d16b55c1a23e5a747`，Ubuntu 26.04 主机包安装、完整同步、checkout 和编译预检均通过。14:28:53 UTC 进入同步，14:41:41 进入 checkout，14:42:43 进入 compile，14:45:03 返回 exit 1；最新受限错误为 `cts/hostsidetests/atrace/Android.bp:19` 引用的 `trebuchet-core` 未定义。未生成可交付镜像。
+
+下一次锁定 tools/trebuchet@cc86c36ffc7d164dc7f20373f072c821f36458c6。另对已报错的 14 份 Blueprint 做了公开来源预检：从实际锁定的 AOSP/TeamWin 提交读取文件，逐一核验 Git blob 身份；未使用私有覆盖层或日志内容。由 libcore/NativeCode.bp 的 static_libs 和 system/bt/gd/Android.bp 的 static_libs、rustlibs、proc_macros 直接引用，补齐同标签完整 external/fdlibm、external/google-breakpad、external/rust/crates/{num-derive,num-traits}。后四项是经原始公开定义确认的直接依赖，不是本轮编译摘要报告的额外错误。五个完整项目共 1,195 个 Git 文件、29,108,564 bytes，其已识别 Blueprint 引用均有字面量提供方。AIDL 生成名、Make 生成名及真正命名空间/变体的解析仍交由实际构建验证。合计 383 项；原始项目身份、私有输入和复制规则均不变。
+
+本轮部分 GitHub 任务状态接口显示滞后，已通过带 no-cache 的 GitHub 公开 REST 读取和构建进度分支交叉核对，未据此更改并发取消策略或中断实际构建。383 项提交准备期间，本地执行环境断开；提交仅增加断开前已完成来源、完整 Git tree 与引用核对的公开项目，私有输入身份保持原值。本轮新提交的标准库测试、shell/actionlint 与公开 smoke 由 runner-image Job 执行，检查成功后才允许完整构建，不将尚未执行的本地检查记为通过。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：补齐 benchmark、USB 和 Pybind11 后的 378 项图是否能通过 Soong 并完成实际镜像编译；原生路线仍需真实完整验证，尚无成功 boot.img。
+当前最大不确定性：补齐 Trebuchet 及已核对直接依赖后的 383 项图是否能通过 Soong 并完成实际镜像编译；原生路线仍需真实完整验证，尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 

@@ -581,6 +581,36 @@
       "path": "external/python/pybind11",
       "revision": "960c6f3b4ca0b7ac3d6178bd76cbcb7687ad5173",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/tools/trebuchet",
+      "path": "tools/trebuchet",
+      "revision": "cc86c36ffc7d164dc7f20373f072c821f36458c6",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/fdlibm",
+      "path": "external/fdlibm",
+      "revision": "19a89b7a083dc38384446f88ca29c6b09a45db62",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/google-breakpad",
+      "path": "external/google-breakpad",
+      "revision": "dd594e30ddcafeab4a16462e002bcb4bb76b9a2f",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/num-derive",
+      "path": "external/rust/crates/num-derive",
+      "revision": "1b3a5204cc5f10c7156fd8fbcd8957ecbd206255",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/num-traits",
+      "path": "external/rust/crates/num-traits",
+      "revision": "a53d5188633b74f59868a0429cdcb6779a520296",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

@@ -33,7 +33,7 @@ flowchart TD
 
 后续补齐同版本 `tools/tradefederation/prebuilts@2a5fd21caf0d161ef6fc2efec1fadf2f31986039`，其原始 Java import/filegroup/JAR 提供两个缺失模块。285 项运行同步和校验通过后，Soong 报告下一组 DEQP、Python 和 VNDK 缺项；已按公开提供方及其直接声明的依赖补齐，实际状态以 [AUDIT.md](AUDIT.md) 的运行证据为准。2026-10-22 用户明确要求持续修正、构建直至得到成品，因此每次失败均保留真实失败状态，再审查和修正后继续尝试，不再将旧的一轮停止约定作为暂停理由。
 
-298 项运行完成完整同步和预检后，Soong 继续报告 Mockito、Objenesis、Google Java Format、Connected Apps SDK、dexlib2 与 modules-utils 缺项。随后补齐这些提供方和 Robolectric/Car 直接引用的同版本项目；326 项运行继续报告 Rust 缺项，363 项运行继续报告 ICU 测试引用的 `junit-params`。首次原生 364 项运行在 Ubuntu 26.04 通过官方旧 ABI 包安装、完整同步与预检，随后报告另外八个缺失依赖；375 项运行继续报告 benchmark、libusb 和 pybind11 头文件缺项。当前合计锁定 378 项，补齐同一 Android 标签的实际提供方；公开模块字面量索引用于静态核对，实际构建仍是验收依据。当前尚未取得成功镜像。
+298 项运行完成完整同步和预检后，Soong 继续报告 Mockito、Objenesis、Google Java Format、Connected Apps SDK、dexlib2 与 modules-utils 缺项。随后补齐这些提供方和 Robolectric/Car 直接引用的同版本项目；326 项运行继续报告 Rust 缺项，363 项运行继续报告 ICU 测试引用的 `junit-params`。首次原生 364 项运行在 Ubuntu 26.04 通过官方旧 ABI 包安装、完整同步与预检，随后报告另外八个缺失依赖；375 项运行继续报告 benchmark、libusb 和 pybind11 头文件缺项，378 项运行报告 CTS 的 `trebuchet-core` 缺项。当前合计锁定 383 项，补齐 Trebuchet 和已核对的 fdlibm、Breakpad、Num Rust 直接依赖；公开模块字面量索引用于静态核对，实际构建仍是验收依据。当前尚未取得成功镜像。
 
 原生入口按 AGENTS.md 使用统一的 `runner-image` 输出，以及经核对的 `checkout@main`、`upload-artifact@main` 和共享 `run-sudo@main`。主机依赖优先安装 Ubuntu 二进制包；旧工具需要的 ABI 5 使用 Ubuntu 官方 Jammy `libtinfo5`、`libncurses5` 的 `6.3-2ubuntu0.3` amd64 安装包，逐个核验 SHA-256、包名、版本、架构与安装状态，不自行编译 ncurses，不修改全局 Java/Python。JDK、Clang 仍来自锁定源码。此路线尚须完整编译与静态验收，不能据静态检查认定稳定。
 
