@@ -80,7 +80,15 @@
 
 2026-10-22 用户要求继续后，复核到原 manifest 没有 `platform/cts` 或 `platform/platform_testing`。同版 AOSP 标签 `android-12.1.0_r4` 的 [CTS 根 Android.bp](https://android.googlesource.com/platform/cts/+/5c5a1cac99f23a61564c60be33f9274ff7fcd5fa/Android.bp) 定义 `cts_defaults`，经 `cts_support_defaults` 引用 `cts_error_prone_rules_tests`，并直接依赖 `platform-test-annotations`；后者由同版 [platform_testing/libraries/annotations](https://android.googlesource.com/platform/platform_testing/+/af7eaff31e0aed03c06f6bade385397d792f4008/libraries/annotations/Android.bp) 提供。两个 tag 对应 SHA 均通过公开 Gitiles 元数据核对。CTS 完整 Git tree 已本地抓取：23,012 个文件，逻辑大小 2,032,706,654 bytes，含 1,561 个 Android.bp；不采用其他 Android 版本的 CTS 或自行编写空 defaults。
 
-本次修复在 `source.lock.json.public_projects` 锁定这两个完整公开项目，由 `source_inputs.py compose` 验证原始 manifest 的 blob 身份后生成有效 manifest。原私有 manifest、十个下载输入、282 个原项目 SHA 及 12 条 copy/link 指令均保留；新增路径、项目名、remote 冲突或 Android tag 不匹配立即失败。完整 checkout 校验和受限诊断覆盖新增项目。40 项本地测试、Bash 语法、YAML/actionlint 和真实私有 manifest 组合检查已通过；284 项完整构建尚未验证。本轮仅验证这一有明确来源的依赖补齐，不在失败后自动扩大图或禁用测试。
+本次修复在 `source.lock.json.public_projects` 锁定这两个完整公开项目，由 `source_inputs.py compose` 验证原始 manifest 的 blob 身份后生成有效 manifest。原私有 manifest、十个下载输入、282 个原项目 SHA 及 12 条 copy/link 指令均保留；新增路径、项目名、remote 冲突或 Android tag 不匹配立即失败。完整 checkout 校验和受限诊断覆盖新增项目。40 项本地测试、Bash 语法、YAML/actionlint 和真实私有 manifest 组合检查已通过；284 项真实构建结果见下。本轮仅验证这一有明确来源的依赖补齐，不在失败后自动扩大图或禁用测试。
+
+[完整运行 39728081394](https://github.com/Grinch27/twrp_builder/actions/runs/39728081394) 使用 `8ca01e413e2df619fc5bc2423692b420a6732bc7`。40 项测试、actionlint 和公开单项目同步均通过；完整 job 的输入下载/校验、284 项完整同步、锁定 HEAD/clean 校验、覆盖应用、空间/JDK/AAR 预检及 lunch 均通过。13:29:14 进入 source_sync，13:34:46 进入 checkout_verification，13:35:31 已进入 compile，13:37:46 在 Soong 以 exit 1 停止（2026-10-22，Asia/Shanghai）。新增完整 CTS 已提供原缺失的 defaults，但图尚未闭合；本轮受限摘要列出新的 `tradefed`、`compatibility-tradefed` 未定义错误，涉及 `cts/libs/install/Android.bp:174`、两个 VTS fastboot 测试、`platform_testing/libraries/audio-test-harness/tradefed/Android.bp:23` 和 `test/vts/tools/vts-core-tradefed/Android.bp:19`。摘要受固定数量和公开身份校验限制，不能作为全部错误清单。
+
+该次运行 Artifact 列表为空；两个公开产物步骤均 skipped，未创建 Release，未进入静态镜像验收。一次性触发条件在登记后已恢复，当前完整构建仍只接受 main 的 workflow_dispatch。源码归档未修改，未新增缺依赖绕过或测试禁用；本轮在这一失败点停止，没有自动重跑。
+
+后续依赖来源已完成只读核对：AOSP `platform/tools/tradefederation/prebuilts`，目标 checkout 路径 `tools/tradefederation/prebuilts`，`android-12.1.0_r4` 对应提交 `2a5fd21caf0d161ef6fc2efec1fadf2f31986039`。完整 Git tree 为 22 个文件、107,971,279 bytes；[test_harness/Android.bp](https://android.googlesource.com/platform/tools/tradefederation/prebuilts/+/2a5fd21caf0d161ef6fc2efec1fadf2f31986039/test_harness/Android.bp) 的第 25、58 行分别定义 `tradefed` 和 `compatibility-tradefed`，使用同版本官方预编译输入。该项目也存在于 TWRP 12.1 上游 default manifest，但不在当前归档 manifest。对现代 `platform/test/suite_harness` 和 Tradefed 源码仓库的相同 release tag 查询返回 404，因此不猜测跨版本分支作为替代。
+
+下一入口：先审查这一项目的 JAR/filegroup 引用和现有图的重名情况，再决定是否将该 SHA 作为第三个公开补充项目（合计 285 项），随后单独验证。**它尚未写入 source.lock.json，也没有进行 285 项构建；不能保证只补它就能闭合全部依赖。**
 
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
@@ -88,7 +96,7 @@
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：已确认并补齐 `cts_defaults` 及其 annotations 来源，但 284 项图是否还存在其他缺依赖尚未通过真实编译验证；尚无新 boot.img 成功证明。
+当前最大不确定性：284 项完整同步和预检已通过，但 Soong 仍缺 `tradefed`、`compatibility-tradefed`；后续依赖闭包和可成功编译的 boot.img 均未验证。
 
 用户可能遗漏：跨仓库私有读取需要单独的只读凭据；公开镜像也会包含配置/固件；publish=false 不保留可下载镜像或完整诊断日志。
 
