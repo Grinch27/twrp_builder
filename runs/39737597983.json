@@ -2,5 +2,26 @@
   "schema": 1,
   "run_id": 39737597983,
   "builder_commit": "0407905fb170ca3322690fc1f0380642b9dcabfa",
-  "stage": "compile"
+  "stage": "compile",
+  "exit_code": 1,
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "test/vts/testcases/host/kernel_proc_file_api_test/Android.bp",
+      "line": 22
+    },
+    {
+      "path": "cts/tools/cts-tradefed/tests/Android.bp",
+      "line": 19
+    }
+  ],
+  "public_dependencies": [
+    "CtsDeqpRunnerTests",
+    "py-parse_type",
+    "py-ply",
+    "vts_vndk_utils"
+  ]
 }
