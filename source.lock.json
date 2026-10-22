@@ -17,6 +17,12 @@
       "path": "platform_testing",
       "revision": "af7eaff31e0aed03c06f6bade385397d792f4008",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/tools/tradefederation/prebuilts",
+      "path": "tools/tradefederation/prebuilts",
+      "revision": "2a5fd21caf0d161ef6fc2efec1fadf2f31986039",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

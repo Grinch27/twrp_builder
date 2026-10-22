@@ -2,7 +2,7 @@
 # Requirements: classify a failed compile without exporting private log text.
 # Ambiguity: unknown diagnostics remain unclassified; no guessed source fixes.
 # Research: public locations and dependencies must exist in pinned upstream Git.
-# Optimization: inspect bounded log fragments and at most eight candidate files.
+# Optimization: inspect bounded log fragments and at most 64 candidate files.
 # Risks: private overlay contents, paths, identifiers or credentials in errors.
 # Validation: fixed categories and Git-confirmed public metadata; synthetic tests.
 """Return restricted compiler diagnostics, never compiler output or source text."""
@@ -72,23 +72,25 @@ def public_file(source, name, projects, excluded):
 def summarize(text, manifest, source, excluded=()):
     categories = [name for name, rule in RULES.items() if re.search(rule, text, re.I)]
     projects = ET.fromstring(manifest).findall('project')
-    locations, dependencies, attempted = [], set(), set()
+    locations, dependencies, cache = [], set(), {}
     for line in text.splitlines():
         for match in LOCATION.finditer(line):
             name, number = match.groups()
-            if name in attempted or len(attempted) >= 8:
-                continue
-            attempted.add(name)
-            public = public_file(source, name, projects, excluded)
+            if name not in cache:
+                if len(cache) >= 64:
+                    continue
+                cache[name] = public_file(source, name, projects, excluded)
+                if cache[name] is not None:
+                    locations.append({'path': name, 'line': int(number)})
+            public = cache[name]
             if public is None:
                 continue
-            locations.append({'path': name, 'line': int(number)})
             for dependency in DEPENDENCY.findall(line):
                 # Only a literal present in this exact public Git blob is eligible.
                 if json.dumps(dependency) in public:
                     dependencies.add(dependency)
     return {'categories': categories or ['UNCLASSIFIED_COMPILE_FAILURE'],
-            'public_locations': locations, 'public_dependencies': sorted(dependencies)[:8]}
+            'public_locations': locations, 'public_dependencies': sorted(dependencies)[:128]}
 
 
 def main():
@@ -99,9 +101,9 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     with args.log.open('rb') as stream:
-        first = stream.read(262144)
-        stream.seek(max(len(first), args.log.stat().st_size - 262144))
-        text = (first + b'\n' + stream.read(262144)).decode('utf-8', errors='replace')
+        first = stream.read(2 * 1024**2)
+        stream.seek(max(len(first), args.log.stat().st_size - 2 * 1024**2))
+        text = (first + b'\n' + stream.read(2 * 1024**2)).decode('utf-8', errors='replace')
     excluded = {entry['destination'].removeprefix('overlay/') for entry in load_lock()['files']}
     result = summarize(text, args.manifest.read_bytes(), args.source, excluded)
     args.output.write_text(json.dumps(result, indent=2) + '\n')

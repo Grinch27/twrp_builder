@@ -13,6 +13,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 from summarize_compile_failure import summarize
+from report_progress import record
 
 
 class CompileSummaryTests(unittest.TestCase):
@@ -43,6 +44,30 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertEqual(result['public_locations'], [{'path': 'external/public/Android.bp', 'line': 1}])
         self.assertEqual(result['public_dependencies'], ['libpublic'])
         self.assertIn('UNDEFINED_MODULE', result['categories'])
+
+    def test_multiple_failures_in_one_public_file_are_all_reported(self):
+        (self.project / 'Android.bp').write_text('cc_library { name: "demo", shared_libs: ["libpublic", "libother"] }\n')
+        self.git('add', '.')
+        self.git('commit', '--quiet', '-m', 'additional public dependency')
+        revision = self.git('rev-parse', 'HEAD').strip()
+        manifest = self.manifest.replace(self.revision.encode(), revision.encode())
+        result = summarize('external/public/Android.bp:1: depends on undefined module "libpublic"\n'
+                           'external/public/Android.bp:1: depends on undefined module "libother"',
+                           manifest, self.source)
+        self.assertEqual(result['public_dependencies'], ['libother', 'libpublic'])
+        self.assertEqual(len(result['public_locations']), 1)
+
+    def test_progress_mirror_rechecks_names_and_drops_private_content(self):
+        value = record({'stage': 'compile', 'exit_code': 1, 'raw': 'private'}, 42, 'a' * 40,
+                       {'categories': ['UNDEFINED_MODULE', 'private'],
+                        'public_locations': [{'path': 'external/public/Android.bp', 'line': 1},
+                                             {'path': '../private', 'line': 1}],
+                        'public_dependencies': ['libpublic', 'private'], 'raw': 'secret'},
+                       self.source, self.manifest)
+        self.assertEqual(value['public_dependencies'], ['libpublic'])
+        self.assertEqual(value['categories'], ['UNDEFINED_MODULE'])
+        self.assertNotIn('private', json.dumps(value))
+        self.assertNotIn('secret', json.dumps(value))
 
     def test_private_values_and_messages_are_not_returned(self):
         result = summarize('error: external/public/Android.bp:1:1: depends on undefined module "secretvalue". '

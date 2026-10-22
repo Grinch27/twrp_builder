@@ -47,9 +47,10 @@ class InputTests(unittest.TestCase):
         self.assertEqual(lock['source']['manifest_projects'], 282)
         self.assertEqual(lock['device']['overlay_files'], 4)
         self.assertEqual(lock['build']['target'], 'bootimage')
-        self.assertEqual(len(lock['public_projects']), 2)
+        self.assertEqual(len(lock['public_projects']), 3)
         self.assertEqual(lock['public_projects'][0]['name'], 'platform/cts')
         self.assertEqual(lock['public_projects'][1]['name'], 'platform/platform_testing')
+        self.assertEqual(lock['public_projects'][2]['name'], 'platform/tools/tradefederation/prebuilts')
 
     def test_path_boundaries(self):
         for value in ['', '.', '..', '../outside', '/absolute', 'a/../b', 'a//b',

@@ -52,7 +52,7 @@
 
 ## 新构建器的实际验证状态
 
-- 当前标准库边界测试：40 项通过，包含多组子案例；覆盖输入路径、覆盖拒绝、链接逃逸、下载身份、manifest 锁定及危险指令、公开补充项目的身份/路径/版本冲突与 checkout、boot/cpio/解压边界、错误 kernel/DTB/fstab、未验证状态保留，以及同步和编译安全摘要的错误分类与隐私边界。
+- 当前标准库边界测试：48 项通过，包含多组子案例；覆盖输入路径、覆盖拒绝、链接逃逸、下载身份、manifest 锁定及危险指令、公开补充项目的身份/路径/版本冲突与 checkout、boot/cpio/解压边界、错误 kernel/DTB/fstab、未验证状态保留、同步和编译安全摘要，以及加密交付认证、进度字段白名单和诊断再次校验。
 - 新增 Python 可解析、全部 shell 通过 bash -n、工作流 YAML 可解析、手动触发与公开产物条件检查通过。
 - 实际归档 manifest 经新校验器通过：282 个项目、40 位锁定 revision、受限下载来源与路径。
 - GitHub Actions [运行 39693140718](https://github.com/Grinch27/twrp_builder/actions/runs/39693140718) 已成功：在代码提交 `dadd8c3dcfcc9e50d5d99e0c129b4cfcbacf47a6` 上，20 项测试、actionlint v1.7.7、官方下载校验及共享 Runner 解析均通过。完整编译 job 为 skipped，不能将这条绿色记录称作 TWRP 编译成功。
@@ -90,13 +90,19 @@
 
 下一入口：先审查这一项目的 JAR/filegroup 引用和现有图的重名情况，再决定是否将该 SHA 作为第三个公开补充项目（合计 285 项），随后单独验证。**它尚未写入 source.lock.json，也没有进行 285 项构建；不能保证只补它就能闭合全部依赖。**
 
+2026-10-22 后续授权与实现：用户明确要求“继续：修正、构建。不断执行直至完全构建得到成品”，已覆盖旧的一轮失败停止策略；仍不允许隐瞒失败、缺依赖绕过、禁用测试、付费资源、公开明文产物或设备操作。已完成 Tradefed 同版本完整 tree 与 filegroups/JAR 非空检查，并将 `2a5fd21caf0d161ef6fc2efec1fadf2f31986039` 加入公开补充项目，合计 285 项；原 282 项、十个私有输入和 12 条 copy/link 不变。该图尚待真实编译验证。
+
+为保留成功成品，新增标准 OpenSSL 3 CMS AES-256-GCM / RSA-OAEP 交付：只有通过既有镜像静态验收后，才加密打包 boot.img、static-validation.json、SHA256SUMS；工作流只自动上传 sealed-output.cms，七天留存。交付私钥留在本地工作区之外的私有临时目录，不进入 Git、Runner 或公开日志；仓库仅含收件公钥证书。本地已验证合成明文往返、内容严格限制及密文篡改认证失败。publish=false 继续禁止明文 Artifact 和 Release。
+
+新增 build-progress 分支，仅镜像受限阶段/退出码以及经公开 Git blob 再次校验的诊断；不复制任意 JSON 字段或原始日志。宿主 GitHub token 不进入容器。编译摘要扩展至最多 64 个公开文件、128 个依赖，且可完整记录同一文件多条依赖错误。48 项测试、Bash、YAML/actionlint、真实 manifest 组合检查已通过。当前连接仍缺 workflow_dispatch 接口；本次持续修复仅以精确日期标记 `[selene-build-20261022] ` 的 main 提交触发，成功交付后恢复普通手动条件。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 手动运行一次 publish=false 的完整任务；上限 350 分钟。任何输入、同步、容量、Soong 或静态验收失败即停止，不自动反复构建。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：284 项完整同步和预检已通过，但 Soong 仍缺 `tradefed`、`compatibility-tradefed`；后续依赖闭包和可成功编译的 boot.img 均未验证。
+当前最大不确定性：已补入同版本 Tradefed，但 285 项依赖闭包和可成功编译的 boot.img 尚待验证。
 
 用户可能遗漏：跨仓库私有读取需要单独的只读凭据；公开镜像也会包含配置/固件；publish=false 不保留可下载镜像或完整诊断日志。
 

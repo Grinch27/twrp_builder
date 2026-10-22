@@ -15,7 +15,7 @@ run_sudo apt-get -yqq --no-install-recommends install \
   bc bison build-essential ca-certificates cpio curl file flex g++-multilib \
   gcc-multilib git gnupg gperf lib32ncurses-dev lib32readline-dev lib32z1-dev \
   libelf-dev liblz4-tool libncurses5 libncurses-dev libssl-dev \
-  libxml2-utils lzop openssh-client pngcrush python-is-python3 python3 rsync unzip \
+  libxml2-utils lzop openssh-client openssl pngcrush python-is-python3 python3 rsync unzip \
   util-linux xsltproc zip zlib1g-dev
 groupadd --gid "${BUILDER_GID}" builder
 useradd --no-log-init --create-home --uid "${BUILDER_UID}" --gid "${BUILDER_GID}" builder

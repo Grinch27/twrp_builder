@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Requirements: fresh work, archive manifest plus public CTS/annotation projects.
-# Ambiguity: 284 full checkouts have not yet passed a clean bootimage build.
-# Research: stop at the first failure; no automated dependency suppression.
+# Ambiguity: the expanded source graph still needs a successful real bootimage build.
+# Research: inspect each failure and apply verified fixes under retry authorization.
 # Optimization: bounded sync/build time, JDK/Clang from the selected Android tree.
 # Risks: source availability, old prebuilts, capacity; preserve the failure logs.
 # Validation: exact checkout identities, mka exit 0, AVB and boot payload checks.
@@ -133,4 +133,6 @@ python3 "${SELF}/scripts/verify_boot.py" --image "${image}" \
 cp "${image}" "${WORK}/output/boot.img"
 cd "${WORK}/output"
 sha256sum boot.img static-validation.json > SHA256SUMS
+python3 "${SELF}/scripts/seal_output.py" --output "${WORK}/output" \
+  --certificate "${SELF}/delivery-recipient.pem"
 set_stage complete
