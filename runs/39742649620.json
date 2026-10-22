@@ -2,5 +2,19 @@
   "schema": 1,
   "run_id": 39742649620,
   "builder_commit": "fda36b1e1019352e0a04e4c9bd7af9eae8be80e6",
-  "stage": "compile"
+  "stage": "compile",
+  "exit_code": 1,
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "prebuilts/misc/common/robolectric/Android.bp",
+      "line": 10
+    }
+  ],
+  "public_dependencies": [
+    "robolectric-host-android_all"
+  ]
 }
