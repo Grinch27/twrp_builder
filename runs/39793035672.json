@@ -2,5 +2,37 @@
   "schema": 1,
   "run_id": 39793035672,
   "builder_commit": "14a0f363a40c7182490eaf180eb5fcb0185eeaa0",
-  "stage": "compile"
+  "stage": "compile",
+  "exit_code": 1,
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "libcore/NativeCode.bp",
+      "line": 241
+    },
+    {
+      "path": "packages/modules/adb/tools/Android.bp",
+      "line": 24
+    },
+    {
+      "path": "bionic/benchmarks/Android.bp",
+      "line": 123
+    },
+    {
+      "path": "system/bt/gd/Android.bp",
+      "line": 957
+    },
+    {
+      "path": "bionic/benchmarks/spawn/Android.bp",
+      "line": 49
+    }
+  ],
+  "public_dependencies": [
+    "libgoogle-benchmark",
+    "libusb",
+    "pybind11_headers"
+  ]
 }
