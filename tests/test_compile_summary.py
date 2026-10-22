@@ -13,7 +13,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 from summarize_compile_failure import summarize
-from report_progress import record
+from report_progress import public_module_names, record
 
 
 class CompileSummaryTests(unittest.TestCase):
@@ -68,6 +68,24 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertEqual(value['categories'], ['UNDEFINED_MODULE'])
         self.assertNotIn('private', json.dumps(value))
         self.assertNotIn('secret', json.dumps(value))
+
+    def test_module_catalog_uses_pinned_git_and_ignores_private_worktree(self):
+        (self.project / 'Named.bp').write_text('cc_library {\n    name: "public_catalog_name",\n}\n')
+        self.git('add', '.')
+        self.git('commit', '--quiet', '-m', 'public catalog fixture')
+        revision = self.git('rev-parse', 'HEAD').strip()
+        manifest = self.manifest.replace(self.revision.encode(), revision.encode())
+        (self.project / 'Named.bp').write_text('name: "private_worktree_value"\n')
+        (self.project / 'Untracked.bp').write_text('name: "private_untracked_value"\n')
+        names = public_module_names(manifest, self.source)
+        self.assertIn('public_catalog_name', names)
+        self.assertNotIn('private_worktree_value', names)
+        self.assertNotIn('private_untracked_value', names)
+
+    def test_module_catalog_rejects_wrong_commit(self):
+        manifest = self.manifest.replace(self.revision.encode(), b'1' * 40)
+        with self.assertRaises(ValueError):
+            public_module_names(manifest, self.source)
 
     def test_private_values_and_messages_are_not_returned(self):
         result = summarize('error: external/public/Android.bp:1:1: depends on undefined module "secretvalue". '

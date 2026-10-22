@@ -52,7 +52,7 @@
 
 ## 新构建器的实际验证状态
 
-- 当前标准库边界测试：48 项通过，包含多组子案例；覆盖输入路径、覆盖拒绝、链接逃逸、下载身份、manifest 锁定及危险指令、公开补充项目的身份/路径/版本冲突与 checkout、boot/cpio/解压边界、错误 kernel/DTB/fstab、未验证状态保留、同步和编译安全摘要，以及加密交付认证、进度字段白名单和诊断再次校验。
+- 当前标准库边界测试：50 项通过，包含多组子案例；覆盖输入路径、覆盖拒绝、链接逃逸、下载身份、manifest 锁定及危险指令、公开补充项目的身份/路径/版本冲突与 checkout、boot/cpio/解压边界、错误 kernel/DTB/fstab、未验证状态保留、同步和编译安全摘要，以及加密交付认证、进度字段白名单、诊断再次校验和公开 Git blob 模块索引隔离。
 - 新增 Python 可解析、全部 shell 通过 bash -n、工作流 YAML 可解析、手动触发与公开产物条件检查通过。
 - 实际归档 manifest 经新校验器通过：282 个项目、40 位锁定 revision、受限下载来源与路径。
 - GitHub Actions [运行 39693140718](https://github.com/Grinch27/twrp_builder/actions/runs/39693140718) 已成功：在代码提交 `dadd8c3dcfcc9e50d5d99e0c129b4cfcbacf47a6` 上，20 项测试、actionlint v1.7.7、官方下载校验及共享 Runner 解析均通过。完整编译 job 为 skipped，不能将这条绿色记录称作 TWRP 编译成功。
@@ -104,15 +104,19 @@
 
 继续补齐同版 `platform/tools/apksig@c2b69bcc45dfac3a745e5f2fefcec42594dddb6c`，checkout 路径 `tools/apksig`。锁定公开 Android.bp 直接定义 `java_library_host` 模块 apksig，Java 1.8；其 apksigner 工具使用的 Conscrypt 已在原始 manifest 中。当前合计 296 项，等待真实构建验证；原始项目和私有输入未改动。
 
+[296 项运行 39742649620](https://github.com/Grinch27/twrp_builder/actions/runs/39742649620) 使用 `fda36b1e1019352e0a04e4c9bd7af9eae8be80e6`，静态检查和公开同步通过；15:49:35 开始完整同步，15:57:08 进入 checkout 校验，15:57:55 进入 compile，15:59:58 以 exit 1 停止（Asia/Shanghai）。新的公开诊断是 `prebuilts/misc/common/robolectric/Android.bp:10` 缺少 `robolectric-host-android_all`。没有镜像成品。
+
+下一次补齐同标签完整 `external/robolectric-shadows@fc6f4e51fa28f85090051012a491dd1ab0233eef`，其根 Android.bp 定义该实际框架聚合库，并引用 `android.car`。同标签完整 `packages/services/Car@af051f0a86d0ded75e4be48aa3387c68d569202b` 提供后者，两个完整公开 Git tree 与模块定义均已核对，合计 298 项。依赖闭包仍待实际 Soong 验证，不用占位模块替代框架库。为减少逐项猜测，进度分支新增来自锁定公开 Git blob 的模块名字面量索引；测试确认未跟踪文件、工作树私有改动及错误 HEAD 不会进入索引。该索引不证明生成模块或命名空间可见性。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：补齐 apksig 后的 296 项图是否能通过 Soong 并完成实际镜像编译；295 项同步后的空间预检已通过，但尚无成功 boot.img。
+当前最大不确定性：补齐 Robolectric 与 android.car 后的 298 项图是否能通过 Soong 并完成实际镜像编译；296 项同步后的空间预检已通过，但尚无成功 boot.img。
 
-用户可能遗漏：跨仓库私有读取需要单独的只读凭据；公开镜像也会包含配置/固件；publish=false 不保留可下载镜像或完整诊断日志。
+用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
 Q1（私有输入授权）：已获批准，且实际读取与身份校验已通过。
 Q2（公开产物）：本轮保持 publish=false；未批准公开镜像或 Release。

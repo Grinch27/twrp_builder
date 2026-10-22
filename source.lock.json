@@ -89,6 +89,18 @@
       "path": "tools/apksig",
       "revision": "c2b69bcc45dfac3a745e5f2fefcec42594dddb6c",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/robolectric-shadows",
+      "path": "external/robolectric-shadows",
+      "revision": "fc6f4e51fa28f85090051012a491dd1ab0233eef",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/services/Car",
+      "path": "packages/services/Car",
+      "revision": "af051f0a86d0ded75e4be48aa3387c68d569202b",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

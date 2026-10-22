@@ -41,7 +41,7 @@ flowchart TD
 4. 完整任务会清理该次临时 GitHub runner 的预装 Android SDK、hostedtoolcache、dotnet、PowerShell 四个目录，以获得空间；不会在本地或 self-hosted runner 上运行该清理脚本。若空间门槛仍不满足，任务停止，不自动购买或选择付费 runner。
 5. 成功并通过静态验收后，总是用 `delivery-recipient.pem` 的公钥将三个成品文件打包为 AES-256-GCM / RSA-OAEP 的 CMS 密文，保留加密 Actions Artifact 七天。私钥只在交付方本地，不进入仓库或 Runner；`publish=false` 不公开镜像明文。只有明确勾选 `publish` 才另行上传明文 Artifact 和实验性 prerelease。完整日志仍不上传。
 
-运行阶段及经过公开 Git blob 再次校验的诊断，可在 `build-progress` 分支的 `runs/<run_id>.json` 读取。该分支不存私有源码、manifest 原文、原始日志或镜像；进度失败不影响真实构建退出状态。GitHub token 只用于宿主进度上传，不传入编译容器。
+运行阶段及经过公开 Git blob 再次校验的诊断，可在 `build-progress` 分支的 `runs/<run_id>.json` 读取。`catalogs/<run_id>.json` 仅列出锁定公开 Git blob 中的模块名字面量，用于核对依赖提供方；它不保证命名空间解析、生成模块或整个图有效。有效 manifest 会重新组合比对，工作树和私有覆盖文件不参与索引。该分支不存私有源码、manifest 原文、原始日志或镜像；进度失败不影响真实构建退出状态。GitHub token 只用于宿主进度上传，不传入编译容器。
 
 **隐私范围：** token 仅在宿主机下载步骤存在，不传入编译容器。只下载 manifest、四个已审查设备覆盖文件和五个 stock 输入，合计 11,178,084 bytes。私有源码、manifest 原文、fstab 原文、编译日志和历史证据不进入公开仓库或 Artifact。公开镜像会包含所用配置/固件，因此也必须通过 `publish` 明确批准。
 
