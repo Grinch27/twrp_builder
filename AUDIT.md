@@ -27,7 +27,7 @@
 
 | 等级 | 风险 | 当前处理与验证边界 |
 | --- | --- | --- |
-| HIGH | 282 项重建图仍可能缺少 Soong 全局依赖 | 完整 checkout，先核对每个 HEAD 和 clean 状态，首个失败停止；不循环补库或禁用测试 |
+| HIGH | 282 项重建图仍可能缺少 Soong 全局依赖 | 完整 checkout 并核对 HEAD/clean；每轮真实失败后审查公开提供方、验证修复再重试，不禁用测试 |
 | HIGH | 私有归档与公开 builder 的信息边界 | 仅通过用户配置的只读 secret 读取十个锁定输入；凭据不进入 Docker；源码与原始日志不上传 |
 | HIGH | 公开 boot.img 会携带配置及固件 | publish 默认为 false；只有显式 true 且构建和静态检查成功才上传与预发布 |
 | HIGH | 干净源码、Git 对象和编译输出可能超出标准 runner 容量 | 手动构建时只清理四个明确列出的临时 runner SDK 目录；50/18 GiB 双阶段检查，资源不足即停止 |
@@ -108,13 +108,19 @@
 
 下一次补齐同标签完整 `external/robolectric-shadows@fc6f4e51fa28f85090051012a491dd1ab0233eef`，其根 Android.bp 定义该实际框架聚合库，并引用 `android.car`。同标签完整 `packages/services/Car@af051f0a86d0ded75e4be48aa3387c68d569202b` 提供后者，两个完整公开 Git tree 与模块定义均已核对，合计 298 项。依赖闭包仍待实际 Soong 验证，不用占位模块替代框架库。为减少逐项猜测，进度分支新增来自锁定公开 Git blob 的模块名字面量索引；测试确认未跟踪文件、工作树私有改动及错误 HEAD 不会进入索引。该索引不证明生成模块或命名空间可见性。
 
+[298 项运行 39747393426](https://github.com/Grinch27/twrp_builder/actions/runs/39747393426) 使用 `ae825a2c3575f634e24bebc0871cf9fdc3676c79`，50 项测试、actionlint 和公开同步通过；16:31:13 进入完整同步，16:38:01 进入 checkout 校验，16:38:48 进入 compile，16:41:16 因未定义模块 exit 1（Asia/Shanghai）。受限摘要确认缺少 `ConnectedAppsSDK_Annotations`、`dexlib2`、`dexlib2-no-guava-no-cli`、`google_java_format`、`mockito`、`mockito-host`、`modules-utils-build-testing`、`objenesis`、`objenesis-host`。未进入镜像静态验收，密文和明文产物步骤均跳过。
+
+该次公开 Git blob 模块索引实际取得 16,064 个字面量名字。以实际错误为起点，并沿 Robolectric/Car 的公开 Android.bp 直接引用核对，新增同一 android-12.1.0_r4 的 28 个完整项目，合计 326 项。它们包括 Mockito/Objenesis、Connected Apps SDK、smali、Dagger/Google Java Format/Kotlin metadata、Dexmaker/dexter、libphonenumber、libprotobuf-mutator、okio、lottie/setupcompat/setupdesign、ZXing、modules-utils/proto_logging、Car 应用与公共库、Settings/ManagedProvisioning、Car 框架服务和 Setup Wizard，以及真正提供 glide-prebuilt 的官方 bumptech 预编译项目。外部 glide 源码未被当作 glide-prebuilt 替代，未加入清单。各标签 SHA、完整 Git tree、提供模块与传递引用已在公开锁定 Git 对象中检查；名字缺席不是缺依赖的充分证明，SDK/AIDL 自动生成名字仍由真实 Soong 检验。原 282 项身份、十个私有输入与 12 条 copy/link 不变。
+
+Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 Actions 运行；随后通过 Contents API 更新构建脚本需求注释，才产生上述 ae825a2 运行。本次后续提交将依赖锁定文件作为最后一次 Contents 更新，确保实际登记并验证任务。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：补齐 Robolectric 与 android.car 后的 298 项图是否能通过 Soong 并完成实际镜像编译；296 项同步后的空间预检已通过，但尚无成功 boot.img。
+当前最大不确定性：补齐已核对传递依赖后的 326 项图是否能通过 Soong 并完成实际镜像编译；298 项同步后的空间预检已通过，但尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
