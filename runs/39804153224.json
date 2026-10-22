@@ -2,5 +2,30 @@
   "schema": 1,
   "run_id": 39804153224,
   "builder_commit": "89f9c912ed08d50bc44fa264cd7ec7cd6504ef75",
-  "stage": "compile"
+  "stage": "compile",
+  "exit_code": 1,
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "frameworks/base/libs/usb/tests/accessorytest/Android.bp",
+      "line": 11
+    },
+    {
+      "path": "frameworks/native/cmds/installd/Android.bp",
+      "line": 124
+    },
+    {
+      "path": "art/disassembler/Android.bp",
+      "line": 57
+    }
+  ],
+  "public_dependencies": [
+    "libtinyalsa",
+    "libvixl",
+    "libvixld",
+    "server_configurable_flags"
+  ]
 }
