@@ -5,6 +5,20 @@
     "commit": "b0aef415d0a5eabf66663c8882d16e1e227381dd",
     "manifest_projects": 282
   },
+  "public_projects": [
+    {
+      "name": "platform/cts",
+      "path": "cts",
+      "revision": "5c5a1cac99f23a61564c60be33f9274ff7fcd5fa",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/platform_testing",
+      "path": "platform_testing",
+      "revision": "af7eaff31e0aed03c06f6bade385397d792f4008",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    }
+  ],
   "device": {
     "repository": "hasan6034/recovery_device_xiaomi_selene",
     "commit": "c77512445ab5be5908ddb3ca9c659e6b149c78de",

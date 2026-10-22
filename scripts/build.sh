@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Requirements: fresh /builder/work, locked manifest, selene stock-v14 inputs.
-# Ambiguity: 282 full checkouts have not yet passed a clean bootimage build.
+# Requirements: fresh work, archive manifest plus public CTS/annotation projects.
+# Ambiguity: 284 full checkouts have not yet passed a clean bootimage build.
 # Research: stop at the first failure; no automated dependency suppression.
 # Optimization: bounded sync/build time, JDK/Clang from the selected Android tree.
 # Risks: source availability, old prebuilts, capacity; preserve the failure logs.
@@ -24,14 +24,14 @@ finish() {
   trap - EXIT
   if ((result != 0)) && [[ "${stage}" == compile && -f "${WORK}/logs/compile.log" ]]; then
     if ! python3 "${SELF}/scripts/summarize_compile_failure.py" \
-      --log "${WORK}/logs/compile.log" --manifest "${WORK}/inputs/default.xml" \
+      --log "${WORK}/logs/compile.log" --manifest "${WORK}/manifest/default.xml" \
       --source "${WORK}/android" --output "${WORK}/output/compile-error-summary.json"; then
       printf 'Structured compiler diagnostics unavailable.\n' >&2
     fi
   fi
   if ((result != 0)) && [[ -n "${phase_log:-}" && -f "${phase_log}" ]]; then
     if ! python3 "${SELF}/scripts/summarize_repo_failure.py" \
-      --log "${phase_log}" --manifest "${WORK}/inputs/default.xml" \
+      --log "${phase_log}" --manifest "${WORK}/manifest/default.xml" \
       --output "${WORK}/output/source-error-summary.json"; then
       printf 'Structured repository diagnostics unavailable.\n' >&2
     fi
@@ -70,7 +70,8 @@ export GIT_COMMITTER_EMAIL=twrp-builder@users.noreply.github.com
 export GIT_CONFIG_COUNT=2
 export GIT_CONFIG_KEY_0=user.name GIT_CONFIG_VALUE_0=twrp-builder
 export GIT_CONFIG_KEY_1=user.email GIT_CONFIG_VALUE_1=twrp-builder@users.noreply.github.com
-cp "${WORK}/inputs/default.xml" "${WORK}/manifest/default.xml"
+python3 "${SELF}/scripts/source_inputs.py" compose \
+  --manifest "${WORK}/inputs/default.xml" --output "${WORK}/manifest/default.xml"
 git -C "${WORK}/manifest" init --initial-branch=main --quiet
 git -C "${WORK}/manifest" add default.xml
 git -C "${WORK}/manifest" commit --quiet -m 'Use reviewed locked manifest'

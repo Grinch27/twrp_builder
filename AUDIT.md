@@ -52,7 +52,7 @@
 
 ## 新构建器的实际验证状态
 
-- 当前标准库边界测试：33 项通过，包含多组子案例；覆盖输入路径、覆盖拒绝、链接逃逸、下载身份、manifest 锁定及危险指令、boot/cpio/解压边界、错误 kernel/DTB/fstab、未验证状态保留，以及同步和编译安全摘要的错误分类与隐私边界。
+- 当前标准库边界测试：40 项通过，包含多组子案例；覆盖输入路径、覆盖拒绝、链接逃逸、下载身份、manifest 锁定及危险指令、公开补充项目的身份/路径/版本冲突与 checkout、boot/cpio/解压边界、错误 kernel/DTB/fstab、未验证状态保留，以及同步和编译安全摘要的错误分类与隐私边界。
 - 新增 Python 可解析、全部 shell 通过 bash -n、工作流 YAML 可解析、手动触发与公开产物条件检查通过。
 - 实际归档 manifest 经新校验器通过：282 个项目、40 位锁定 revision、受限下载来源与路径。
 - GitHub Actions [运行 39693140718](https://github.com/Grinch27/twrp_builder/actions/runs/39693140718) 已成功：在代码提交 `dadd8c3dcfcc9e50d5d99e0c129b4cfcbacf47a6` 上，20 项测试、actionlint v1.7.7、官方下载校验及共享 Runner 解析均通过。完整编译 job 为 skipped，不能将这条绿色记录称作 TWRP 编译成功。
@@ -76,13 +76,19 @@
 
 已补齐编译摘要的诊断缺口：完整日志仍在临时 runner；只输出固定类别、由锁定公开 Git blob 证实的文件位置与依赖字面量，明确排除私有覆盖文件。八项新增测试验证未知值、凭据、未跟踪路径、工作树私有修改和错误 revision 不会被回传。下一次仅验证这一诊断补丁，不改 manifest 或依赖图；取得第一个具体错误后停止。
 
+[诊断运行 39699820379](https://github.com/Grinch27/twrp_builder/actions/runs/39699820379) 已结束：静态检查、公开同步测试、十个输入校验、282 项完整同步、checkout 和预检通过；08:38:40（Asia/Shanghai）在 compile 阶段以 exit 1 停止。受限摘要报告 `UNDEFINED_MODULE` 和 `SOONG_BOOTSTRAP_FAILURE`，公开位置为 `packages/modules/IPsec/tests/cts/Android.bp:19` 与 `packages/modules/StatsD/tests/apps/statsdapp/Android.bp:32`，缺失依赖为 `cts_defaults`。未上传 Artifact 或创建 Release。
+
+2026-10-22 用户要求继续后，复核到原 manifest 没有 `platform/cts` 或 `platform/platform_testing`。同版 AOSP 标签 `android-12.1.0_r4` 的 [CTS 根 Android.bp](https://android.googlesource.com/platform/cts/+/5c5a1cac99f23a61564c60be33f9274ff7fcd5fa/Android.bp) 定义 `cts_defaults`，经 `cts_support_defaults` 引用 `cts_error_prone_rules_tests`，并直接依赖 `platform-test-annotations`；后者由同版 [platform_testing/libraries/annotations](https://android.googlesource.com/platform/platform_testing/+/af7eaff31e0aed03c06f6bade385397d792f4008/libraries/annotations/Android.bp) 提供。两个 tag 对应 SHA 均通过公开 Gitiles 元数据核对。CTS 完整 Git tree 已本地抓取：23,012 个文件，逻辑大小 2,032,706,654 bytes，含 1,561 个 Android.bp；不采用其他 Android 版本的 CTS 或自行编写空 defaults。
+
+本次修复在 `source.lock.json.public_projects` 锁定这两个完整公开项目，由 `source_inputs.py compose` 验证原始 manifest 的 blob 身份后生成有效 manifest。原私有 manifest、十个下载输入、282 个原项目 SHA 及 12 条 copy/link 指令均保留；新增路径、项目名、remote 冲突或 Android tag 不匹配立即失败。完整 checkout 校验和受限诊断覆盖新增项目。40 项本地测试、Bash 语法、YAML/actionlint 和真实私有 manifest 组合检查已通过；284 项完整构建尚未验证。本轮仅验证这一有明确来源的依赖补齐，不在失败后自动扩大图或禁用测试。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 手动运行一次 publish=false 的完整任务；上限 350 分钟。任何输入、同步、容量、Soong 或静态验收失败即停止，不自动反复构建。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：干净完整 checkout 已通过，但编译阶段的第一个具体错误尚未取得，尚无新 boot.img 成功证明。
+当前最大不确定性：已确认并补齐 `cts_defaults` 及其 annotations 来源，但 284 项图是否还存在其他缺依赖尚未通过真实编译验证；尚无新 boot.img 成功证明。
 
 用户可能遗漏：跨仓库私有读取需要单独的只读凭据；公开镜像也会包含配置/固件；publish=false 不保留可下载镜像或完整诊断日志。
 

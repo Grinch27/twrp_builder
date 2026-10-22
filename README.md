@@ -8,7 +8,7 @@
 
 ```mermaid
 flowchart TD
-  A["锁定 manifest 与 10 个归档输入"] --> B["282 个上游项目完整 checkout"]
+  A["锁定 manifest 与 10 个归档输入"] --> B["282 个原项目 + 2 个公开依赖完整 checkout"]
   B --> C["应用 4 个设备覆盖文件"]
   C --> D["twrp_selene-eng / bootimage"]
   D --> E["静态验收与可选公开预发布"]
@@ -19,7 +19,7 @@ flowchart TD
 | 工作流 | `.github/workflows/twrp_allinone.yml`，一个文件、两个 job |
 | Runner | 共享 `resolve-runner-image@main` 动态解析 Ubuntu x64 |
 | 编译容器 | `ubuntu:22.04`，与 Android 12.1 的历史主机工具依赖匹配；宿主 Runner 独立更新 |
-| 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob 和 282 项上游 SHA |
+| 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和 2 项公开依赖 SHA |
 | 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j4` |
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；四任务、容器 14 GiB 内存 |
 | 磁盘检查 | 清理后至少 50 GiB；编译前至少 18 GiB；不足立即失败 |
@@ -27,6 +27,8 @@ flowchart TD
 | 唯一手动输入 | `publish=false`；设为 true 明确允许公开镜像、静态报告和校验和 |
 
 源码预编译 JDK、Clang 等从锁定上游重新同步；不克隆整个 7.44 GiB Git 归档，不回放旧 `out`、Soong 测试禁用、稀疏片段或 `ALLOW_MISSING_DEPENDENCIES`。归档内 18 个 Release 大文件不作为这条干净路线的下载入口。
+
+原归档 manifest 原样保留并校验。构建前另生成仅供当前 runner 使用的有效 manifest，添加同一 `android-12.1.0_r4` 标签的完整公开 `platform/cts` 和 `platform/platform_testing` 项目，分别提供 `cts_defaults` 及其直接依赖 `platform-test-annotations`。不更新原来 282 个项目的 SHA，不新增私有下载文件。当前补齐方案仍需完整编译验证，不能视为依赖闭包已经成功。
 
 ## 首次运行
 

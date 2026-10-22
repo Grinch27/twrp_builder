@@ -8,6 +8,7 @@ import base64
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -30,6 +31,15 @@ def entry(data=b'fixture'):
             'blob': hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()}
 
 
+def public_fixture():
+    data = manifest().replace(b'<default remote="aosp"/>',
+                              b'<default remote="aosp" revision="refs/tags/android-12.1.0_r4"/>')
+    lock = {'source': {'manifest_projects': 1, 'commit': '1' * 40}, 'files': [entry(data)],
+            'public_projects': [{'name': 'platform/cts', 'path': 'cts', 'revision': '2' * 40,
+                                 'upstream': 'refs/tags/android-12.1.0_r4'}]}
+    return data, lock
+
+
 class InputTests(unittest.TestCase):
     def test_repository_lock(self):
         lock = source.load_lock()
@@ -37,6 +47,9 @@ class InputTests(unittest.TestCase):
         self.assertEqual(lock['source']['manifest_projects'], 282)
         self.assertEqual(lock['device']['overlay_files'], 4)
         self.assertEqual(lock['build']['target'], 'bootimage')
+        self.assertEqual(len(lock['public_projects']), 2)
+        self.assertEqual(lock['public_projects'][0]['name'], 'platform/cts')
+        self.assertEqual(lock['public_projects'][1]['name'], 'platform/platform_testing')
 
     def test_path_boundaries(self):
         for value in ['', '.', '..', '../outside', '/absolute', 'a/../b', 'a//b',
@@ -124,6 +137,98 @@ class InputTests(unittest.TestCase):
             self.assertEqual(json.loads((output / 'input-identities.json').read_text())['source_commit'], '1' * 40)
             with self.assertRaises(FileExistsError):
                 source.fetch(lock, output, Client())
+
+    def test_compose_preserves_archive_and_adds_a_pinned_public_project(self):
+        data, lock = public_fixture()
+        effective = source.compose_manifest(lock, data)
+        root = source.ET.fromstring(effective)
+        self.assertEqual(len(root.findall('project')), 2)
+        self.assertEqual(source.ET.tostring(root.findall('project')[0]),
+                         source.ET.tostring(source.ET.fromstring(data).find('project')))
+        cts = root.findall('project')[1]
+        self.assertEqual(cts.get('revision'), '2' * 40)
+        self.assertEqual(cts.get('remote'), 'builder-reviewed-aosp')
+        self.assertEqual(cts.get('clone-depth'), '1')
+        self.assertEqual(len(lock['files']), 1)
+        source.verify_blob(data, lock['files'][0])
+
+    def test_compose_rejects_changed_archive_manifest(self):
+        data, lock = public_fixture()
+        with self.assertRaises(ValueError):
+            source.compose_manifest(lock, data + b'\n')
+
+    def test_compose_rejects_unlocked_or_unreviewed_public_projects(self):
+        for key, value in [('revision', 'main'), ('path', '../escape'),
+                           ('name', 'unreviewed/project'), ('upstream', 'main'),
+                           ('fetch', 'https://example.com')]:
+            with self.subTest(key=key):
+                data, lock = public_fixture()
+                lock['public_projects'][0][key] = value
+                with self.assertRaises(ValueError):
+                    source.compose_manifest(lock, data)
+
+    def test_compose_rejects_names_paths_versions_and_remote_collisions(self):
+        for key, value in [('name', 'platform/build'), ('path', 'build'),
+                           ('path', 'build/make'), ('path', 'build/make/child'),
+                           ('upstream', 'refs/tags/android-13.0.0_r1')]:
+            with self.subTest(key=key, value=value):
+                data, lock = public_fixture()
+                lock['public_projects'][0][key] = value
+                with self.assertRaises(ValueError):
+                    source.compose_manifest(lock, data)
+        data, lock = public_fixture()
+        data = data.replace(b'</manifest>', b'<remote name="builder-reviewed-aosp" '
+                            b'fetch="https://github.com"/></manifest>')
+        lock['files'] = [entry(data)]
+        with self.assertRaises(ValueError):
+            source.compose_manifest(lock, data)
+
+    def test_compose_rejects_copy_destinations_and_duplicate_additions(self):
+        data, lock = public_fixture()
+        data = data.replace(b'"1' + b'1' * 39 + b'"/>',
+                            b'"' + b'1' * 40 + b'"><linkfile src="x" dest="cts/input"/></project>')
+        lock['files'] = [entry(data)]
+        with self.assertRaises(ValueError):
+            source.compose_manifest(lock, data)
+        data, lock = public_fixture()
+        lock['public_projects'] *= 2
+        with self.assertRaises(ValueError):
+            source.compose_manifest(lock, data)
+
+    def test_checkout_checks_public_revision_and_clean_state(self):
+        data, lock = public_fixture()
+        with tempfile.TemporaryDirectory() as temp:
+            manifest_file = Path(temp) / 'default.xml'
+            manifest_file.write_bytes(data)
+            for outputs, passes in [(['1' * 40, '', '2' * 40, ''], True),
+                                    (['1' * 40, '', '3' * 40], False),
+                                    (['1' * 40, '', '2' * 40, ' M Android.bp'], False)]:
+                with self.subTest(outputs=outputs), patch.object(
+                        source.subprocess, 'check_output', side_effect=outputs) as call:
+                    if passes:
+                        self.assertEqual(source.verify_checkout(lock, manifest_file, temp), 2)
+                        self.assertEqual(call.call_args_list[2].args[0][2], str(Path(temp) / 'cts'))
+                    else:
+                        with self.assertRaises(ValueError):
+                            source.verify_checkout(lock, manifest_file, temp)
+
+    def test_compose_cli_creates_new_output_without_overwriting(self):
+        data, lock = public_fixture()
+        lock.update(schema=1)
+        lock['source']['repository'] = 'owner/repo'
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / 'input.xml').write_bytes(data)
+            (root / 'lock.json').write_text(json.dumps(lock))
+            command = [sys.executable, str(Path(source.__file__)), '--lock', str(root / 'lock.json'),
+                       'compose', '--manifest', str(root / 'input.xml'), '--output', str(root / 'output.xml')]
+            result = subprocess.run(command, capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual((root / 'output.xml').read_bytes(), source.compose_manifest(lock, data))
+            result = subprocess.run(command, capture_output=True, text=True, check=False)
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual((root / 'input.xml').read_bytes(), data)
+            self.assertNotIn('Traceback', result.stderr)
 
 
 if __name__ == '__main__':

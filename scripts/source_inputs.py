@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# Requirements: pinned selene archive inputs; private credential only during fetch.
+# Requirements: pinned selene archive inputs and reviewed public AOSP additions.
 # Ambiguity: a complete checkout of the locked manifest is not yet a proven build.
 # Research: resolve the first real dependency failure without disabling modules.
 # Optimization: fetch ten selected files, rather than the whole archive.
-# Risks: path traversal, credential disclosure, partial downloads, upstream drift.
+# Risks: path collisions, credential disclosure, partial downloads, upstream drift.
 # Validation: Git blob identities, sizes, manifest paths, clean project HEADs.
 """Fetch reviewed inputs and verify a fresh repo checkout. Python >= 3.10."""
 
@@ -50,7 +50,25 @@ def load_lock(path=ROOT / "source.lock.json"):
     for key in ("path", "destination"):
         if len({e[key] for e in lock["files"]}) != len(lock["files"]):
             raise ValueError("duplicate locked file")
+    public_projects(lock)
     return lock
+
+
+def public_projects(lock):
+    """Validate public additions independently of the private input allowlist."""
+    projects = lock.get("public_projects", [])
+    if not isinstance(projects, list):
+        raise ValueError("invalid public project list")
+    for project in projects:
+        if not isinstance(project, dict) or set(project) != {"name", "path", "revision", "upstream"}:
+            raise ValueError("invalid public project fields")
+        relative_path(project["name"])
+        relative_path(project["path"])
+        if (not project["name"].startswith("platform/")
+                or not SHA.fullmatch(project["revision"])
+                or not re.fullmatch(r"refs/tags/android-[0-9][0-9A-Za-z._-]*", project["upstream"])):
+            raise ValueError("unreviewed public project identity")
+    return projects
 
 
 def validate_manifest(data, expected_count):
@@ -97,6 +115,40 @@ def validate_manifest(data, expected_count):
                 raise ValueError("duplicate copy/link destination")
             destinations.add(dest)
     return projects
+
+
+def compose_manifest(lock, data):
+    """Preserve the locked archive graph and add complete, pinned AOSP projects."""
+    manifests = [entry for entry in lock["files"] if entry["destination"] == "default.xml"]
+    if len(manifests) != 1:
+        raise ValueError("one locked archive manifest is required")
+    verify_blob(data, manifests[0])
+    original = validate_manifest(data, lock["source"]["manifest_projects"])
+    additions = public_projects(lock)
+    if not additions:
+        return data
+    root = ET.fromstring(data)
+    remote_name = "builder-reviewed-aosp"
+    if any(remote.get("name") == remote_name for remote in root.findall("remote")):
+        raise ValueError("public source remote collision")
+    root.append(ET.Element("remote", {"name": remote_name, "fetch": "https://android.googlesource.com"}))
+    names = {project.get("name") for project in original}
+    paths = {project.get("path", project.get("name")) for project in original}
+    # Copy/link destinations also occupy paths, even outside their project root.
+    paths.update(child.get("dest") for project in original for child in project)
+    upstream = root.find("default").get("revision")
+    for project in additions:
+        path = project["path"]
+        if (project["name"] in names or project["upstream"] != upstream
+                or any(path == other or path.startswith(other + "/")
+                       or other.startswith(path + "/") for other in paths)):
+            raise ValueError("public source path, identity or Android version collision")
+        root.append(ET.Element("project", {**project, "remote": remote_name, "clone-depth": "1"}))
+        names.add(project["name"])
+        paths.add(path)
+    result = ET.tostring(root, encoding="utf-8", xml_declaration=True) + b"\n"
+    validate_manifest(result, len(original) + len(additions))
+    return result
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -186,7 +238,8 @@ def fetch(lock, output, client):
 
 
 def verify_checkout(lock, manifest, source):
-    projects = validate_manifest(Path(manifest).read_bytes(), lock["source"]["manifest_projects"])
+    effective = compose_manifest(lock, Path(manifest).read_bytes())
+    projects = validate_manifest(effective, lock["source"]["manifest_projects"] + len(public_projects(lock)))
     for project in projects:
         path = Path(source) / project.get("path", project.get("name"))
         head = subprocess.check_output(["git", "-C", str(path), "rev-parse", "HEAD"], text=True).strip()
@@ -208,6 +261,9 @@ def main():
     download.add_argument("--output", type=Path, required=True)
     manifest = commands.add_parser("manifest")
     manifest.add_argument("path", type=Path)
+    compose = commands.add_parser("compose")
+    compose.add_argument("--manifest", type=Path, required=True)
+    compose.add_argument("--output", type=Path, required=True)
     checkout = commands.add_parser("checkout")
     checkout.add_argument("--manifest", type=Path, required=True)
     checkout.add_argument("--source", type=Path, required=True)
@@ -220,6 +276,9 @@ def main():
         fetch(lock, args.output, SourceClient(lock["source"]["repository"], lock["source"]["commit"], token))
     elif args.command == "manifest":
         validate_manifest(args.path.read_bytes(), lock["source"]["manifest_projects"])
+    elif args.command == "compose":
+        data = compose_manifest(lock, args.manifest.read_bytes())
+        write_new(args.output.parent, args.output.name, data)
     else:
         verify_checkout(lock, args.manifest, args.source)
     print("Source input verification passed.")
