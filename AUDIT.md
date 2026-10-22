@@ -100,13 +100,17 @@
 
 下一组修复锁定同一 android-12.1.0_r4 的 `external/deqp`、`external/python/parse_type`、`external/ply`、`test/vts-testcase/vndk`，并按提供方实际 Android.bp 的直接引用补齐 `external/deqp-deps/{SPIRV-Headers,SPIRV-Tools,glslang,amber}`、DEQP Runner 测试的 EasyMock，以及 VNDK 测试的 ABI dump genrule 来源 `prebuilts/abi-dumps/vndk`。提交身份见 source.lock.json；四个直接模块的定义已在对应锁定公开树中核对，DEQP 和 VNDK 的新增依赖来自原始定义，未编写空模块、禁用测试或改用跨版本输入。当前合计 295 项，仍需真实构建检验。
 
+[295 项运行 39740769101](https://github.com/Grinch27/twrp_builder/actions/runs/39740769101) 使用 `8de04c07ca5ec58800e76e743793ed30a7b210a7`，48 项测试与公开同步通过；15:32:10 进入同步，15:38:58 进入 checkout 校验，15:39:45 已进入 compile，15:42:04 因 Soong 未定义模块停止（Asia/Shanghai）。完整 checkout 和空间/输入预检通过，摘要这次列出的缺项为 `build/make/tools/signapk/Android.bp:23` 引用的 `apksig`。未进入镜像验收，没有明文或加密成品。
+
+继续补齐同版 `platform/tools/apksig@c2b69bcc45dfac3a745e5f2fefcec42594dddb6c`，checkout 路径 `tools/apksig`。锁定公开 Android.bp 直接定义 `java_library_host` 模块 apksig，Java 1.8；其 apksigner 工具使用的 Conscrypt 已在原始 manifest 中。当前合计 296 项，等待真实构建验证；原始项目和私有输入未改动。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：295 项扩展图是否还有未闭合依赖，以及新增 DEQP/ABI 数据后的 Runner 空间是否足以完成编译；尚无成功 boot.img。
+当前最大不确定性：补齐 apksig 后的 296 项图是否能通过 Soong 并完成实际镜像编译；295 项同步后的空间预检已通过，但尚无成功 boot.img。
 
 用户可能遗漏：跨仓库私有读取需要单独的只读凭据；公开镜像也会包含配置/固件；publish=false 不保留可下载镜像或完整诊断日志。
 

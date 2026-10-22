@@ -83,6 +83,12 @@
       "path": "prebuilts/abi-dumps/vndk",
       "revision": "f3cda30722da4ad96bc305d65367bab02c326380",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/tools/apksig",
+      "path": "tools/apksig",
+      "revision": "c2b69bcc45dfac3a745e5f2fefcec42594dddb6c",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
