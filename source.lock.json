@@ -635,6 +635,12 @@
       "path": "external/jemalloc_new",
       "revision": "6d4d27fd2651ed114386b89c2d251b816a849460",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/fonttools",
+      "path": "external/fonttools",
+      "revision": "e76853bf40a5da5d1967ae174747408d080c17d6",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

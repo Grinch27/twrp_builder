@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-# Requirements: run the existing build pipeline directly on a disposable runner.
+# Requirements: native build with private logs, live numeric heartbeats and timing.
 # Ambiguity: native execution has no Docker memory limit or filesystem isolation.
 # Research: preserve host HOME unchanged; omit CI credentials from the build child.
-# Optimization: reuse locked source, restricted progress and image validation code.
+# Optimization: bounded log samples; upload progress only at phase transitions.
 # Risks: leaked output, inherited credentials, stale work and orphaned build groups.
-# Validation: environment allowlist, private exclusive log, real exit and group cleanup.
+# Validation: numeric-only metrics, no source leakage, real exit and group cleanup.
 """Run a native build while keeping compiler output out of public Actions logs."""
 
 import argparse
@@ -16,7 +16,7 @@ import subprocess
 import sys
 import time
 
-from report_progress import STAGES
+from build_telemetry import sample
 
 ENVIRONMENT = {'PATH', 'HOME', 'USER', 'LOGNAME', 'SHELL', 'LANG', 'LC_ALL', 'TZ', 'TERM'}
 
@@ -48,16 +48,36 @@ def stop_group(process):
         process.wait(timeout=5)
 
 
-def run_build(builder, work, checkpoint=None, interval=15):
+def run_build(builder, work, checkpoint=None, interval=15, heartbeat=60):
     builder, work = Path(builder).resolve(), Path(work).resolve()
     (work / 'logs').mkdir(exist_ok=True)
     (work / 'output').mkdir(exist_ok=True)
+    started = time.monotonic()
+    last_stage, last_heartbeat = None, started - heartbeat
+
+    def emit(force=False):
+        nonlocal last_stage, last_heartbeat
+        try:
+            stage, metrics = sample(work, started)
+        except (OSError, ValueError, TypeError):
+            print('Restricted build telemetry unavailable.', flush=True)
+            return
+        now = time.monotonic()
+        changed = stage != last_stage
+        if changed or force or now - last_heartbeat >= heartbeat:
+            if changed:
+                print('Build stage: ' + stage, flush=True)
+            print('BUILD_METRICS ' + json.dumps({'stage': stage, **metrics}, sort_keys=True), flush=True)
+            last_heartbeat = now
+        last_stage = stage
+        if changed and not force:
+            report()
 
     def report():
         if checkpoint is not None:
             try:
                 checkpoint()
-            except (OSError, ValueError, subprocess.SubprocessError):
+            except (OSError, ValueError, TypeError, subprocess.SubprocessError):
                 print('Restricted progress checkpoint unavailable.', flush=True)
 
     def interrupt(signum, frame):
@@ -72,23 +92,16 @@ def run_build(builder, work, checkpoint=None, interval=15):
         )
         handlers = {s: signal.signal(s, interrupt) for s in (signal.SIGINT, signal.SIGTERM)}
         try:
-            last_stage = None
             while process.poll() is None:
-                try:
-                    stage = json.loads((work / 'output/status.json').read_text()).get('stage')
-                except (OSError, ValueError, AttributeError):
-                    stage = None
-                if isinstance(stage, str) and stage in STAGES and stage != last_stage:
-                    print('Build stage: ' + stage, flush=True)
-                    report()
-                    last_stage = stage
+                emit()
                 time.sleep(interval)
             result = process.wait()
         finally:
             stop_group(process)
             for signum, handler in handlers.items():
                 signal.signal(signum, handler)
-        report()
+            emit(force=True)
+            report()
     result = 128 - result if result < 0 else result
     print('Native build exit: ' + str(result), flush=True)
     return result

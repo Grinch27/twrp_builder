@@ -33,7 +33,7 @@ flowchart TD
 
 后续补齐同版本 `tools/tradefederation/prebuilts@2a5fd21caf0d161ef6fc2efec1fadf2f31986039`，其原始 Java import/filegroup/JAR 提供两个缺失模块。285 项运行同步和校验通过后，Soong 报告下一组 DEQP、Python 和 VNDK 缺项；已按公开提供方及其直接声明的依赖补齐，实际状态以 [AUDIT.md](AUDIT.md) 的运行证据为准。2026-10-22 用户明确要求持续修正、构建直至得到成品，因此每次失败均保留真实失败状态，再审查和修正后继续尝试，不再将旧的一轮停止约定作为暂停理由。
 
-298 项运行完成完整同步和预检后，Soong 继续报告 Mockito、Objenesis、Google Java Format、Connected Apps SDK、dexlib2 与 modules-utils 缺项。随后补齐这些提供方和 Robolectric/Car 直接引用的同版本项目；326 项运行继续报告 Rust 缺项，363 项运行继续报告 ICU 测试引用的 `junit-params`。首次原生 364 项运行在 Ubuntu 26.04 通过官方旧 ABI 包安装、完整同步与预检，随后报告另外八个缺失依赖；375 项运行继续报告 benchmark、libusb 和 pybind11 头文件缺项，378 项运行报告 CTS 的 `trebuchet-core` 缺项。383 项运行仍在 Soong 因 libtinyalsa、libvixl、libvixld、server_configurable_flags 未定义而失败。386 项运行继续报告 Bionic 的 libjemalloc5 缺项。当前合计锁定 387 项，补齐同版本完整 TinyALSA、VIXL、system/server_configurable_flags 和 jemalloc_new；公开模块字面量索引用于静态核对，实际构建仍是验收依据。当前尚未取得成功镜像。
+298 项运行完成完整同步和预检后，Soong 继续报告 Mockito、Objenesis、Google Java Format、Connected Apps SDK、dexlib2 与 modules-utils 缺项。随后补齐这些提供方和 Robolectric/Car 直接引用的同版本项目；326 项运行继续报告 Rust 缺项，363 项运行继续报告 ICU 测试引用的 `junit-params`。首次原生 364 项运行在 Ubuntu 26.04 通过官方旧 ABI 包安装、完整同步与预检，随后报告另外八个缺失依赖；375 项运行继续报告 benchmark、libusb 和 pybind11 头文件缺项，378 项运行报告 CTS 的 `trebuchet-core` 缺项。383 项运行仍在 Soong 因 libtinyalsa、libvixl、libvixld、server_configurable_flags 未定义而失败。386 项运行继续报告 Bionic 的 libjemalloc5 缺项。387 项运行继续报告 fontTools 缺项。当前合计锁定 388 项，另补齐同版本完整 external/fonttools；公开模块字面量索引用于静态核对，实际构建仍是验收依据。当前尚未取得成功镜像。
 
 原生入口按 AGENTS.md 使用统一的 `runner-image` 输出，以及经核对的 `checkout@main`、`upload-artifact@main` 和共享 `run-sudo@main`。主机依赖优先安装 Ubuntu 二进制包；旧工具需要的 ABI 5 使用 Ubuntu 官方 Jammy `libtinfo5`、`libncurses5` 的 `6.3-2ubuntu0.3` amd64 安装包，逐个核验 SHA-256、包名、版本、架构与安装状态，不自行编译 ncurses，不修改全局 Java/Python。JDK、Clang 仍来自锁定源码。此路线尚须完整编译与静态验收，不能据静态检查认定稳定。
 
@@ -45,6 +45,18 @@ flowchart TD
 3. 打开 **Actions → TWRP Selene (Native) → Run workflow**，选 `main` 并保持 `publish=false`。现有 Docker 入口仍可独立手动选择；两条路线共享并发组，避免同时执行占用磁盘的构建。
 4. 完整任务会清理该次临时 GitHub runner 的预装 Android SDK、hostedtoolcache、dotnet、PowerShell 四个目录，以获得空间；不会在本地或 self-hosted runner 上运行该清理脚本。若空间门槛仍不满足，任务停止，不自动购买或选择付费 runner。
 5. 成功并通过静态验收后，总是用 `delivery-recipient.pem` 的公钥将三个成品文件打包为 AES-256-GCM / RSA-OAEP 的 CMS 密文，保留加密 Actions Artifact 七天。私钥只在交付方本地，不进入仓库或 Runner；`publish=false` 不公开镜像明文。只有明确勾选 `publish` 才另行上传明文 Artifact 和实验性 prerelease。完整日志仍不上传。
+
+原生工作流现在提供更直观的调试信息：
+
+| 位置 | 信息 |
+| --- | --- |
+| Runner 准备步骤 | 四项获准清理的开始、完成、耗时与磁盘空间 |
+| 主机包安装步骤 | APT 更新、下载及安装的正常输出 |
+| 编译步骤 `BUILD_METRICS` | 阶段切换及约 60 秒心跳；总耗时、当前阶段耗时、可用磁盘/内存、Swap、负载、日志大小及距最后写入时间 |
+| 同一数值记录 | 识别到 Repo/Ninja 标准进度时显示完成数/总数；Ninja 为当前批次，并非整个构建百分比；无法识别时省略 |
+| `BUILD_DIAGNOSTICS` / Job Summary | 真实退出码、各阶段耗时、固定错误类别、HTTP 状态和经锁定公开 Git blob 复核的依赖/位置 |
+
+阶段耗时由构建脚本在实际切换点记录。心跳和字段过滤失败不会替换编译退出码。完整源码、命令、原始编译/同步日志及未知诊断文本仍留在临时 Runner；新增输出只含白名单数值和已核验公开字段。进度分支在阶段切换时同步这些信息；心跳直接写入 Actions 日志，模块索引仅在进入 compile 时生成一次。
 
 运行阶段及经过公开 Git blob 再次校验的诊断，可在 `build-progress` 分支的 `runs/<run_id>.json` 读取。`catalogs/<run_id>.json` 仅列出锁定公开 Git blob 中的模块名字面量，用于核对依赖提供方；它不保证命名空间解析、生成模块或整个图有效。有效 manifest 会重新组合比对，工作树和私有覆盖文件不参与索引。该分支不存私有源码、manifest 原文、原始日志或镜像；进度失败不影响真实构建退出状态。GitHub token 只用于宿主进度上传，不传入编译容器或原生编译子进程。
 

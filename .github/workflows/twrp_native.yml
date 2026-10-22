@@ -1,9 +1,9 @@
 name: TWRP Selene (Native)
 
-# Requirements: one native workflow; 387 locked projects and unchanged boot validation.
+# Requirements: one native workflow; 388 locked projects and unchanged boot validation.
 # Ambiguity: only a real successful bootimage build establishes a native baseline.
 # Research: reviewed shared actions; official Ubuntu legacy ABI binary packages.
-# Optimization: reuse source, progress, validation and encrypted delivery helpers.
+# Optimization: live safe telemetry, visible host setup and encrypted delivery.
 # Risks: changing runner image/actions, old prebuilts and limited runner resources.
 # Validation: public smoke, exact checkout identities, real exit, payload and AVB.
 # GitHub Actions workflow syntax reference:
@@ -116,8 +116,8 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$(dpkg --print-architecture)" == amd64 ]]
-          run_sudo apt-get -qq update
-          run_sudo apt-get -yqq --no-install-recommends install \
+          run_sudo apt-get update
+          run_sudo apt-get -y --no-install-recommends install \
             bc bison build-essential ca-certificates cpio curl file flex g++-multilib \
             gcc-multilib git gnupg gperf lib32ncurses-dev lib32readline-dev lib32z1-dev \
             libelf-dev lz4 libncurses-dev libssl-dev libxml2-utils lzop \
@@ -147,7 +147,7 @@ jobs:
             metadata="$(dpkg-deb --show --showformat='${Package} ${Version} ${Architecture}' "${deb_dir}/${package}_6.3-2ubuntu0.3_amd64.deb")"
             [[ "${metadata}" == "${package} 6.3-2ubuntu0.3 amd64" ]]
           done
-          run_sudo apt-get -yqq --no-install-recommends install \
+          run_sudo apt-get -y --no-install-recommends install \
             "${deb_dir}/libtinfo5_6.3-2ubuntu0.3_amd64.deb" \
             "${deb_dir}/libncurses5_6.3-2ubuntu0.3_amd64.deb"
           for package in libtinfo5 libncurses5; do
@@ -158,7 +158,7 @@ jobs:
         env:
           TWRP_SOURCE_TOKEN: ${{ secrets.TWRP_SOURCE_TOKEN }}
         run: /usr/bin/python3 scripts/source_inputs.py fetch --output "${BUILD_ROOT}/inputs"
-      - name: Build and statically validate natively
+      - name: Build with live telemetry and static validation
         id: compile
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -2,9 +2,9 @@
 # Requirements: fresh work, archive manifest plus reviewed public dependency projects.
 # Ambiguity: the expanded source graph still needs a successful real bootimage build.
 # Research: inspect each failure and apply verified fixes under retry authorization.
-# Optimization: bounded sync/build time, JDK/Clang from the selected Android tree.
+# Optimization: bounded sync/build time, exact phase clocks and source JDK/Clang.
 # Risks: source availability, old prebuilts, capacity; preserve the failure logs.
-# Validation: exact checkout identities, mka exit 0, AVB and boot payload checks.
+# Validation: exact checkout identities, real phase/exit records, AVB and payloads.
 set -eo pipefail
 umask 077
 SELF="${BUILDER_SELF:-/builder/self}"
@@ -14,11 +14,7 @@ stage=initialization
 mkdir -p "${WORK}/logs" "${WORK}/output"
 set_stage() {
   stage="$1"
-  python3 - "${WORK}/output/status.json" "${stage}" <<'PY'
-import json,sys
-from pathlib import Path
-Path(sys.argv[1]).write_text(json.dumps({'stage':sys.argv[2]})+'\n')
-PY
+  python3 "${SELF}/scripts/build_telemetry.py" --work "${WORK}" --stage "${stage}"
 }
 finish() {
   local result=$?
@@ -37,14 +33,12 @@ finish() {
       printf 'Structured repository diagnostics unavailable.\n' >&2
     fi
   fi
-  python3 - "${WORK}/output/status.json" "${stage}" "${result}" <<'PY'
-import json,sys
-from pathlib import Path
-Path(sys.argv[1]).write_text(json.dumps({"stage":sys.argv[2],"exit_code":int(sys.argv[3])})+'\n')
-PY
+  python3 "${SELF}/scripts/build_telemetry.py" --work "${WORK}" \
+    --stage "${stage}" --exit-code "${result}" || true
   exit "${result}"
 }
 trap finish EXIT
+set_stage initialization
 
 # This file is invoked only in a newly created work directory.
 [[ ! -e "${WORK}/android" && ! -e "${WORK}/out" && ! -e "${WORK}/manifest" ]]
