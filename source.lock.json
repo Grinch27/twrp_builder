@@ -611,6 +611,24 @@
       "path": "external/rust/crates/num-traits",
       "revision": "a53d5188633b74f59868a0429cdcb6779a520296",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/tinyalsa",
+      "path": "external/tinyalsa",
+      "revision": "5638a6e1d1a5775c9d064948e68ac40722814b31",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/vixl",
+      "path": "external/vixl",
+      "revision": "eea8abec9ea365f30ac09461a6133077d34f5ca2",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/system/server_configurable_flags",
+      "path": "system/server_configurable_flags",
+      "revision": "cf0231f8f5c03f9c83a5a972cfbaa410782a63f4",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

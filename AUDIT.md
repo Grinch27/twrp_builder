@@ -142,13 +142,19 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 本轮部分 GitHub 任务状态接口显示滞后，已通过带 no-cache 的 GitHub 公开 REST 读取和构建进度分支交叉核对，未据此更改并发取消策略或中断实际构建。383 项提交准备期间，本地执行环境断开；提交仅增加断开前已完成来源、完整 Git tree 与引用核对的公开项目，私有输入身份保持原值。本轮新提交的标准库测试、shell/actionlint 与公开 smoke 由 runner-image Job 执行，检查成功后才允许完整构建，不将尚未执行的本地检查记为通过。
 
+[原生 383 项运行 39804153224](https://github.com/Grinch27/twrp_builder/actions/runs/39804153224) 使用 `89f9c912ed08d50bc44fa264cd7ec7cd6504ef75`。54 项测试、actionlint、公开 smoke、官方主机依赖安装、十个输入校验通过；15:25:38 UTC 进入同步，15:32:10 进入 checkout 校验，15:32:57 进入 preflight，15:33:19 进入 compile，15:35:21 返回 exit 1。受限诊断来自 frameworks/base 的 USB accessory 测试、frameworks/native 的 installd 和 ART disassembler，缺失 `libtinyalsa`、`libvixl`、`libvixld`、`server_configurable_flags`。没有进入镜像静态验收，成品步骤全部跳过。
+
+下一次锁定同一 android-12.1.0_r4 的完整 `external/tinyalsa@5638a6e1d1a5775c9d064948e68ac40722814b31`、`external/vixl@eea8abec9ea365f30ac09461a6133077d34f5ca2` 和 `system/server_configurable_flags@cf0231f8f5c03f9c83a5a972cfbaa410782a63f4`。官方 manifest 确认 Flags 的 system 路径；三个完整 Git checkout 的 tag、commit、3,182 个文件和 422,766,297 bytes 已核对，原始 Blueprint 定义上述四个模块，已识别的直接 Blueprint 引用均在已核对的公开模块名字面量集中。该静态核对不证明变体、可见性或完整 Soong 图正确。合计 386 项，原 282 项身份、十个私有输入、12 条 copy/link、编译目标和镜像验收不变。
+
+本轮接续已在本地找到原交付私钥；由 OpenSSL 导出公钥后与仓库收件证书逐字节比较一致。未更换收件证书，私钥未进入仓库、Runner 或公开日志。原生构建继续保持 publish=false。本地 54 项标准库测试、全部 shell 语法、两份 YAML/20 段内嵌 shell、actionlint 1.7.7、实际锁定 manifest 的 386 项组合及 git diff --check 通过；完整构建结果待下一次运行验证。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：补齐 Trebuchet 及已核对直接依赖后的 383 项图是否能通过 Soong 并完成实际镜像编译；原生路线仍需真实完整验证，尚无成功 boot.img。
+当前最大不确定性：补齐 TinyALSA、VIXL 和 Flags 后的 386 项图是否能通过 Soong 并完成实际镜像编译；原生路线仍需真实完整验证，尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
