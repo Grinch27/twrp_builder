@@ -269,6 +269,228 @@
       "path": "tools/dexter",
       "revision": "093604d5f4ac95f1e63296014483325e8cf063a7",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/async-stream",
+      "path": "external/rust/crates/async-stream",
+      "revision": "b8686a09a4c46a6be04e0a5a22faa7144f0f2514",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/async-stream-impl",
+      "path": "external/rust/crates/async-stream-impl",
+      "revision": "edeb9d414a8c961e22cae57f4e41d06c2555a18c",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/bytes",
+      "path": "external/rust/crates/bytes",
+      "revision": "69181530e77d7251fc79dcce0fb90c82012bb754",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/codespan-reporting",
+      "path": "external/rust/crates/codespan-reporting",
+      "revision": "e8421715e7e9d7ba6298de3c14cd245be6f2e2d2",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/futures",
+      "path": "external/rust/crates/futures",
+      "revision": "59f526639defd139b9d2f52c2739cf5f40b0f08e",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/futures-channel",
+      "path": "external/rust/crates/futures-channel",
+      "revision": "3c58c658ceba1a9d965e4aff35272fa68834528d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/futures-core",
+      "path": "external/rust/crates/futures-core",
+      "revision": "db60ebe631225798732237c76f0780b1ff7e0eea",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/futures-executor",
+      "path": "external/rust/crates/futures-executor",
+      "revision": "cda3331b583e5a58442e8bc3bdd33a6e7ae59a04",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/futures-io",
+      "path": "external/rust/crates/futures-io",
+      "revision": "28895b8a13b73177f5228a80201228ba3e8696c8",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/futures-macro",
+      "path": "external/rust/crates/futures-macro",
+      "revision": "fdf5d38a19c4d6d2bc86a39375d39239b5b90788",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/futures-sink",
+      "path": "external/rust/crates/futures-sink",
+      "revision": "829a9652ae4687388747d2a6043053f9b274be74",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/futures-task",
+      "path": "external/rust/crates/futures-task",
+      "revision": "d31222d36b445ed60cc173d9dbf416f2242097d2",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/futures-util",
+      "path": "external/rust/crates/futures-util",
+      "revision": "be79e2e202ffe478c0aa8cdd48bcb786f63feec9",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/grpcio",
+      "path": "external/rust/crates/grpcio",
+      "revision": "dd3964ccf8bc6c5cfeb51d8c80843379cbe8423d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/grpcio-sys",
+      "path": "external/rust/crates/grpcio-sys",
+      "revision": "54ae4c60107b7503f9058311ad6231726c9b7b83",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/instant",
+      "path": "external/rust/crates/instant",
+      "revision": "401a40aa1441255da71b01f325ba0ca7fa7c3932",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/libz-sys",
+      "path": "external/rust/crates/libz-sys",
+      "revision": "29d191c17472011ac7b83e0ede4f6b7a671658a3",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/lock_api",
+      "path": "external/rust/crates/lock_api",
+      "revision": "cc6587e280c2840df80753402034864f5245c100",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/mio",
+      "path": "external/rust/crates/mio",
+      "revision": "336960c8c61bf1254fae2b4926d69a320c888934",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/num_cpus",
+      "path": "external/rust/crates/num_cpus",
+      "revision": "00a5869dd63fa4aa147792e401525de2e0ca5085",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/parking_lot",
+      "path": "external/rust/crates/parking_lot",
+      "revision": "8243e8edc0cc68bc24968527ccc471e9cf778c69",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/parking_lot_core",
+      "path": "external/rust/crates/parking_lot_core",
+      "revision": "3895199b24120319c2ae20624c2f7b7240d4226a",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/paste",
+      "path": "external/rust/crates/paste",
+      "revision": "401972fedb60820a736a51805fc558bbddca280a",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/pin-project-lite",
+      "path": "external/rust/crates/pin-project-lite",
+      "revision": "3b618083c2407192490c182bbe98a655dc021618",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/pin-utils",
+      "path": "external/rust/crates/pin-utils",
+      "revision": "14c33453abb3bb905a89e53629f5a47a731eb6f2",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/proc-macro-hack",
+      "path": "external/rust/crates/proc-macro-hack",
+      "revision": "14fb35ed210cf96b470306894f52cc9c679f9db3",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/proc-macro-nested",
+      "path": "external/rust/crates/proc-macro-nested",
+      "revision": "b5af54e6572152963076427cd23bfa8909b9a0cb",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/protobuf",
+      "path": "external/rust/crates/protobuf",
+      "revision": "852452cb1d57871e4e736abc50628d9c8794c95e",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/scopeguard",
+      "path": "external/rust/crates/scopeguard",
+      "revision": "4f20c4a8520acaefa9183a7ac370aebbd6bc1169",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/slab",
+      "path": "external/rust/crates/slab",
+      "revision": "77344e3ed914812efd564f16ac80a16f99d1bfe9",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/termcolor",
+      "path": "external/rust/crates/termcolor",
+      "revision": "ab4f7550a493b7f5ee9a9bf83caefd3d44fd1f47",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/tokio",
+      "path": "external/rust/crates/tokio",
+      "revision": "1402fa9f5141ff1eaf9ac083b70f5c9390da02d9",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/tokio-macros",
+      "path": "external/rust/crates/tokio-macros",
+      "revision": "13c415b10f2389cc4e68e86aa57c08ff70ca01c5",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/tokio-stream",
+      "path": "external/rust/crates/tokio-stream",
+      "revision": "1218e27ee46bf77fed6bd80dbf66fc25c6b24fc8",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/tokio-test",
+      "path": "external/rust/crates/tokio-test",
+      "revision": "14e182e8feb4d970f6be201bc3245fdb6ebf3a87",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/unicode-width",
+      "path": "external/rust/crates/unicode-width",
+      "revision": "407d8fc2a81358fdefea4b4f797e081adc034a89",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/cxx",
+      "path": "external/rust/cxx",
+      "revision": "e21664011d153978e59171e636aa8520a4153440",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
