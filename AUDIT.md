@@ -132,13 +132,17 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 继续锁定同一 android-12.1.0_r4 的 11 个完整公开提供方：external/libdivsufsort、external/eigen、external/flatbuffers、system/testing/gtest_extras、external/nanopb-c、external/sonivox，以及 external/rust/crates 下的 serde_json、itoa、ryu、serde、serde_derive。合计 3,173 个 Git 文件、47,597,640 bytes；标签 SHA、完整 Git tree、实际模块定义和 Serde 的传递引用均已核对。结合本轮 16,521 个公开模块字面量索引，这 11 个项目的已识别 Blueprint 引用没有缺失字面量提供方；该结果仍不证明命名空间、生成模块、变体或真实构建闭包正确。当前 375 项，原始 282 项与私有输入/复制规则不变。
 
+[原生 375 项运行 39793035672](https://github.com/Grinch27/twrp_builder/actions/runs/39793035672) 使用 `14a0f363a40c7182490eaf180eb5fcb0185eeaa0`，54 项测试、actionlint、公开 smoke、Ubuntu 26.04 官方主机包安装均通过。14:11:48 UTC 开始完整同步，14:19:21 进入 checkout 校验，14:20:08 进入 compile，14:21:38 返回 exit 1。受限摘要的新缺项为 libgoogle-benchmark、libusb、pybind11_headers，来自 libcore/NativeCode.bp、ADB tools、bionic benchmarks 和 Bluetooth gd 的公开定义。尚无镜像，产物与 Release 步骤均跳过。
+
+下一次补齐同标签的 external/google-benchmark@770b190cd0052a180fe161abad59b4cbdfd99d46、external/libusb@b103c6be096fc0f1b0114188430e3ff5d39fdc35、external/python/pybind11@960c6f3b4ca0b7ac3d6178bd76cbcb7687ad5173。官方同标签 manifest 确认 Pybind11 的实际路径在 external/python 下；三个完整项目共 604 个 Git 文件、4,680,973 bytes，实际模块及其 Blueprint 引用已核对，当前合计 378 项。没有增加绕过标志或改动原始输入。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：补齐首次原生运行暴露缺项后的 375 项图是否能通过 Soong 并完成实际镜像编译；原生路线仍需真实完整验证，尚无成功 boot.img。
+当前最大不确定性：补齐 benchmark、USB 和 Pybind11 后的 378 项图是否能通过 Soong 并完成实际镜像编译；原生路线仍需真实完整验证，尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 

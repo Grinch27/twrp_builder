@@ -563,6 +563,24 @@
       "path": "external/rust/crates/serde_derive",
       "revision": "f87a8544a56fcb48f81b18d10ed68b870e55d851",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/google-benchmark",
+      "path": "external/google-benchmark",
+      "revision": "770b190cd0052a180fe161abad59b4cbdfd99d46",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libusb",
+      "path": "external/libusb",
+      "revision": "b103c6be096fc0f1b0114188430e3ff5d39fdc35",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/python/pybind11",
+      "path": "external/python/pybind11",
+      "revision": "960c6f3b4ca0b7ac3d6178bd76cbcb7687ad5173",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
