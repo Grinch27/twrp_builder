@@ -497,6 +497,72 @@
       "path": "external/junit-params",
       "revision": "fa8720eb57ec6d8fe8fdfd7c74e581f094fd9219",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libdivsufsort",
+      "path": "external/libdivsufsort",
+      "revision": "83ef56609ee34fcddb21571d377f58af34c14f64",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/eigen",
+      "path": "external/eigen",
+      "revision": "c5a628e442d5a093b9f9d7179ac090738f4e093d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/flatbuffers",
+      "path": "external/flatbuffers",
+      "revision": "04d4e06804470e451b7f67d1c07c614a66f5e03b",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/system/testing/gtest_extras",
+      "path": "system/testing/gtest_extras",
+      "revision": "95cc749048a53521688b68ee1d0b34c5db8be4c3",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/nanopb-c",
+      "path": "external/nanopb-c",
+      "revision": "2bbb09319b1aa6bd55791ccb19caf822b75de0c2",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/serde_json",
+      "path": "external/rust/crates/serde_json",
+      "revision": "51217caa9538676e7915bfabcc4ea1976a1c6013",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/sonivox",
+      "path": "external/sonivox",
+      "revision": "39d4c3efe8f0c379c77305d0cf83a1ae480f2930",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/itoa",
+      "path": "external/rust/crates/itoa",
+      "revision": "52806fb8b0331215842ccee4e8646d4cb99048fa",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/ryu",
+      "path": "external/rust/crates/ryu",
+      "revision": "2ab1c65dcc60e2a261ba30ee0032997056dc67e5",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/serde",
+      "path": "external/rust/crates/serde",
+      "revision": "4269064736b858f5caaf2fa60937d8a9a0d1908b",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/serde_derive",
+      "path": "external/rust/crates/serde_derive",
+      "revision": "f87a8544a56fcb48f81b18d10ed68b870e55d851",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

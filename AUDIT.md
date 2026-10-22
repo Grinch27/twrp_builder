@@ -128,13 +128,17 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 原生启动器将宿主进度上传与编译子进程分开：子进程环境白名单不含 CI token，HOME 保持原值；输出写入独占 0600 日志，仅输出固定阶段与退出码，SIGTERM/SIGINT 清理新建的构建进程组。54 项标准库测试（包括真实失败和取消子进程）、bash -n、两份 YAML 解析/内嵌 shell 检查、actionlint 1.7.7、实际归档 manifest 身份检查均通过。本地公开 repo smoke 在 GPG agent 启动时报错，未绕过签名验证，需以 GitHub runner 的原生公开 smoke 和完整构建结果继续验证。上述检查及官方包核对不构成原生完整构建成功的证据。
 
+[首次原生 364 项运行 39789626001](https://github.com/Grinch27/twrp_builder/actions/runs/39789626001) 使用 `236d1ef2a950cbb0c70ec73406494610da09c1c2`。bootstrap 的 54 项测试、actionlint 和原生公开 repo 初始化/同步均成功；完整任务实际运行在动态解析的 Ubuntu 26.04，官方两个 ncurses 安装包于 13:49:44 UTC 通过 SHA-256，包身份和安装状态检查均通过。13:50:05 开始完整同步，13:58:07 进入 checkout 校验，13:58:39 进入 preflight，13:59:02 进入 compile，14:00:19 返回真实 exit 1。受限诊断列出 libdivsufsort、libdivsufsort64、libeigen、libflatbuffers-cpp、libgtest_isolated、libprotobuf-c-nano、libserde_json、libsonivoxwithoutjet；未生成成品，密文/明文产物和 Release 均跳过。此次证据解决了本地 GPG agent 因禁止创建套接字而无法执行公开 smoke 的环境限制，但不证明原生完整编译成功。
+
+继续锁定同一 android-12.1.0_r4 的 11 个完整公开提供方：external/libdivsufsort、external/eigen、external/flatbuffers、system/testing/gtest_extras、external/nanopb-c、external/sonivox，以及 external/rust/crates 下的 serde_json、itoa、ryu、serde、serde_derive。合计 3,173 个 Git 文件、47,597,640 bytes；标签 SHA、完整 Git tree、实际模块定义和 Serde 的传递引用均已核对。结合本轮 16,521 个公开模块字面量索引，这 11 个项目的已识别 Blueprint 引用没有缺失字面量提供方；该结果仍不证明命名空间、生成模块、变体或真实构建闭包正确。当前 375 项，原始 282 项与私有输入/复制规则不变。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：补齐 junit-params 后的 364 项图是否能在动态 Ubuntu Runner 上通过 Soong 并完成实际镜像编译；原生路线仍需真实完整验证，尚无成功 boot.img。
+当前最大不确定性：补齐首次原生运行暴露缺项后的 375 项图是否能通过 Soong 并完成实际镜像编译；原生路线仍需真实完整验证，尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
