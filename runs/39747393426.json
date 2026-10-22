@@ -2,5 +2,83 @@
   "schema": 1,
   "run_id": 39747393426,
   "builder_commit": "ae825a2c3575f634e24bebc0871cf9fdc3676c79",
-  "stage": "compile"
+  "stage": "compile",
+  "exit_code": 1,
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "tools/platform-compat/java/android/compat/testing/Android.bp",
+      "line": 19
+    },
+    {
+      "path": "frameworks/base/tools/powermodel/Android.bp",
+      "line": 21
+    },
+    {
+      "path": "tools/platform-compat/javatest/android/processor/compat/changeid/Android.bp",
+      "line": 21
+    },
+    {
+      "path": "cts/common/device-side/bedstead/testapp/Android.bp",
+      "line": 201
+    },
+    {
+      "path": "tools/platform-compat/javatest/android/processor/compat/unsupportedappusage/Android.bp",
+      "line": 21
+    },
+    {
+      "path": "platform_testing/libraries/health/composers/host/tests/Android.bp",
+      "line": 19
+    },
+    {
+      "path": "cts/common/device-side/bedstead/remoteframeworkclasses/Android.bp",
+      "line": 29
+    },
+    {
+      "path": "external/auto/factory/Android.bp",
+      "line": 17
+    },
+    {
+      "path": "cts/tools/release-parser/Android.bp",
+      "line": 21
+    },
+    {
+      "path": "platform_testing/libraries/audio-test-harness/server/Android.bp",
+      "line": 162
+    },
+    {
+      "path": "cts/tools/cts-api-coverage/Android.bp",
+      "line": 20
+    },
+    {
+      "path": "platform_testing/libraries/health/runners/longevity/host/tests/Android.bp",
+      "line": 21
+    },
+    {
+      "path": "frameworks/base/tools/protologtool/Android.bp",
+      "line": 31
+    },
+    {
+      "path": "platform_testing/libraries/device-collectors/src/hostsidetests/Android.bp",
+      "line": 19
+    },
+    {
+      "path": "tools/platform-compat/javatest/com/android/annotationvisitor/Android.bp",
+      "line": 19
+    }
+  ],
+  "public_dependencies": [
+    "ConnectedAppsSDK_Annotations",
+    "dexlib2",
+    "dexlib2-no-guava-no-cli",
+    "google_java_format",
+    "mockito",
+    "mockito-host",
+    "modules-utils-build-testing",
+    "objenesis",
+    "objenesis-host"
+  ]
 }
