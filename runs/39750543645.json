@@ -2,5 +2,31 @@
   "schema": 1,
   "run_id": 39750543645,
   "builder_commit": "07eb95d4f5960939e1b5a84218b7a9bcbc53ddae",
-  "stage": "compile"
+  "stage": "compile",
+  "exit_code": 1,
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "system/bt/gd/rust/common/Android.bp",
+      "line": 45
+    },
+    {
+      "path": "external/rust/crates/anyhow/Android.bp",
+      "line": 58
+    },
+    {
+      "path": "system/bt/gd/rust/gddi/Android.bp",
+      "line": 10
+    }
+  ],
+  "public_dependencies": [
+    "libcxx",
+    "libfutures",
+    "libgrpcio",
+    "libpaste",
+    "libtokio"
+  ]
 }
