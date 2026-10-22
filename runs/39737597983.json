@@ -2,5 +2,5 @@
   "schema": 1,
   "run_id": 39737597983,
   "builder_commit": "0407905fb170ca3322690fc1f0380642b9dcabfa",
-  "stage": "source_sync"
+  "stage": "checkout_verification"
 }
