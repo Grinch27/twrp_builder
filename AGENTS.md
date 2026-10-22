@@ -9,9 +9,11 @@
 本阶段仅制定规范，不修改工作流、不迁移构建路线、不提交仓库。
 -->
 
-# Part I — GitHub Actions 通用规范（新增）
+# Part I — GitHub Actions 通用规范（统一维护）
 
 <!-- BEGIN: NEW WORKFLOW RULES -->
+<!-- COMMON_RULES_VERSION: 1.0.0 -->
+<!-- COMMON_RULES_SOURCE: Grinch27/github-actions/docs/agents/part-i.md -->
 
 ## 1. 适用范围与基本原则
 
@@ -35,7 +37,7 @@
 本文件分为两部分：
 
 - Part I：通用 GitHub Actions 工作流规范。
-- Part II：TWRP Builder 原有项目维护与安全约束。
+- Part II：各仓库独立维护的项目专属约束（不参与同步）。
 
 两部分相互独立，但在实际执行时共同生效。
 
@@ -51,7 +53,7 @@
 
 参考文件：
 
-`build-openwrt.yml`
+[Grinch27/openwrt-compiler/build-openwrt.yml](https://github.com/Grinch27/openwrt-compiler/blob/main/.github/workflows/build-openwrt.yml)（跨仓库基础路线参考）
 
 所有新项目原则上先使用 Non-container 构建路线。
 
@@ -74,7 +76,7 @@ Non-container 是项目最初的开发和调试路线。
 
 参考文件：
 
-`uboot_allinone.yml`
+[Grinch27/uboot-mtk-compiler/uboot_allinone.yml](https://github.com/Grinch27/uboot-mtk-compiler/blob/main/.github/workflows/uboot_allinone.yml)（跨仓库 Container 路线参考）
 
 重点参考该文件的前 200 行。
 
@@ -467,11 +469,11 @@ https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workf
 
 ---
 
-## 7. 本阶段实施边界
+## 7. 实施与授权边界
 
-当前阶段仅制定 `AGENTS.md` 规范。
+本规范仅定义工作流设计与执行边界；是否实际修改或部署由具体任务授权决定。
 
-不执行：
+未经当前任务明确授权，不自动执行：
 
 - 工作流重构。
 - Non-container 路线补建。
@@ -480,7 +482,7 @@ https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workf
 - Action 引用替换。
 - Runner 配置修改。
 - 源码修改。
-- Git Commit 或 Push。
+- 超出当前任务范围的 Git Commit 或 Push。
 - GitHub Actions 工作流触发。
 
 新的规则用于指导后续明确授权的修改任务。
