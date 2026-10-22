@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Requirements: fresh work, archive manifest plus public CTS/annotation projects.
+# Requirements: fresh work, archive manifest plus reviewed public dependency projects.
 # Ambiguity: the expanded source graph still needs a successful real bootimage build.
 # Research: inspect each failure and apply verified fixes under retry authorization.
 # Optimization: bounded sync/build time, JDK/Clang from the selected Android tree.
