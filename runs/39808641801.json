@@ -2,5 +2,19 @@
   "schema": 1,
   "run_id": 39808641801,
   "builder_commit": "5525774bf12db0368fc3e115a14436ff3346b840",
-  "stage": "compile"
+  "stage": "compile",
+  "exit_code": 1,
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "bionic/libc/Android.bp",
+      "line": 158
+    }
+  ],
+  "public_dependencies": [
+    "libjemalloc5"
+  ]
 }
