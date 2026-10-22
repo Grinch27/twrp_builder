@@ -2,5 +2,19 @@
   "schema": 1,
   "run_id": 39740769101,
   "builder_commit": "8de04c07ca5ec58800e76e743793ed30a7b210a7",
-  "stage": "compile"
+  "stage": "compile",
+  "exit_code": 1,
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "build/make/tools/signapk/Android.bp",
+      "line": 23
+    }
+  ],
+  "public_dependencies": [
+    "apksig"
+  ]
 }
