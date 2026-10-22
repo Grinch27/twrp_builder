@@ -32,7 +32,7 @@ flowchart TD
 
 后续补齐同版本 `tools/tradefederation/prebuilts@2a5fd21caf0d161ef6fc2efec1fadf2f31986039`，其原始 Java import/filegroup/JAR 提供两个缺失模块。285 项运行同步和校验通过后，Soong 报告下一组 DEQP、Python 和 VNDK 缺项；已按公开提供方及其直接声明的依赖补齐，实际状态以 [AUDIT.md](AUDIT.md) 的运行证据为准。2026-10-22 用户明确要求持续修正、构建直至得到成品，因此每次失败均保留真实失败状态，再审查和修正后继续尝试，不再将旧的一轮停止约定作为暂停理由。
 
-298 项运行完成完整同步和预检后，Soong 继续报告 Mockito、Objenesis、Google Java Format、Connected Apps SDK、dexlib2 与 modules-utils 缺项。现在合计锁定 326 项，包括这些提供方和 Robolectric/Car 公开直接引用所需的应用库、统计协议、Dexmaker、Setup Wizard 等同版本完整项目；公开模块字面量索引用于静态核对，实际构建仍是验收依据。当前尚未取得成功镜像。
+298 项运行完成完整同步和预检后，Soong 继续报告 Mockito、Objenesis、Google Java Format、Connected Apps SDK、dexlib2 与 modules-utils 缺项。随后补齐这些提供方和 Robolectric/Car 直接引用的同版本项目，326 项运行通过完整同步与预检，编译继续报告 Rust 的 cxx、futures、grpcio、paste 和 tokio 缺项。当前合计锁定 363 项，新增 37 个同版本 Rust 提供方与传递依赖；公开模块字面量索引用于静态核对，实际构建仍是验收依据。当前尚未取得成功镜像。
 
 ## 首次运行
 

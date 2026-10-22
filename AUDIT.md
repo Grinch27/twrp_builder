@@ -114,13 +114,17 @@
 
 Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 Actions 运行；随后通过 Contents API 更新构建脚本需求注释，才产生上述 ae825a2 运行。本次后续提交将依赖锁定文件作为最后一次 Contents 更新，确保实际登记并验证任务。
 
+[326 项运行 39750543645](https://github.com/Grinch27/twrp_builder/actions/runs/39750543645) 使用 `07eb95d4f5960939e1b5a84218b7a9bcbc53ddae`，50 项测试、actionlint 和公开同步通过；16:54:08 进入完整同步，17:00:12 进入 checkout 校验，17:00:59 进入 preflight，17:01:20 进入 compile，17:03:32 因 Soong 未定义模块 exit 1（Asia/Shanghai）。这次摘要列出 `system/bt/gd/rust/common/Android.bp:45`、`system/bt/gd/rust/gddi/Android.bp:10` 与 `external/rust/crates/anyhow/Android.bp:58`，缺少 `libcxx`、`libfutures`、`libgrpcio`、`libpaste`、`libtokio`。未生成可交付镜像，密文与公开产物步骤均跳过。
+
+继续核对同标签完整 `external/rust/cxx` 和四个首层 crate，并沿实际 Blueprint 的 rustlibs、proc_macros、原生库和生成工具引用逐层查找提供方；37 个完整公开项目合计 6,559 个 Git 文件、47,341,749 bytes，所有标签 SHA、Git tree 和实际模块名已核对。结合 326 项公开模块索引，这批 Blueprint 的已识别引用均有字面量提供方；该静态结果不代替 Soong 的变体、命名空间或实际编译验证。已将 37 项锁定到 source.lock.json，当前总计 363 项。原始 282 项身份、十个私有输入、12 条 copy/link 均保留，没有新增缺依赖绕过或测试禁用。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：补齐已核对传递依赖后的 326 项图是否能通过 Soong 并完成实际镜像编译；298 项同步后的空间预检已通过，但尚无成功 boot.img。
+当前最大不确定性：补齐 Rust 传递依赖后的 363 项图是否能通过 Soong 并完成实际镜像编译；326 项同步后的空间预检已通过，但尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 

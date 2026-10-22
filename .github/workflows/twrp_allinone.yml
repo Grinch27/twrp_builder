@@ -2,7 +2,7 @@
 # Ambiguity: the locked source closure has not yet produced a clean CI boot image.
 # Research: fail each attempt honestly; verified fixes and retries are authorized.
 # Optimization: one workflow, shared runner resolution, an Ubuntu build container.
-# Risks: public repository; publish=false retains all source/logs/images on the runner.
+# Risks: public repository; publish=false exports only authenticated image ciphertext.
 # Validation: static tests on push/PR; manual full build; payload and AVB verification.
 name: TWRP Selene (All in One Docker)
 
