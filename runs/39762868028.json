@@ -2,5 +2,19 @@
   "schema": 1,
   "run_id": 39762868028,
   "builder_commit": "36dc8baa6daf49c71cec5dc543be959628ce1129",
-  "stage": "compile"
+  "stage": "compile",
+  "exit_code": 1,
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "external/icu/icu4j/Android.bp",
+      "line": 82
+    }
+  ],
+  "public_dependencies": [
+    "junit-params"
+  ]
 }
