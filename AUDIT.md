@@ -96,13 +96,17 @@
 
 新增 build-progress 分支，仅镜像受限阶段/退出码以及经公开 Git blob 再次校验的诊断；不复制任意 JSON 字段或原始日志。宿主 GitHub token 不进入容器。编译摘要扩展至最多 64 个公开文件、128 个依赖，且可完整记录同一文件多条依赖错误。48 项测试、Bash、YAML/actionlint、真实 manifest 组合检查已通过。当前连接仍缺 workflow_dispatch 接口；本次持续修复仅以精确日期标记 `[selene-build-20261022] ` 的 main 提交触发，成功交付后恢复普通手动条件。
 
+[285 项运行 39737597983](https://github.com/Grinch27/twrp_builder/actions/runs/39737597983) 使用 `0407905fb170ca3322690fc1f0380642b9dcabfa`。CI 的 48 项测试、actionlint 和公开同步通过；完整源码同步、checkout、预检通过，15:14:47 已进入 compile，15:16:21 因 Soong 未定义模块停止（Asia/Shanghai）。进度分支已实际回传受限阶段和再次核验的公开诊断，未公开原始日志。新缺项为 `CtsDeqpRunnerTests`、`py-parse_type`、`py-ply`、`vts_vndk_utils`，分别来自 CTS Tradefed 测试和 VTS kernel_proc_file_api_test 的公开 Android.bp。未取得可交付镜像，未上传明文或创建 Release。
+
+下一组修复锁定同一 android-12.1.0_r4 的 `external/deqp`、`external/python/parse_type`、`external/ply`、`test/vts-testcase/vndk`，并按提供方实际 Android.bp 的直接引用补齐 `external/deqp-deps/{SPIRV-Headers,SPIRV-Tools,glslang,amber}`、DEQP Runner 测试的 EasyMock，以及 VNDK 测试的 ABI dump genrule 来源 `prebuilts/abi-dumps/vndk`。提交身份见 source.lock.json；四个直接模块的定义已在对应锁定公开树中核对，DEQP 和 VNDK 的新增依赖来自原始定义，未编写空模块、禁用测试或改用跨版本输入。当前合计 295 项，仍需真实构建检验。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
-3. 手动运行一次 publish=false 的完整任务；上限 350 分钟。任何输入、同步、容量、Soong 或静态验收失败即停止，不自动反复构建。
+3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：已补入同版本 Tradefed，但 285 项依赖闭包和可成功编译的 boot.img 尚待验证。
+当前最大不确定性：295 项扩展图是否还有未闭合依赖，以及新增 DEQP/ABI 数据后的 Runner 空间是否足以完成编译；尚无成功 boot.img。
 
 用户可能遗漏：跨仓库私有读取需要单独的只读凭据；公开镜像也会包含配置/固件；publish=false 不保留可下载镜像或完整诊断日志。
 

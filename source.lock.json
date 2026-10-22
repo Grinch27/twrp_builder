@@ -23,6 +23,66 @@
       "path": "tools/tradefederation/prebuilts",
       "revision": "2a5fd21caf0d161ef6fc2efec1fadf2f31986039",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/deqp",
+      "path": "external/deqp",
+      "revision": "64fb9996f7fc2805355f03427a263f7a1a2a2983",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/python/parse_type",
+      "path": "external/python/parse_type",
+      "revision": "c377f51ae22f7a96136d9f83b6f8aa2132dc03eb",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/ply",
+      "path": "external/ply",
+      "revision": "0463af9bd0afb0adf7803fd4066d90d163dbe7b1",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/test/vts-testcase/vndk",
+      "path": "test/vts-testcase/vndk",
+      "revision": "ea6b1eeb118f329ffdaef7120db5bf7adde90ae3",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/deqp-deps/SPIRV-Headers",
+      "path": "external/deqp-deps/SPIRV-Headers",
+      "revision": "c4faca6d2467a132eace04193742fc68a6067f49",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/deqp-deps/SPIRV-Tools",
+      "path": "external/deqp-deps/SPIRV-Tools",
+      "revision": "c8f646fab31bd371788f9b8e376e5d9d6d377b5c",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/deqp-deps/glslang",
+      "path": "external/deqp-deps/glslang",
+      "revision": "5f7fd5c016c6bf2fcaf0d21313cd3f0bdce60445",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/deqp-deps/amber",
+      "path": "external/deqp-deps/amber",
+      "revision": "4ed22191f86b9c1da339aca725697ad1417cd0fc",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/easymock",
+      "path": "external/easymock",
+      "revision": "51beb6618fd32fa0f2d51082f04c80c07c8677c9",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/prebuilts/abi-dumps/vndk",
+      "path": "prebuilts/abi-dumps/vndk",
+      "revision": "f3cda30722da4ad96bc305d65367bab02c326380",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
