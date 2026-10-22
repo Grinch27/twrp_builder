@@ -2,5 +2,50 @@
   "schema": 1,
   "run_id": 39789626001,
   "builder_commit": "236d1ef2a950cbb0c70ec73406494610da09c1c2",
-  "stage": "compile"
+  "stage": "compile",
+  "exit_code": 1,
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "external/bsdiff/Android.bp",
+      "line": 74
+    },
+    {
+      "path": "bionic/tests/Android.bp",
+      "line": 773
+    },
+    {
+      "path": "frameworks/av/media/libheadtracking/Android.bp",
+      "line": 10
+    },
+    {
+      "path": "frameworks/av/media/libmedia/Android.bp",
+      "line": 213
+    },
+    {
+      "path": "external/rust/crates/either/Android.bp",
+      "line": 56
+    },
+    {
+      "path": "external/grpc-grpc/Android.bp",
+      "line": 487
+    },
+    {
+      "path": "system/bt/gd/dumpsys/Android.bp",
+      "line": 129
+    }
+  ],
+  "public_dependencies": [
+    "libdivsufsort",
+    "libdivsufsort64",
+    "libeigen",
+    "libflatbuffers-cpp",
+    "libgtest_isolated",
+    "libprotobuf-c-nano",
+    "libserde_json",
+    "libsonivoxwithoutjet"
+  ]
 }
