@@ -22,6 +22,13 @@ PY
 finish() {
   local result=$?
   trap - EXIT
+  if ((result != 0)) && [[ "${stage}" == compile && -f "${WORK}/logs/compile.log" ]]; then
+    if ! python3 "${SELF}/scripts/summarize_compile_failure.py" \
+      --log "${WORK}/logs/compile.log" --manifest "${WORK}/inputs/default.xml" \
+      --source "${WORK}/android" --output "${WORK}/output/compile-error-summary.json"; then
+      printf 'Structured compiler diagnostics unavailable.\n' >&2
+    fi
+  fi
   if ((result != 0)) && [[ -n "${phase_log:-}" && -f "${phase_log}" ]]; then
     if ! python3 "${SELF}/scripts/summarize_repo_failure.py" \
       --log "${phase_log}" --manifest "${WORK}/inputs/default.xml" \
@@ -112,7 +119,7 @@ timeout --signal=TERM --kill-after=60s 160m bash -c '
   source build/envsetup.sh
   lunch twrp_selene-eng
   mka bootimage -j4
-'
+' > "${WORK}/logs/compile.log" 2>&1
 
 set_stage static_validation
 image="${OUT_DIR}/target/product/selene/boot.img"

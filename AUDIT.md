@@ -12,7 +12,7 @@
 | --- | --- | --- |
 | 最新归档构建 | 2026-10-06 最后退出码为 1，新运行目录没有 boot.img | 旧 artifacts 内的 boot.img 不能作为当前源码成功证据 |
 | 最后失败 | Soong 图生成阶段缺少 Robolectric monitor 1.0.2-alpha1 AAR；当前 Git 清单中也没有该 AAR | 补齐一个文件不能推出全部闭包已完成 |
-| Manifest | 282 个唯一项目，282 个 40 位 SHA，12 个 copy/link 指令 | 可作为锁定输入；尚无干净完整同步及构建证明 |
+| Manifest | 282 个唯一项目，282 个 40 位 SHA，12 个 copy/link 指令 | 已完成干净完整同步与 HEAD/clean 校验；尚无编译成功证明 |
 | 源码现场 | CTS 在归档中只有 7 个 Git 文件；prebuilts/tools、Gradle 使用过稀疏恢复 | 归档 checkout 不等同于上游完整源码 |
 | 测试禁用 | 清单实际为 43 个 Android.bp、56 个模块 | 新构建不回放这些实验调整 |
 | 缺依赖绕过 | 最后 runner 含 ALLOW_MISSING_DEPENDENCIES，依然失败 | 新构建不设置该变量 |
@@ -52,12 +52,12 @@
 
 ## 新构建器的实际验证状态
 
-- 本地标准库边界测试：20 项通过，包含多组子案例；覆盖输入路径、覆盖拒绝、链接逃逸、下载身份、manifest 锁定及危险指令、boot/cpio/解压边界、错误 kernel/DTB/fstab 和未验证状态保留。
+- 当前标准库边界测试：33 项通过，包含多组子案例；覆盖输入路径、覆盖拒绝、链接逃逸、下载身份、manifest 锁定及危险指令、boot/cpio/解压边界、错误 kernel/DTB/fstab、未验证状态保留，以及同步和编译安全摘要的错误分类与隐私边界。
 - 新增 Python 可解析、全部 shell 通过 bash -n、工作流 YAML 可解析、手动触发与公开产物条件检查通过。
 - 实际归档 manifest 经新校验器通过：282 个项目、40 位锁定 revision、受限下载来源与路径。
 - GitHub Actions [运行 39693140718](https://github.com/Grinch27/twrp_builder/actions/runs/39693140718) 已成功：在代码提交 `dadd8c3dcfcc9e50d5d99e0c129b4cfcbacf47a6` 上，20 项测试、actionlint v1.7.7、官方下载校验及共享 Runner 解析均通过。完整编译 job 为 skipped，不能将这条绿色记录称作 TWRP 编译成功。
-- 本轮连接不支持查询 Actions Secret 或发起 workflow_dispatch；`TWRP_SOURCE_TOKEN` 是否配置尚未核实。当前没有以其他身份或接口绕过该限制。
-- 完整 repo sync、Ubuntu 容器依赖安装、mka bootimage、真实 boot.img 静态验收：**NOT_EXECUTED**。
+- 本轮连接不支持查询 Actions Secret 或发起 workflow_dispatch；已通过获授权的实际构建确认 `TWRP_SOURCE_TOKEN` 存在，十个输入全部下载并通过身份校验。没有读取或导出 Secret 值。
+- Ubuntu 容器依赖安装、Repo 初始化和公开单项目同步已通过真实 runner 验证；282 项完整同步、mka bootimage 和真实 boot.img 静态验收的最新进度见下方继续执行记录。
 - 新镜像启动、触摸、FBE、备份/恢复、动态分区/snapshot：**NOT_TESTED**。
 
 ## 后续顺序与停止点
@@ -72,16 +72,20 @@
 
 修复提交 `f1b5fd7304cf8ac44f45e5db6b14db799f8893a5` 的 [CI 39696581000](https://github.com/Grinch27/twrp_builder/actions/runs/39696581000) 已通过 25 项单元测试、actionlint、公开 Repo 初始化与单项目实际同步；该次完整构建 job 为 skipped。之后才继续验证正式的 282 项源码路线。
 
+[完整运行 39696743200](https://github.com/Grinch27/twrp_builder/actions/runs/39696743200) 使用 `cadbe391854ede5f0d1e406bb3ff1bdd3e302033`，验证 job 成功；十个私有输入校验、282 项完整同步、所有 checkout 的锁定 HEAD 和 clean 校验、设备覆盖、空间/JDK/原缺失 AAR 预检以及首次 lunch 均通过。容器于 08:01:04 进入 source_sync、08:18:52 进入 checkout_verification、08:19:37 进入 compile，08:21:07 以 exit 1 停止（Asia/Shanghai）。这只能证明编译阶段失败，不能推断具体 Soong/模块根因；该版本摘要尚未覆盖编译日志。Artifact 查询为空，发布步骤跳过，未进行镜像静态验收。
+
+已补齐编译摘要的诊断缺口：完整日志仍在临时 runner；只输出固定类别、由锁定公开 Git blob 证实的文件位置与依赖字面量，明确排除私有覆盖文件。八项新增测试验证未知值、凭据、未跟踪路径、工作树私有修改和错误 revision 不会被回传。下一次仅验证这一诊断补丁，不改 manifest 或依赖图；取得第一个具体错误后停止。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 手动运行一次 publish=false 的完整任务；上限 350 分钟。任何输入、同步、容量、Soong 或静态验收失败即停止，不自动反复构建。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：完整的 282 项上游 checkout 能否闭合 Soong 依赖并在标准 runner 空间内生成新 boot.img。
+当前最大不确定性：干净完整 checkout 已通过，但编译阶段的第一个具体错误尚未取得，尚无新 boot.img 成功证明。
 
 用户可能遗漏：跨仓库私有读取需要单独的只读凭据；公开镜像也会包含配置/固件；publish=false 不保留可下载镜像或完整诊断日志。
 
-Q1：是否批准十个指定私有输入由 GitHub 托管 runner 处理，并自行配置只读 secret？
-Q2：首次运行保持 publish=false，还是明确批准公开成功产物与实验性 Release？
-Q3：若首次失败，选择私有 runner/存储保留诊断，还是先在独立本地环境复现？
+Q1（私有输入授权）：已获批准，且实际读取与身份校验已通过。
+Q2（公开产物）：本轮保持 publish=false；未批准公开镜像或 Release。
+Q3（失败诊断）：本轮仅保留公开安全摘要；完整私有日志的持久出口尚未配置。
