@@ -2,5 +2,5 @@
   "schema": 1,
   "run_id": 39789626001,
   "builder_commit": "236d1ef2a950cbb0c70ec73406494610da09c1c2",
-  "stage": "preflight"
+  "stage": "compile"
 }
