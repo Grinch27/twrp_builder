@@ -2,5 +2,19 @@
   "schema": 1,
   "run_id": 39812919485,
   "builder_commit": "6cd2d8f7f2313747f31e32a104097bef18abff95",
-  "stage": "compile"
+  "stage": "compile",
+  "exit_code": 1,
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "frameworks/base/tools/fonts/Android.bp",
+      "line": 50
+    }
+  ],
+  "public_dependencies": [
+    "fontTools"
+  ]
 }
