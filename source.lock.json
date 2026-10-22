@@ -629,6 +629,12 @@
       "path": "system/server_configurable_flags",
       "revision": "cf0231f8f5c03f9c83a5a972cfbaa410782a63f4",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/jemalloc_new",
+      "path": "external/jemalloc_new",
+      "revision": "6d4d27fd2651ed114386b89c2d251b816a849460",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
