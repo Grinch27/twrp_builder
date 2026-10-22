@@ -3,7 +3,7 @@
 # Ambiguity: the first private-input build failed before a compiler was invoked.
 # Research: expose the initialization error without publishing private build logs.
 # Optimization: sync one small public project, never the complete Android tree.
-# Risks: upstream availability and ephemeral container package installation.
+# Risks: upstream availability and ephemeral host/container package installation.
 # Validation: exact repo revision, noninteractive initialization and one-project sync.
 set -euo pipefail
 
@@ -15,9 +15,17 @@ if [[ "${1:-}" == container ]]; then
   exec runuser -u builder -- bash /builder/self/tests/repo_init_smoke.sh user
 fi
 
-if [[ "${1:-}" == user ]]; then
-  cd /builder/work
-  read -r repo_ref repo_commit launcher_digest < <(python3 - /builder/self/source.lock.json <<'PY'
+if [[ "${1:-}" == native ]]; then
+  : "${RUNNER_TEMP:?}" "${GITHUB_WORKSPACE:?}"
+  export BUILDER_SELF="${GITHUB_WORKSPACE}"
+  export SMOKE_ROOT="$(mktemp -d "${RUNNER_TEMP}/repo-init-native.XXXXXXXX")"
+fi
+
+if [[ "${1:-}" == user || "${1:-}" == native ]]; then
+  smoke_self="${BUILDER_SELF:-/builder/self}"
+  smoke_work="${SMOKE_ROOT:-/builder/work}"
+  cd "${smoke_work}"
+  read -r repo_ref repo_commit launcher_digest < <(python3 - "${smoke_self}/source.lock.json" <<'PY'
 import json,sys
 d=json.load(open(sys.argv[1]))['repo_tool']
 print(d['version'],d['commit'],d['launcher_sha256'])
@@ -28,7 +36,7 @@ PY
     "https://raw.githubusercontent.com/GerritCodeReview/git-repo/${repo_commit}/repo" --output bin/repo
   printf '%s  %s\n' "${launcher_digest}" bin/repo | sha256sum --check --status
   chmod 0755 bin/repo
-  export PATH="/builder/work/bin:${PATH}"
+  export PATH="${smoke_work}/bin:${PATH}"
   export GIT_TERMINAL_PROMPT=0 GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null
   export GIT_AUTHOR_NAME=twrp-builder GIT_COMMITTER_NAME=twrp-builder
   export GIT_AUTHOR_EMAIL=twrp-builder@users.noreply.github.com
@@ -48,7 +56,7 @@ XML
   git -C manifest commit --quiet -m 'Public synthetic initialization fixture'
   cd android
   timeout --signal=TERM --kill-after=20s 180s repo init \
-    --manifest-url=file:///builder/work/manifest --manifest-branch=main \
+    --manifest-url="file://${smoke_work}/manifest" --manifest-branch=main \
     --manifest-name=default.xml --depth=1 --groups=all --no-clone-bundle \
     --no-use-superproject --repo-rev="${repo_ref}" < /dev/null
   [[ "$(git -C .repo/repo rev-parse HEAD)" == "${repo_commit}" ]]

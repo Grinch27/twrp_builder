@@ -118,13 +118,23 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 继续核对同标签完整 `external/rust/cxx` 和四个首层 crate，并沿实际 Blueprint 的 rustlibs、proc_macros、原生库和生成工具引用逐层查找提供方；37 个完整公开项目合计 6,559 个 Git 文件、47,341,749 bytes，所有标签 SHA、Git tree 和实际模块名已核对。结合 326 项公开模块索引，这批 Blueprint 的已识别引用均有字面量提供方；该静态结果不代替 Soong 的变体、命名空间或实际编译验证。已将 37 项锁定到 source.lock.json，当前总计 363 项。原始 282 项身份、十个私有输入、12 条 copy/link 均保留，没有新增缺依赖绕过或测试禁用。
 
+[363 项运行 39762868028](https://github.com/Grinch27/twrp_builder/actions/runs/39762868028) 使用 `36dc8baa6daf49c71cec5dc543be959628ce1129`，完整同步、checkout 与预检后，Soong 因 `external/icu/icu4j/Android.bp:82` 引用的 `junit-params` 未定义而失败。下一次补齐同一 `android-12.1.0_r4` 的完整 `platform/external/junit-params@fa8720eb57ec6d8fe8fdfd7c74e581f094fd9219`；167 个 Git 文件、1,826,549 bytes，原始 Android.bp 定义真实 Java 库、兼容 host 库及其预编译测试依赖。仅引用原始完整项目，未加入测试禁用或占位模块。合计 364 项；原始 282 项、十个输入和 12 条 copy/link 均不变。
+
+2026-10-22 用户明确授权根据新 AGENTS.md 补建非 container 单文件入口，并要求持续修正直至成品成功；此前仅制定规范的阶段已结束。新增 `.github/workflows/twrp_native.yml`，包含统一 `runner-image` 和直接运行的 build 两个 Job。原有 Docker 工作流保留。两者共享并发组；新的精确提交标记只触发原生完整构建。资源门槛、超时、来源锁定、静态验收、只读私有源和 publish=false 的 CMS 密文交付均沿用。
+
+编写前已一次性核对 `actions/checkout`、`actions/upload-artifact` 的仓库、默认 main 分支、main/master 和实际 action.yml（均为 Node 24）；新入口采用 @main。共享仓库 `Grinch27/github-actions` 默认 main，master 不存在；实际读取 resolve-runner-image、run-sudo 和 env-toolchain 的 action.yml。采用前两者；env-toolchain 的清理/升级范围不符合本项目当前窄清理边界，未引入。参考上传的 OpenWrt 和 U-Boot YAML 的结构，未复制其容器权限、设备挂载、广泛清理或覆盖 Release 的行为。
+
+按用户要求，主机 ncurses 不从源码构建。采用 Ubuntu 官方二进制归档 `https://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/`（工作流也支持官方 security.ubuntu.com 同路径），版本 `6.3-2ubuntu0.3`、amd64：libtinfo5 为 100,004 bytes，SHA-256 `4df4288404108f1a156d014e8764a064e977e34e6d44931ab60451694c03c90d`；libncurses5 为 106,866 bytes，SHA-256 `58da01991712c6856af0658dc5e9cb533c1a6854ab950055ade185e35bc9c276`。散列来自 packages.ubuntu.com 的 Jammy 下载元数据；本地实际下载、SHA-256 和 dpkg-deb 包名/版本/架构均已核对。二者分别依赖 libc6 >=2.33、>=2.34，libncurses5 另依赖相同版本 libtinfo5。它们提供真正 ABI 5，与当前 ABI 6 并存，不通过错误软链接伪装。只在一次性 Runner 安装，不改本地主机全局 Java/Python。
+
+原生启动器将宿主进度上传与编译子进程分开：子进程环境白名单不含 CI token，HOME 保持原值；输出写入独占 0600 日志，仅输出固定阶段与退出码，SIGTERM/SIGINT 清理新建的构建进程组。54 项标准库测试（包括真实失败和取消子进程）、bash -n、两份 YAML 解析/内嵌 shell 检查、actionlint 1.7.7、实际归档 manifest 身份检查均通过。本地公开 repo smoke 在 GPG agent 启动时报错，未绕过签名验证，需以 GitHub runner 的原生公开 smoke 和完整构建结果继续验证。上述检查及官方包核对不构成原生完整构建成功的证据。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：补齐 Rust 传递依赖后的 363 项图是否能通过 Soong 并完成实际镜像编译；326 项同步后的空间预检已通过，但尚无成功 boot.img。
+当前最大不确定性：补齐 junit-params 后的 364 项图是否能在动态 Ubuntu Runner 上通过 Soong 并完成实际镜像编译；原生路线仍需真实完整验证，尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 

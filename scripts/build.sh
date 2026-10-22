@@ -7,8 +7,9 @@
 # Validation: exact checkout identities, mka exit 0, AVB and boot payload checks.
 set -eo pipefail
 umask 077
-SELF=/builder/self
-WORK=/builder/work
+SELF="${BUILDER_SELF:-/builder/self}"
+WORK="${BUILD_ROOT:-/builder/work}"
+[[ "${SELF}" == /* && "${WORK}" == /* && "${SELF}" != "${WORK}" ]]
 stage=initialization
 mkdir -p "${WORK}/logs" "${WORK}/output"
 set_stage() {

@@ -491,6 +491,12 @@
       "path": "external/rust/cxx",
       "revision": "e21664011d153978e59171e636aa8520a4153440",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/junit-params",
+      "path": "external/junit-params",
+      "revision": "fa8720eb57ec6d8fe8fdfd7c74e581f094fd9219",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
