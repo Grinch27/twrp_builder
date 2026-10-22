@@ -101,6 +101,174 @@
       "path": "packages/services/Car",
       "revision": "af051f0a86d0ded75e4be48aa3387c68d569202b",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/connectedappssdk",
+      "path": "external/connectedappssdk",
+      "revision": "101102838597ea8383623738ef82ff565e468970",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/dagger2",
+      "path": "external/dagger2",
+      "revision": "18761281ab659492ade7a78a8b0ff5c81c8cee40",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/dexmaker",
+      "path": "external/dexmaker",
+      "revision": "691b39b4b19a3a1726f13b7c5ac6bd0fb906a614",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/google-java-format",
+      "path": "external/google-java-format",
+      "revision": "c0e9894d003545b4b31b6373c1aa4e9a447b6226",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/kotlinx.metadata",
+      "path": "external/kotlinx.metadata",
+      "revision": "f30142f39a5cca983813018a10873ffab68b985d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libphonenumber",
+      "path": "external/libphonenumber",
+      "revision": "1d0590a86976fba14c233c346dd886535d97f4aa",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libprotobuf-mutator",
+      "path": "external/libprotobuf-mutator",
+      "revision": "f5608da8bd42af2134c1ece270460212cba75cea",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/lottie",
+      "path": "external/lottie",
+      "revision": "4d4a4b708375c94066006aeca912374d84a4cc6d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/lua",
+      "path": "external/lua",
+      "revision": "50357382f66e0973a1428f712c01b1e52f8e8d30",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/mockito",
+      "path": "external/mockito",
+      "revision": "7eb0861430819806dced351813582a5aa666e670",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/objenesis",
+      "path": "external/objenesis",
+      "revision": "6392daddb9a890ad7a2142efb470d105e5824ac9",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/okio",
+      "path": "external/okio",
+      "revision": "30cddbf0047dd52cc0f15aff775fe0eaf4291887",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/setupcompat",
+      "path": "external/setupcompat",
+      "revision": "13644ae60092b3469c81dad57d58520916f7cb60",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/setupdesign",
+      "path": "external/setupdesign",
+      "revision": "232dec4a1957e44381b75deb2f0bf26abc71f32d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/smali",
+      "path": "external/smali",
+      "revision": "bb22a92b16eb0453f7f42a540679fad20382b68d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/zxing",
+      "path": "external/zxing",
+      "revision": "ba286208c7ef6f78abef676d3e9f4b88342264f1",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/libs/modules-utils",
+      "path": "frameworks/libs/modules-utils",
+      "revision": "0a8bde0eb27a5de62e73faf9de06a498a4ccec69",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/opt/car/services",
+      "path": "frameworks/opt/car/services",
+      "revision": "54e95ff9297183d9c94dca3700db31b3f6130e1d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/opt/car/setupwizard",
+      "path": "frameworks/opt/car/setupwizard",
+      "revision": "db4b953b8c0fe801c660665477fcce93c172e259",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/proto_logging",
+      "path": "frameworks/proto_logging",
+      "revision": "0973249c4f52460c7225100b9b0c3540fbee331e",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/Car/Notification",
+      "path": "packages/apps/Car/Notification",
+      "revision": "a8ecbcf838012f31fed2d77b7be78e02c373c6df",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/Car/Settings",
+      "path": "packages/apps/Car/Settings",
+      "revision": "052638003073c70dcb2e9b77abeb2e45c35c5804",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/Car/SystemUI",
+      "path": "packages/apps/Car/SystemUI",
+      "revision": "6c3e74fe518224e05f5a4b96c39346c7f3f8f2a7",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/Car/libs",
+      "path": "packages/apps/Car/libs",
+      "revision": "dfe2e85c92336cb446576c7d8f7fd4071e14d930",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/ManagedProvisioning",
+      "path": "packages/apps/ManagedProvisioning",
+      "revision": "62fdc05adc6095ce2b9297517d472b8411753acf",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/Settings",
+      "path": "packages/apps/Settings",
+      "revision": "5fe4cc76703d45ac36426aa5b5d7bb54ae41def0",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/prebuilts/maven_repo/bumptech",
+      "path": "prebuilts/maven_repo/bumptech",
+      "revision": "41b79a317ed51ea2b880f3653839bb3dc36dfb3d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/tools/dexter",
+      "path": "tools/dexter",
+      "revision": "093604d5f4ac95f1e63296014483325e8cf063a7",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
