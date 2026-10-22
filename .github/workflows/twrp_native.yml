@@ -1,0 +1,215 @@
+name: TWRP Selene (Native)
+
+# Requirements: one native workflow; the same locked inputs and boot validation.
+# Ambiguity: only a real successful bootimage build establishes a native baseline.
+# Research: reviewed shared actions; official Ubuntu legacy ABI binary packages.
+# Optimization: reuse source, progress, validation and encrypted delivery helpers.
+# Risks: changing runner image/actions, old prebuilts and limited runner resources.
+# Validation: public smoke, exact checkout identities, real exit, payload and AVB.
+# GitHub Actions workflow syntax reference:
+# https://docs.github.com/zh/actions/reference/workflows-and-actions/workflow-syntax
+# https://docs.github.com/zh/actions/reference/workflows-and-actions/metadata-syntax#runs-for-composite-actions
+# https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations#yaml-anchors-and-aliases
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/twrp_native.yml', 'scripts/**', 'tests/**', 'source.lock.json', 'delivery-recipient.pem']
+  pull_request:
+    paths: ['.github/workflows/twrp_native.yml', 'scripts/**', 'tests/**', 'source.lock.json', 'delivery-recipient.pem']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: '允许公开 boot.img、静态报告及校验和，并创建预发布 Release'
+        type: boolean
+        default: false
+        required: true
+
+run-name: TWRP selene native - ${{ github.event_name }} - ${{ github.ref_name }}
+
+permissions: write-all
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  DEBIAN_FRONTEND: noninteractive
+  DEBCONF_NONINTERACTIVE_SEEN: 'true'
+  APT_LISTCHANGES_FRONTEND: none
+  NEEDRESTART_MODE: a
+  TZ: Etc/UTC
+  LANG: C.UTF-8
+  LC_ALL: C.UTF-8
+  GIT_TERMINAL_PROMPT: '0'
+
+concurrency:
+  group: twrp-selene-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  runner-image:
+    name: ubuntu-latest - runner-image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      RUNNER_IMAGE: ${{ steps.resolve-runner-image.outputs.RUNNER_IMAGE }}
+    steps:
+      - name: Resolve runner-image
+        id: resolve-runner-image
+        uses: Grinch27/github-actions/.github/actions/resolve-runner-image@main
+      - name: Checkout builder
+        uses: actions/checkout@main
+        with:
+          persist-credentials: false
+      - name: Validate scripts and boundary tests
+        run: |
+          set -euo pipefail
+          for script in scripts/*.sh tests/*.sh; do bash -n "${script}"; done
+          /usr/bin/python3 -m unittest discover -s tests -v
+      - name: Validate GitHub Actions syntax
+        run: |
+          set -euo pipefail
+          lint_dir="$(mktemp -d "${RUNNER_TEMP}/actionlint.XXXXXXXX")"
+          release=https://github.com/rhysd/actionlint/releases/download/v1.7.7
+          curl --fail --silent --show-error --location --retry 2 --max-time 120 \
+            "${release}/actionlint_1.7.7_linux_amd64.tar.gz" --output "${lint_dir}/actionlint_1.7.7_linux_amd64.tar.gz"
+          curl --fail --silent --show-error --location --retry 2 --max-time 120 \
+            "${release}/actionlint_1.7.7_checksums.txt" --output "${lint_dir}/checksums.txt"
+          (cd "${lint_dir}" && sha256sum --check --ignore-missing checksums.txt)
+          tar -xzf "${lint_dir}/actionlint_1.7.7_linux_amd64.tar.gz" -C "${lint_dir}" actionlint
+          "${lint_dir}/actionlint" -shellcheck='' .github/workflows/twrp_native.yml .github/workflows/twrp_allinone.yml
+      - name: Reproduce native repo initialization with public inputs
+        timeout-minutes: 8
+        run: bash tests/repo_init_smoke.sh native
+
+  build:
+    name: selene - bootimage - native Ubuntu
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' && startsWith(github.event.head_commit.message, '[selene-native-build-20261022] ')))
+    needs: runner-image
+    runs-on: ${{ needs.runner-image.outputs.RUNNER_IMAGE }}
+    timeout-minutes: 350
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout builder
+        uses: actions/checkout@main
+        with:
+          persist-credentials: false
+      - name: Install job-scoped run_sudo
+        uses: Grinch27/github-actions/.github/actions/run-sudo@main
+      - name: Check private source access is configured
+        env:
+          TWRP_SOURCE_TOKEN: ${{ secrets.TWRP_SOURCE_TOKEN }}
+        run: |
+          if [[ -z "${TWRP_SOURCE_TOKEN}" ]]; then
+            printf 'Configure TWRP_SOURCE_TOKEN with Contents: read for Grinch27/twrp_selene.\n' >&2
+            exit 1
+          fi
+      - name: Prepare disposable runner disk
+        run: bash scripts/prepare_runner.sh
+      - name: Install Ubuntu host binary packages
+        run: |
+          set -euo pipefail
+          [[ "$(dpkg --print-architecture)" == amd64 ]]
+          run_sudo apt-get -qq update
+          run_sudo apt-get -yqq --no-install-recommends install \
+            bc bison build-essential ca-certificates cpio curl file flex g++-multilib \
+            gcc-multilib git gnupg gperf lib32ncurses-dev lib32readline-dev lib32z1-dev \
+            libelf-dev lz4 libncurses-dev libssl-dev libxml2-utils lzop \
+            openssh-client openssl pngcrush python3 rsync unzip util-linux xsltproc zip zlib1g-dev
+      - name: Install verified official Ubuntu legacy ncurses binary packages
+        run: |
+          set -euo pipefail
+          deb_dir="$(mktemp -d "${RUNNER_TEMP}/ncurses5-debs.XXXXXXXX")"
+          # Ubuntu Jammy supplies the real ABI 5 libraries alongside current ABI 6.
+          # Official metadata and SHA-256:
+          # https://packages.ubuntu.com/jammy/amd64/libtinfo5/download
+          # https://packages.ubuntu.com/jammy/amd64/libncurses5/download
+          for package in libtinfo5 libncurses5; do
+            filename="${package}_6.3-2ubuntu0.3_amd64.deb"
+            if ! curl --fail --silent --show-error --location --retry 2 --max-time 120 \
+              "https://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/${filename}" --output "${deb_dir}/${filename}"; then
+              curl --fail --silent --show-error --location --retry 2 --max-time 120 \
+                "https://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/${filename}" --output "${deb_dir}/${filename}"
+            fi
+          done
+          (cd "${deb_dir}" && sha256sum --check --strict <<'SHA256'
+          4df4288404108f1a156d014e8764a064e977e34e6d44931ab60451694c03c90d  libtinfo5_6.3-2ubuntu0.3_amd64.deb
+          58da01991712c6856af0658dc5e9cb533c1a6854ab950055ade185e35bc9c276  libncurses5_6.3-2ubuntu0.3_amd64.deb
+          SHA256
+          )
+          for package in libtinfo5 libncurses5; do
+            metadata="$(dpkg-deb --show --showformat='${Package} ${Version} ${Architecture}' "${deb_dir}/${package}_6.3-2ubuntu0.3_amd64.deb")"
+            [[ "${metadata}" == "${package} 6.3-2ubuntu0.3 amd64" ]]
+          done
+          run_sudo apt-get -yqq --no-install-recommends install \
+            "${deb_dir}/libtinfo5_6.3-2ubuntu0.3_amd64.deb" \
+            "${deb_dir}/libncurses5_6.3-2ubuntu0.3_amd64.deb"
+          for package in libtinfo5 libncurses5; do
+            installed="$(dpkg-query --show --showformat='${Version} ${Architecture} ${Status}' "${package}")"
+            [[ "${installed}" == '6.3-2ubuntu0.3 amd64 install ok installed' ]]
+          done
+      - name: Fetch reviewed private inputs
+        env:
+          TWRP_SOURCE_TOKEN: ${{ secrets.TWRP_SOURCE_TOKEN }}
+        run: /usr/bin/python3 scripts/source_inputs.py fetch --output "${BUILD_ROOT}/inputs"
+      - name: Build and statically validate natively
+        id: compile
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: /usr/bin/python3 scripts/run_native.py --work "${BUILD_ROOT}"
+      - name: Upload encrypted output for the configured recipient
+        if: steps.compile.outcome == 'success'
+        uses: actions/upload-artifact@main
+        with:
+          name: twrp-selene-native-sealed-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.BUILD_ROOT }}/output/sealed-output.cms
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+      - name: Upload explicitly approved public output
+        if: inputs.publish && steps.compile.outcome == 'success'
+        uses: actions/upload-artifact@main
+        with:
+          name: twrp-selene-native-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.BUILD_ROOT }}/output/boot.img
+            ${{ env.BUILD_ROOT }}/output/static-validation.json
+            ${{ env.BUILD_ROOT }}/output/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0
+      - name: Publish an explicitly approved prerelease
+        if: inputs.publish && steps.compile.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          BUILDER_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          tag="selene-native-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          body="${BUILD_ROOT}/release.md"
+          printf '%s\n' \
+            'Experimental selene TWRP boot image, targeting China MIUI V14.0.4.0.TKUCNXM.' \
+            'Build and static validation only. Boot, touch, FBE and backup/restore are NOT_TESTED.' \
+            "Builder commit: ${BUILDER_COMMIT}" \
+            'Source lock: source.lock.json at the builder commit.' > "${body}"
+          gh release create "${tag}" --target "${BUILDER_COMMIT}" \
+            --title "TWRP selene native ${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}" \
+            --prerelease --notes-file "${body}" \
+            "${BUILD_ROOT}/output/boot.img" \
+            "${BUILD_ROOT}/output/static-validation.json" \
+            "${BUILD_ROOT}/output/SHA256SUMS"
+      - name: Record validation boundary
+        if: always()
+        env:
+          COMPILE_OUTCOME: ${{ steps.compile.outcome }}
+          PUBLISH_OUTPUTS: ${{ inputs.publish }}
+        run: |
+          printf 'Build step: %s\n\nPublic outputs enabled: %s\n\nDevice boot/FBE/backup/restore: NOT_TESTED.\n' \
+            "${COMPILE_OUTCOME}" "${PUBLISH_OUTPUTS}" >> "${GITHUB_STEP_SUMMARY}"
