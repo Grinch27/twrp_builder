@@ -3,15 +3,22 @@
   "run_id": 39816458849,
   "builder_commit": "a3c00985c34b0ef49096fbb2aaf64050de7c50c8",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "disk_free_mib": 56179,
-    "memory_available_mib": 14908,
-    "swap_free_mib": 2894,
-    "stage_elapsed_seconds": 0.4,
-    "elapsed_seconds": 536.7,
-    "load_1m": 2.7,
-    "log_bytes": 102,
-    "log_idle_seconds": 0.1,
+    "load_1m": 9.06,
+    "swap_free_mib": 2851,
+    "elapsed_seconds": 624.4,
+    "memory_available_mib": 14797,
+    "disk_free_mib": 55572,
+    "log_bytes": 32197,
+    "log_idle_seconds": 5.5,
+    "stage_elapsed_seconds": 88.2,
+    "progress": {
+      "kind": "ninja",
+      "completed": 244,
+      "total": 244,
+      "percent": 100.0
+    },
     "stage_seconds": {
       "initialization": 0.049,
       "repo_tool": 0.193,
@@ -19,7 +26,43 @@
       "repo_tool_verification": 0.04,
       "source_sync": 481.733,
       "checkout_verification": 48.548,
-      "preflight": 3.909
+      "preflight": 3.909,
+      "compile": 82.815
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "packages/modules/StatsD/framework/Android.bp",
+      "line": 52
+    },
+    {
+      "path": "packages/modules/Scheduling/framework/Android.bp",
+      "line": 32
+    },
+    {
+      "path": "packages/modules/Connectivity/Tethering/common/TetheringLib/Android.bp",
+      "line": 20
+    },
+    {
+      "path": "frameworks/base/libs/hwui/Android.bp",
+      "line": 190
+    },
+    {
+      "path": "packages/modules/SdkExtensions/testing/Android.bp",
+      "line": 107
+    },
+    {
+      "path": "packages/modules/Permission/framework/Android.bp",
+      "line": 29
+    },
+    {
+      "path": "packages/modules/SdkExtensions/framework/Android.bp",
+      "line": 36
+    }
+  ],
+  "public_dependencies": []
 }
