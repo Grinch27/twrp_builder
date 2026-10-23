@@ -1,17 +1,12 @@
-# Requirements: one selene target; private source access is an explicit setup step.
+# Requirements: paused Docker research; retain a manual-only reserve entry.
 # Ambiguity: the locked source closure has not yet produced a clean CI boot image.
 # Research: fail each attempt honestly; verified fixes and retries are authorized.
 # Optimization: one workflow, shared runner resolution, an Ubuntu build container.
 # Risks: public repository; publish=false exports only authenticated image ciphertext.
-# Validation: static tests on push/PR; manual full build; payload and AVB verification.
+# Validation: manual checks/build only; native CI owns current automatic validation.
 name: TWRP Selene (All in One Docker)
 
 on:
-  push:
-    branches: [main]
-    paths: ['.github/workflows/twrp_allinone.yml', 'scripts/**', 'tests/**', 'source.lock.json', 'delivery-recipient.pem']
-  pull_request:
-    paths: ['.github/workflows/twrp_allinone.yml', 'scripts/**', 'tests/**', 'source.lock.json', 'delivery-recipient.pem']
   workflow_dispatch:
     inputs:
       publish:
@@ -83,8 +78,7 @@ jobs:
     name: selene - bootimage - Ubuntu 22.04 Docker
     if: >-
       github.ref == 'refs/heads/main' &&
-      (github.event_name == 'workflow_dispatch' ||
-       (github.event_name == 'push' && startsWith(github.event.head_commit.message, '[selene-build-20261022] ')))
+      github.event_name == 'workflow_dispatch'
     needs: runner-image
     runs-on: ${{ needs.runner-image.outputs.RUNNER_IMAGE }}
     timeout-minutes: 350

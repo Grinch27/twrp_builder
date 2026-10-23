@@ -158,6 +158,10 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 2026-10-23 用户要求构建过程展示更多调试信息。本轮增强原生入口：获准的 Runner 清理逐项计时；APT 改用正常输出；新增受限数值遥测、约 60 秒心跳、实际阶段切换计时、Repo/Ninja 当前批次计数、磁盘/内存/Swap/负载和日志写入活跃度。原始日志只读取最多 256 KiB 尾部以提取计数，不回显日志文本或命令。`BUILD_DIAGNOSTICS` 直接向 Actions 输出再次核验的公开诊断，结束时将阶段耗时及诊断写入 Job Summary，并同步受限进度分支。未知字段、非法计数、非数值、布尔/NaN、未验证依赖和私有覆盖文本均不发布；报告故障保持真实子进程退出码。本地 66 项标准库测试、Bash/YAML/内嵌 Shell、actionlint、真实 388 项 manifest 和原始输入契约比对通过；新增测试包括 API 不可用时保留日志/摘要、真实子进程心跳及失败状态、字段和文本泄露边界。模块字面量索引仅在进入 compile 时生成一次，避免结束时重复扫描。新增行为仍需下一轮 Actions 实测，不能据本地合成测试认定远端已验证。
 
+2026-10-24 接续核验：用户已明确只推进 `TWRP Selene (Native)`，暂缓 All in One Docker。Docker YAML/辅助代码保留，移除 push/PR 触发和提交标记条件，仅保留 workflow_dispatch 恢复入口；项目专属 AGENTS.md 和 README 记录该范围，Part I 不变。此前登记的 Docker 验证运行已结束，不发起新的 Docker 任务。
+
+[388 项原生运行 39816458849](https://github.com/Grinch27/twrp_builder/actions/runs/39816458849) 已确认 failure。真实遥测和公开日志验证了心跳、Ninja 当前批次计数、实际阶段计时及再次核验的错误摘要输出；source_sync=481.733s、checkout=48.548s、preflight=3.909s、compile=82.815s，编译退出码 1，未进入镜像静态验收。结束采样可用磁盘 55,572 MiB、可用内存 14,797 MiB；Ninja 244/244 只描述当前批次，不代表镜像成功。新的 UNDEFINED_MODULE / SOONG_BOOTSTRAP_FAILURE 涉及七个公开 Blueprint 位置，但没有提取到缺失模块名字，下一步先核对公开源码的错误格式与诊断提取器，不据位置猜测依赖。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
