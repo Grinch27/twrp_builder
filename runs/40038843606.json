@@ -3,20 +3,21 @@
   "run_id": 40038843606,
   "builder_commit": "92d4e33a638662070f1819dbfaf09ececdfefd60",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "swap_free_mib": 2917,
-    "stage_elapsed_seconds": 4.2,
-    "memory_available_mib": 14602,
-    "log_bytes": 3965,
-    "elapsed_seconds": 700.7,
-    "log_idle_seconds": 0.1,
-    "load_1m": 2.83,
-    "disk_free_mib": 57052,
+    "load_1m": 7.36,
+    "disk_free_mib": 56467,
+    "log_bytes": 31896,
+    "elapsed_seconds": 807.3,
+    "memory_available_mib": 14679,
+    "swap_free_mib": 2888,
+    "log_idle_seconds": 14.3,
+    "stage_elapsed_seconds": 110.8,
     "progress": {
       "kind": "ninja",
-      "completed": 11,
+      "completed": 244,
       "total": 244,
-      "percent": 4.5
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.065,
@@ -25,7 +26,31 @@
       "repo_tool_verification": 0.044,
       "source_sync": 607.524,
       "checkout_verification": 81.454,
-      "preflight": 5.305
+      "preflight": 5.305,
+      "compile": 96.681
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "external/skia/Android.bp",
+      "line": 918
+    },
+    {
+      "path": "system/extras/simpleperf/Android.bp",
+      "line": 71
+    }
+  ],
+  "public_dependencies": [
+    "libdng_sdk",
+    "libjpeg",
+    "libopencsd_decoder",
+    "libpiex",
+    "libsfntly",
+    "libwebp-decode",
+    "libwebp-encode"
+  ]
 }
