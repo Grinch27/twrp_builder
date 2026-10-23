@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # Requirements: classify a failed compile without exporting private log text.
 # Ambiguity: unknown diagnostics remain unclassified; no guessed source fixes.
-# Research: public locations and dependencies must exist in pinned upstream Git.
-# Optimization: inspect bounded log fragments and at most 64 candidate files.
+# Research: inherited/generated dependencies need proof in other pinned public blobs.
+# Optimization: bounded log fragments, 64 locations and a 45-second literal search.
 # Risks: private overlay contents, paths, identifiers or credentials in errors.
 # Validation: fixed categories and Git-confirmed public metadata; synthetic tests.
 """Return restricted compiler diagnostics, never compiler output or source text."""
@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import time
 import xml.etree.ElementTree as ET
 
 from source_inputs import load_lock, relative_path
@@ -31,9 +32,10 @@ RULES = {
 }
 LOCATION = re.compile(r'(?<![\w/.-])([A-Za-z0-9_./+-]+):([0-9]{1,7})(?::[0-9]+)?:')
 DEPENDENCY = re.compile(r'(?:undefined module|missing dependencies:)\s*"([A-Za-z0-9_.+-]{1,128})"')
+NAME = re.compile(r'[A-Za-z0-9_.+-]{1,128}\Z')
 
 
-def public_file(source, name, projects, excluded):
+def public_file(source, name, projects, excluded, timeout=10):
     """Use pinned Git blobs rather than private overlays or arbitrary log paths."""
     try:
         relative_path(name)
@@ -52,15 +54,15 @@ def public_file(source, name, projects, excluded):
                 return None
             root = Path(source) / prefix
             head = subprocess.check_output(['git', '-C', str(root), 'rev-parse', 'HEAD'],
-                                           stderr=subprocess.DEVNULL, timeout=10).decode().strip()
+                                           stderr=subprocess.DEVNULL, timeout=timeout).decode().strip()
             if head != revision:
                 return None
             size = subprocess.check_output(['git', '-C', str(root), 'cat-file', '-s', revision + ':' + suffix],
-                                           stderr=subprocess.DEVNULL, timeout=10)
+                                           stderr=subprocess.DEVNULL, timeout=timeout)
             if int(size) > 2 * 1024**2:
                 return None
             data = subprocess.check_output(['git', '-C', str(root), 'show', revision + ':' + suffix],
-                                           stderr=subprocess.DEVNULL, timeout=10)
+                                           stderr=subprocess.DEVNULL, timeout=timeout)
             if len(data) > 2 * 1024**2 or b'\0' in data:
                 return None
             return data.decode('utf-8')
@@ -69,10 +71,81 @@ def public_file(source, name, projects, excluded):
     return None
 
 
+def dependency_names(line):
+    """Recognize quoted Blueprint names and Soong's bare comma-separated list."""
+    result = set(DEPENDENCY.findall(line))
+    missing = re.search(r'missing dependencies:\s*(.*)$', line)
+    if missing:
+        result.update(name.strip() for name in missing[1].split(',')[:128]
+                      if NAME.fullmatch(name.strip()))
+    return result
+
+
+def public_dependency_sources(source, projects, candidates, excluded):
+    """Find literal proof in pinned public Git, never in worktree/default overlays."""
+    pending = {name for name in candidates if NAME.fullmatch(name)}
+    if not pending:
+        return [], set()
+    deadline = time.monotonic() + 45
+    evidence, verified, seen = [], set(), set()
+    priority = {'build/soong': 0, 'frameworks/base': 1}
+    ordered = sorted(projects, key=lambda p: priority.get(p.get('path', p.get('name')), 2))
+    for project in ordered:
+        remaining = deadline - time.monotonic()
+        if not pending or remaining <= 0 or len(seen) >= 32:
+            break
+        prefix = project.get('path', project.get('name', ''))
+        revision = project.get('revision', '')
+        try:
+            relative_path(prefix)
+            if not re.fullmatch(r'[0-9a-f]{40}', revision):
+                continue
+            root = Path(source) / prefix
+            head = subprocess.check_output(['git', '-C', str(root), 'rev-parse', 'HEAD'],
+                                           stderr=subprocess.DEVNULL,
+                                           timeout=min(2, remaining)).decode().strip()
+            if head != revision:
+                continue
+            patterns = [arg for name in sorted(pending)[:128] for arg in ('-e', json.dumps(name))]
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            result = subprocess.run(['git', '-C', str(root), 'grep', '-l', '-z', '-F',
+                                     *patterns, revision, '--', '*.bp', '*.mk', '*.go'],
+                                    stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                                    timeout=min(2, remaining), check=False)
+            if result.returncode not in (0, 1) or len(result.stdout) > 1024**2:
+                continue
+            for raw in result.stdout.decode('utf-8').split('\0'):
+                remaining = deadline - time.monotonic()
+                if remaining < 0.15 or not pending or len(seen) >= 32:
+                    break
+                if not raw.startswith(revision + ':'):
+                    continue
+                name = prefix + '/' + raw[len(revision) + 1:]
+                if name in seen or not re.fullmatch(r'[A-Za-z0-9_./+-]+', name):
+                    continue
+                seen.add(name)
+                text = public_file(source, name, projects, excluded,
+                                   timeout=min(2, remaining / 3))
+                if text is None:
+                    continue
+                hits = sorted(dep for dep in pending if json.dumps(dep) in text)
+                if hits:
+                    line = next(i + 1 for i, value in enumerate(text.splitlines())
+                                if any(json.dumps(dep) in value for dep in hits))
+                    evidence.append({'path': name, 'line': line, 'dependencies': hits})
+                    verified.update(hits)
+                    pending.difference_update(hits)
+        except (ValueError, OSError, UnicodeError, subprocess.SubprocessError):
+            continue
+    return evidence, verified
+
+
 def summarize(text, manifest, source, excluded=()):
     categories = [name for name, rule in RULES.items() if re.search(rule, text, re.I)]
     projects = ET.fromstring(manifest).findall('project')
-    locations, dependencies, cache = [], set(), {}
+    locations, dependencies, candidates, cache = [], set(), set(), {}
     for line in text.splitlines():
         for match in LOCATION.finditer(line):
             name, number = match.groups()
@@ -85,12 +158,19 @@ def summarize(text, manifest, source, excluded=()):
             public = cache[name]
             if public is None:
                 continue
-            for dependency in DEPENDENCY.findall(line):
+            names = dependency_names(line)
+            candidates.update(names)
+            for dependency in names:
                 # Only a literal present in this exact public Git blob is eligible.
                 if json.dumps(dependency) in public:
                     dependencies.add(dependency)
-    return {'categories': categories or ['UNCLASSIFIED_COMPILE_FAILURE'],
-            'public_locations': locations, 'public_dependencies': sorted(dependencies)[:128]}
+    evidence, inherited = public_dependency_sources(source, projects, candidates - dependencies, excluded)
+    result = {'categories': categories or ['UNCLASSIFIED_COMPILE_FAILURE'],
+              'public_locations': locations,
+              'public_dependencies': sorted(dependencies | inherited)[:128]}
+    if evidence:
+        result['public_dependency_sources'] = evidence
+    return result
 
 
 def main():

@@ -172,3 +172,18 @@ exit 7
                 self.assertNotIn('private-token', text)
                 self.assertNotIn('private API response', text)
                 self.assertNotIn('never-display', text)
+
+    def test_replaced_manifest_cannot_authorize_public_diagnostics(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for name in ('output', 'manifest', 'inputs'):
+                (root / name).mkdir()
+            (root / 'output/status.json').write_text('{"stage":"compile","exit_code":1}')
+            for name in ('manifest', 'inputs'):
+                (root / name / 'default.xml').write_text('<manifest><project name="private-project"/></manifest>')
+            output = io.StringIO()
+            with patch.object(sys, 'argv', ['report_progress.py', '--work', str(root)]):
+                with contextlib.redirect_stdout(output), self.assertRaises(ValueError):
+                    report_progress.main()
+            self.assertNotIn('BUILD_DIAGNOSTICS', output.getvalue())
+            self.assertNotIn('private-project', output.getvalue())

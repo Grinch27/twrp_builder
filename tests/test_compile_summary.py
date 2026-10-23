@@ -130,3 +130,76 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertIn('DISK_EXHAUSTED', result['categories'])
         self.assertIn('HOST_TOOL_EXECUTION_FAILURE', result['categories'])
         self.assertNotIn('private.so', json.dumps(result))
+
+    def add_public_default(self, name='inherited.bp'):
+        text = ('package public\nvar inherited = "libinherited"\n' if name.endswith('.go') else
+                'java_defaults { name: "public_defaults", libs: ["libinherited"] }\n')
+        (self.project / name).write_text(text)
+        self.git('add', name)
+        self.git('commit', '--quiet', '-m', 'public inherited dependency fixture')
+        revision = self.git('rev-parse', 'HEAD').strip()
+        return self.manifest.replace(self.revision.encode(), revision.encode())
+
+    def test_soong_bare_list_keeps_only_pinned_public_dependency_names(self):
+        result = summarize('external/public/Android.bp:1: module demo missing dependencies: libpublic, secret_value',
+                           self.manifest, self.source)
+        self.assertEqual(result['public_dependencies'], ['libpublic'])
+        self.assertNotIn('secret_value', json.dumps(result))
+
+    def test_inherited_dependency_requires_separate_pinned_public_evidence(self):
+        manifest = self.add_public_default()
+        text = 'external/public/Android.bp:1: depends on undefined module "libinherited"'
+        result = summarize(text, manifest, self.source)
+        self.assertEqual(result['public_dependencies'], ['libinherited'])
+        self.assertEqual(result['public_locations'], [{'path': 'external/public/Android.bp', 'line': 1}])
+        self.assertEqual(result['public_dependency_sources'], [
+            {'path': 'external/public/inherited.bp', 'line': 1, 'dependencies': ['libinherited']}])
+        value = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                       result, self.source, manifest)
+        self.assertEqual(value['public_dependencies'], ['libinherited'])
+        self.assertEqual(value['public_dependency_sources'], result['public_dependency_sources'])
+
+    def test_go_generated_dependency_literal_can_be_verified_without_exporting_code(self):
+        manifest = self.add_public_default('generated.go')
+        result = summarize('external/public/Android.bp:1: module demo missing dependencies: libinherited',
+                           manifest, self.source)
+        self.assertEqual(result['public_dependencies'], ['libinherited'])
+        self.assertTrue(result['public_dependency_sources'][0]['path'].endswith('generated.go'))
+        self.assertNotIn('java_defaults', json.dumps(result))
+
+    def test_excluded_default_file_never_authorizes_a_dependency(self):
+        manifest = self.add_public_default()
+        result = summarize('external/public/Android.bp:1: depends on undefined module "libinherited"',
+                           manifest, self.source, {'external/public/inherited.bp'})
+        self.assertEqual(result['public_dependencies'], [])
+        self.assertNotIn('public_dependency_sources', result)
+
+    def test_private_error_location_cannot_trigger_global_public_literal_search(self):
+        manifest = self.add_public_default()
+        result = summarize('external/public/BoardConfig.mk:1: depends on undefined module "libinherited"',
+                           manifest, self.source, {'external/public/BoardConfig.mk'})
+        self.assertEqual(result['public_dependencies'], [])
+        self.assertNotIn('public_dependency_sources', result)
+
+    def test_progress_rechecks_global_evidence_instead_of_trusting_summary_fields(self):
+        manifest = self.add_public_default()
+        (self.project / 'inherited.bp').write_text('name: "private_worktree_value"\n')
+        summary = {'categories': ['UNDEFINED_MODULE'], 'public_locations': [],
+                   'public_dependencies': ['libinherited', 'private_worktree_value'],
+                   'public_dependency_sources': [
+                       {'path': 'external/public/inherited.bp', 'line': 1,
+                        'dependencies': ['libinherited', 'private_worktree_value']} ]}
+        value = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                       summary, self.source, manifest)
+        self.assertEqual(value['public_dependencies'], ['libinherited'])
+        self.assertNotIn('private_worktree_value', json.dumps(value))
+        excluded = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                          summary, self.source, manifest, {'external/public/inherited.bp'})
+        self.assertEqual(excluded['public_dependencies'], [])
+
+    def test_unknown_name_in_another_worktree_file_is_not_public_evidence(self):
+        (self.project / 'untracked.go').write_text('var Name = "private_worktree_value"\n')
+        result = summarize('external/public/Android.bp:1: module demo missing dependencies: private_worktree_value',
+                           self.manifest, self.source)
+        self.assertEqual(result['public_dependencies'], [])
+        self.assertNotIn('private_worktree_value', json.dumps(result))

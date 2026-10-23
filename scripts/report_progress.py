@@ -94,6 +94,23 @@ def record(status, run_id, commit, summary=None, source=None, manifest=None, exc
                                 if isinstance(c, str) and c in
                                 (RULES.keys() | {'UNCLASSIFIED_COMPILE_FAILURE'})][:16]
         result['public_locations'] = locations
+        sources = []
+        for evidence in summary.get('public_dependency_sources', [])[:32]:
+            name, line = evidence.get('path', ''), evidence.get('line', 0)
+            if (not isinstance(name, str) or not re.fullmatch(r'[A-Za-z0-9_./+-]+', name)
+                    or not isinstance(line, int) or isinstance(line, bool) or not 0 < line < 10**7):
+                continue
+            text = public_file(source, name, projects, excluded)
+            if text is None:
+                continue
+            names = sorted({dep for dep in evidence.get('dependencies', [])
+                            if isinstance(dep, str) and re.fullmatch(r'[A-Za-z0-9_.+-]{1,128}', dep)
+                            and json.dumps(dep) in text})[:128]
+            if names:
+                sources.append({'path': name, 'line': line, 'dependencies': names})
+                texts.append(text)
+        if sources:
+            result['public_dependency_sources'] = sources
         result['public_dependencies'] = sorted({name for name in summary.get('public_dependencies', [])
             if isinstance(name, str) and re.fullmatch(r'[A-Za-z0-9_.+-]{1,128}', name)
             and any(json.dumps(name) in text for text in texts)})[:128]
@@ -117,6 +134,9 @@ def render_summary(value):
             lines.append(f"- {key}: " + ', '.join('`' + item + '`' for item in value[key]))
     for location in value.get('public_locations', []):
         lines.append(f"- Public source: `{location['path']}:{location['line']}`")
+    for source in value.get('public_dependency_sources', []):
+        lines.append(f"- Dependency evidence: `{source['path']}:{source['line']}`; "
+                     + ', '.join('`' + name + '`' for name in source['dependencies']))
     lines += ['', 'Ninja progress is per batch. Device functionality remains NOT_TESTED.', '']
     return '\n'.join(lines)
 
@@ -184,10 +204,15 @@ def main():
     path = args.work / 'output/compile-error-summary.json'
     summary = json.loads(path.read_text()) if path.is_file() else None
     manifest = args.work / 'manifest/default.xml'
+    manifest_data = manifest.read_bytes() if manifest.is_file() else None
+    if manifest_data is not None:
+        expected = compose_manifest(load_lock(), (args.work / 'inputs/default.xml').read_bytes())
+        if manifest_data != expected:
+            raise ValueError('diagnostic manifest differs from the locked graph')
     excluded = {entry['destination'].removeprefix('overlay/') for entry in load_lock()['files']}
     run_id, commit = int(os.environ['GITHUB_RUN_ID']), os.environ['GITHUB_SHA']
     value = record(status, run_id, commit, summary,
-                   args.work / 'android', manifest.read_bytes() if manifest.is_file() else None, excluded,
+                   args.work / 'android', manifest_data, excluded,
                    metrics=read_json(args.work / 'output/telemetry.json'),
                    source_summary=read_json(args.work / 'output/source-error-summary.json'))
     print('BUILD_DIAGNOSTICS ' + json.dumps(value, sort_keys=True), flush=True)
@@ -201,10 +226,7 @@ def main():
     client.publish(value)
     # The pinned catalog is needed once per attempt, not on every heartbeat/exit.
     if status['stage'] == 'compile' and 'exit_code' not in status:
-        expected = compose_manifest(load_lock(), (args.work / 'inputs/default.xml').read_bytes())
-        if manifest.read_bytes() != expected:
-            raise ValueError('module catalog manifest mismatch')
-        names = public_module_names(expected, args.work / 'android')
+        names = public_module_names(manifest_data, args.work / 'android')
         client.publish({'schema': 1, 'run_id': run_id, 'builder_commit': commit,
                         'kind': 'literal-public-bp-names', 'public_module_names': names}, 'catalogs')
 
