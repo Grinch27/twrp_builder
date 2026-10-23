@@ -3,20 +3,21 @@
   "run_id": 40041039792,
   "builder_commit": "15e4c1a1089df2c2a8f976c33c0a8ccbb48b6335",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "elapsed_seconds": 440.6,
-    "load_1m": 3.56,
-    "log_idle_seconds": 0.8,
-    "stage_elapsed_seconds": 8.0,
-    "swap_free_mib": 2946,
-    "memory_available_mib": 14518,
-    "log_bytes": 14878,
-    "disk_free_mib": 56645,
+    "memory_available_mib": 14614,
+    "swap_free_mib": 2940,
+    "log_idle_seconds": 0.7,
+    "stage_elapsed_seconds": 127.3,
+    "elapsed_seconds": 559.8,
+    "load_1m": 10.96,
+    "log_bytes": 31360,
+    "disk_free_mib": 56131,
     "progress": {
       "kind": "ninja",
-      "completed": 108,
+      "completed": 244,
       "total": 244,
-      "percent": 44.3
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.075,
@@ -25,7 +26,21 @@
       "repo_tool_verification": 0.051,
       "source_sync": 379.79,
       "checkout_verification": 44.778,
-      "preflight": 5.816
+      "preflight": 5.816,
+      "compile": 126.708
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "frameworks/av/media/libstagefright/flac/dec/Android.bp",
+      "line": 20
+    }
+  ],
+  "public_dependencies": [
+    "libFLAC"
+  ]
 }
