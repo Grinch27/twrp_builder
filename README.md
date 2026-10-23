@@ -20,7 +20,7 @@ flowchart TD
 | 暂缓的 Docker 工作流 | `.github/workflows/twrp_allinone.yml`，保留代码和手动入口，暂停 push/PR 自动运行 |
 | Runner | 共享 `resolve-runner-image@main` 动态解析 Ubuntu x64 |
 | 编译容器 | `ubuntu:22.04`，与 Android 12.1 的历史主机工具依赖匹配；宿主 Runner 独立更新 |
-| 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和公开补充项目 SHA |
+| 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和 115 项公开补充项目 SHA，共 397 项 |
 | 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j4` |
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；四任务。原生路线使用 Runner 可用内存，Docker 路线另限 14 GiB |
 | 磁盘检查 | 清理后至少 50 GiB；编译前至少 18 GiB；不足立即失败 |
@@ -33,7 +33,7 @@ flowchart TD
 
 后续补齐同版本 `tools/tradefederation/prebuilts@2a5fd21caf0d161ef6fc2efec1fadf2f31986039`，其原始 Java import/filegroup/JAR 提供两个缺失模块。285 项运行同步和校验通过后，Soong 报告下一组 DEQP、Python 和 VNDK 缺项；已按公开提供方及其直接声明的依赖补齐，实际状态以 [AUDIT.md](AUDIT.md) 的运行证据为准。2026-10-22 用户明确要求持续修正、构建直至得到成品，因此每次失败均保留真实失败状态，再审查和修正后继续尝试，不再将旧的一轮停止约定作为暂停理由。
 
-298 项运行完成完整同步和预检后，Soong 继续报告 Mockito、Objenesis、Google Java Format、Connected Apps SDK、dexlib2 与 modules-utils 缺项。随后补齐这些提供方和 Robolectric/Car 直接引用的同版本项目；326 项运行继续报告 Rust 缺项，363 项运行继续报告 ICU 测试引用的 `junit-params`。首次原生 364 项运行在 Ubuntu 26.04 通过官方旧 ABI 包安装、完整同步与预检，随后报告另外八个缺失依赖；375 项运行继续报告 benchmark、libusb 和 pybind11 头文件缺项，378 项运行报告 CTS 的 `trebuchet-core` 缺项。383 项运行仍在 Soong 因 libtinyalsa、libvixl、libvixld、server_configurable_flags 未定义而失败。386 项运行继续报告 Bionic 的 libjemalloc5 缺项。387 项运行继续报告 fontTools 缺项。当前合计锁定 388 项，另补齐同版本完整 external/fonttools；公开模块字面量索引用于静态核对，实际构建仍是验收依据。当前尚未取得成功镜像。
+298 项运行完成完整同步和预检后，Soong 继续报告 Mockito、Objenesis、Google Java Format、Connected Apps SDK、dexlib2 与 modules-utils 缺项。随后补齐这些提供方和 Robolectric/Car 直接引用的同版本项目；326 项运行继续报告 Rust 缺项，363 项运行继续报告 ICU 测试引用的 `junit-params`。首次原生 364 项运行在 Ubuntu 26.04 通过官方旧 ABI 包安装、完整同步与预检，随后报告另外八个缺失依赖；375 项运行继续报告 benchmark、libusb 和 pybind11 头文件缺项，378 项运行报告 CTS 的 `trebuchet-core` 缺项。383 项运行仍在 Soong 因 libtinyalsa、libvixl、libvixld、server_configurable_flags 未定义而失败。386 项运行继续报告 Bionic 的 libjemalloc5 缺项。387 项运行继续报告 fontTools 缺项。388 项补齐同版本 external/fonttools 后，最新运行继续报告 Skia 和 simpleperf 缺项。当前补齐其六个完整提供方、Skia 直接引用的 harfbuzz_ng，以及 SDK 库默认配置引用的 apifinder 和后者直接引用的 cmdline-tools，合计锁定 397 项；公开模块字面量索引用于静态核对，实际构建仍是验收依据。当前尚未取得成功镜像。
 
 原生入口按 AGENTS.md 使用统一的 `runner-image` 输出，以及经核对的 `checkout@main`、`upload-artifact@main` 和共享 `run-sudo@main`。主机依赖优先安装 Ubuntu 二进制包；旧工具需要的 ABI 5 使用 Ubuntu 官方 Jammy `libtinfo5`、`libncurses5` 的 `6.3-2ubuntu0.3` amd64 安装包，逐个核验 SHA-256、包名、版本、架构与安装状态，不自行编译 ncurses，不修改全局 Java/Python。JDK、Clang 仍来自锁定源码。此路线尚须完整编译与静态验收，不能据静态检查认定稳定。
 
@@ -58,7 +58,7 @@ flowchart TD
 
 阶段耗时由构建脚本在实际切换点记录。心跳和字段过滤失败不会替换编译退出码。完整源码、命令、原始编译/同步日志及未知诊断文本仍留在临时 Runner；新增输出只含白名单数值和已核验公开字段。进度分支在阶段切换时同步这些信息；心跳直接写入 Actions 日志，模块索引仅在进入 compile 时生成一次。
 
-388 项运行已实际验证上述遥测，但在七个 SDK 库的 Soong 缺依赖处失败，旧摘要没有提取到模块名。诊断器现支持未加引号的缺项列表，并在有公开报错位置的前提下，限时查找其他锁定 Blueprint/Make/Go Git blob 中的依赖字面量，单列证据位置。报告端再次核验这些证据及整个有效 manifest；私有覆盖、工作树改动和未知名字不能授权公开输出。这项改动不改变源码图，待下一轮实际失败或成功验证。
+388 项运行已实际验证上述遥测，但在七个 SDK 库的 Soong 缺依赖处失败，旧摘要没有提取到模块名。诊断器现支持未加引号的缺项列表，并在有公开报错位置的前提下，限时查找其他锁定 Blueprint/Make/Go Git blob 中的依赖字面量，单列证据位置。报告端再次核验这些证据及整个有效 manifest；私有覆盖、工作树改动和未知名字不能授权公开输出。同一 388 项图的第 9 轮实际返回另一组 Skia/simpleperf 公开错误并提取到七个缺项；这不证明此前 SDK 库已修复，也没有在该次实际运行中覆盖所有新增取证路径。
 
 运行阶段及经过公开 Git blob 再次校验的诊断，可在 `build-progress` 分支的 `runs/<run_id>.json` 读取。`catalogs/<run_id>.json` 仅列出锁定公开 Git blob 中的模块名字面量，用于核对依赖提供方；它不保证命名空间解析、生成模块或整个图有效。有效 manifest 会重新组合比对，工作树和私有覆盖文件不参与索引。该分支不存私有源码、manifest 原文、原始日志或镜像；进度失败不影响真实构建退出状态。GitHub token 只用于宿主进度上传，不传入编译容器或原生编译子进程。
 

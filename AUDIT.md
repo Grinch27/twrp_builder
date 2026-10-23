@@ -164,13 +164,19 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 2026-10-24 诊断修正：七个报错位置的公开锁定源码均为使用 framework-module-defaults 的 java_sdk_library。锁定 Soong 的 android/module.go 确有未加引号、逗号分隔的 missing dependencies 错误格式；继承或生成依赖也可能不在报错的同一 Blueprint 内。新增该格式解析和最长 45 秒的跨项目公开 Git 字面量取证，最多 32 个证据文件；只接受从已核验公开错误位置提取的候选名，再次核验 pinned HEAD/blob 并排除私有覆盖。报告端也重新组合并比对锁定有效 manifest，避免替换清单授权诊断。没有将推测名字作为缺项，没有新增源码项目。74 项标准库测试、actionlint 和差异检查通过，包含继承/生成字面量、私有与未跟踪内容隔离、证据重验及替换 manifest 拒绝；真实 388 项图的下一轮结果仍待验证。
 
+[388 项原生第 9 轮 40038843606](https://github.com/Grinch27/twrp_builder/actions/runs/40038843606) 使用 `92d4e33a638662070f1819dbfaf09ececdfefd60`，远端 74 项测试、actionlint 和公开 smoke 均通过。完整同步 607.524s、checkout 81.454s、预检 5.305s 后，compile 96.681s 返回 exit 1；作业已确认 failure。公开日志有 16 条 BUILD_METRICS 和最终再次核验的 BUILD_DIAGNOSTICS。摘要这次来自锁定 `external/skia/Android.bp:918` 和 `system/extras/simpleperf/Android.bp:71`，实际缺项为 libdng_sdk、libjpeg、libopencsd_decoder、libpiex、libsfntly、libwebp-decode、libwebp-encode。源码图没有改变而报错集合改变，不把此前七个 SDK 库视为已修复，也不将本次视为全部新增取证路径的真实覆盖。未进入镜像静态验收，产物步骤全部跳过。
+
+下一轮锁定同一 android-12.1.0_r4 的九个完整公开项目：external/dng_sdk@9f8d75246e1989e4b325f3252a3912affcc1b22a、external/libjpeg-turbo@e78a6612493d491c4c24069db740022f2822f284、external/OpenCSD@bec745a24a3c9657ae5726e7b307760e69bdc288、external/piex@3778c33a5928ad2a1874ca4f9dc54c0467b689e6、external/sfntly@18570ec0301a59e3ddb0f3720db4cf00f833021c、external/webp@8c9c554a0dcb0f40f55ea7c440077bedd66194f1，提供上述七个实际缺项。另沿锁定 Skia 的直接定义补齐 external/harfbuzz_ng@29fd2884ecc5ffdb0b3ec56ebde8aeeaeea00de3；沿此前 SDK 库共用的 packages/modules/common/sdk/ModuleDefaults.bp:128 插件引用，补齐 tools/apifinder@eaf25fb9a7f47791310b8f3ba621311ec58c0d9b 及其直接引用 lint_api 的提供方 prebuilts/cmdline-tools@859a41090160f26e46438cd32f284ee1bab0d7ef。后三项来自公开直接引用预检，不是本轮摘要新增报告的实际缺项。九项共 3,759 个 Git 文件、172,756,426 bytes，tag/完整 Git tree、模块定义和已识别 Blueprint 引用均已核对；结合现有字面量索引未发现剩余名字缺席，仍不证明变体、命名空间或完整图正确。合计 397 项，原 282 项身份、十个私有输入、12 条 copy/link、只读归档和镜像验收不变。
+
+397 项提交前，本地 74 项标准库测试、全部 Bash 语法、两份 YAML 及其内嵌 shell、actionlint 1.7.7、实际锁定归档 manifest 组合和差异检查全部通过；逐项比较确认先前所有 public pin 与其余输入/设备/验收契约均未改变。Docker 触发仍仅 workflow_dispatch。上述静态结果不能替代下一轮实际构建。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：388 项图的七个 SDK 库缺依赖尚未取得可核验模块名，增强诊断后仍需真实 Soong 和完整镜像编译验证；尚无成功 boot.img。
+当前最大不确定性：397 项图是否闭合，以及实际 Soong、镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 

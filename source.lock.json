@@ -641,6 +641,60 @@
       "path": "external/fonttools",
       "revision": "e76853bf40a5da5d1967ae174747408d080c17d6",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/dng_sdk",
+      "path": "external/dng_sdk",
+      "revision": "9f8d75246e1989e4b325f3252a3912affcc1b22a",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libjpeg-turbo",
+      "path": "external/libjpeg-turbo",
+      "revision": "e78a6612493d491c4c24069db740022f2822f284",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/OpenCSD",
+      "path": "external/OpenCSD",
+      "revision": "bec745a24a3c9657ae5726e7b307760e69bdc288",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/piex",
+      "path": "external/piex",
+      "revision": "3778c33a5928ad2a1874ca4f9dc54c0467b689e6",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/sfntly",
+      "path": "external/sfntly",
+      "revision": "18570ec0301a59e3ddb0f3720db4cf00f833021c",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/webp",
+      "path": "external/webp",
+      "revision": "8c9c554a0dcb0f40f55ea7c440077bedd66194f1",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/harfbuzz_ng",
+      "path": "external/harfbuzz_ng",
+      "revision": "29fd2884ecc5ffdb0b3ec56ebde8aeeaeea00de3",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/tools/apifinder",
+      "path": "tools/apifinder",
+      "revision": "eaf25fb9a7f47791310b8f3ba621311ec58c0d9b",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/prebuilts/cmdline-tools",
+      "path": "prebuilts/cmdline-tools",
+      "revision": "859a41090160f26e46438cd32f284ee1bab0d7ef",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
