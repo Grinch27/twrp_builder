@@ -3,20 +3,21 @@
   "run_id": 40081320145,
   "builder_commit": "009c1fef15913aab628fa2e7fa29dbd88a4ccc5b",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "swap_free_mib": 2948,
-    "disk_free_mib": 55760,
-    "elapsed_seconds": 472.2,
-    "stage_elapsed_seconds": 13.8,
-    "memory_available_mib": 14618,
-    "log_bytes": 19119,
-    "log_idle_seconds": 0.1,
-    "load_1m": 4.4,
+    "swap_free_mib": 2942,
+    "elapsed_seconds": 593.6,
+    "stage_elapsed_seconds": 135.3,
+    "log_idle_seconds": 5.7,
+    "load_1m": 10.03,
+    "memory_available_mib": 14756,
+    "log_bytes": 31545,
+    "disk_free_mib": 55345,
     "progress": {
       "kind": "ninja",
-      "completed": 143,
+      "completed": 244,
       "total": 244,
-      "percent": 58.6
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.077,
@@ -25,7 +26,23 @@
       "repo_tool_verification": 0.053,
       "source_sync": 395.969,
       "checkout_verification": 54.14,
-      "preflight": 6.027
+      "preflight": 6.027,
+      "compile": 129.762
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "packages/modules/DnsResolver/Android.bp",
+      "line": 324
+    }
+  ],
+  "public_dependencies": [
+    "libquiche",
+    "libring",
+    "liburl"
+  ]
 }
