@@ -257,13 +257,20 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 当前共 500 项（原始 282 项、218 项公开补充），所有既有 pin、十个私有输入、12 条 copy/link、构建目标和镜像静态验收不变。继续保持 Native、publish=false、同一收件证书和首查 12 分钟后每分钟一次的检查节奏。 提交前本地 75 项标准库测试、Bash、两份 YAML/20 段内嵌 shell、actionlint 1.7.7、严格本地的实际 manifest 身份组合、六项官方清单/commit 身份复核及 git diff --check 全部通过。
 
+
+[500 项原生运行 40107188457](https://github.com/Grinch27/twrp_builder/actions/runs/40107188457) 使用 b4a179f5083da1a09105558123d292223763510e，已确认整体 failure；远端标准库测试、actionlint、公开 smoke、主机准备及源码身份校验通过。source_sync 576.650s、checkout 137.848s、preflight 6.609s 后，compile 99.575s 以 exit 1 结束。受限摘要报告 packages/modules/Wifi/service/Android.bp:52 引用的 ksoap2 未定义；没有通过静态验收的镜像。
+
+本轮补齐同一 android-12.1.0_r4 的完整 external/ksoap2@93a77e277f823796a75ad9e8915dd28349e39023，官方 tag 的 commit、完整 Git tree、48 文件及 352,644 bytes 已重新核对。根 Blueprint 实际定义 java_library/ksoap2，使用 system_current SDK、min SDK 30，未声明额外模块库引用；这不代替实际变体或完整 Soong 图验证。合计 501 项（原始 282 项、219 项公开补充），所有既有 pin、十个私有输入、12 条 copy/link 和镜像静态验收均不变。
+
+本地工作区因自动维护清理丢失，包括旧交付私钥；已从公开 main 恢复 builder，并仅从已锁定的只读归档输入恢复 default.xml，用于严格本地身份验证。旧收件私钥没有归档副本，且此前没有成功成品；依照 AGENTS 交付约定，为后续构建生成新的本地 3072 位 RSA 私钥与对应收件证书，逐字节比对导出公钥一致。密钥强度与旧证书相同，私钥仍在仓库及 Runner 之外；本次只提交公共 delivery-recipient.pem，CMS AES-256-GCM/RSA-OAEP 和 publish=false 不变。原清理前的研究数据不作为本轮已经重新执行的本地检查证据。 本轮新环境中 75 项标准库测试、Bash、两份 YAML/20 段内嵌 shell、经官方校验和验证的 actionlint 1.7.7、锁定 manifest 的本地 501 项组合、既有 pin/输入契约比较和 git diff --check 均通过；收件公钥与本地私钥再次匹配。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：500 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：501 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
