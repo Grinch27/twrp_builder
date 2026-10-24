@@ -989,6 +989,36 @@
       "path": "external/pdfium",
       "revision": "7e830b781be02c634e63e0012ab5b89fa3622737",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/cbor-java",
+      "path": "external/cbor-java",
+      "revision": "165c9fe482a2efe09dc053ac799d5d9eb766d694",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/exoplayer",
+      "path": "external/exoplayer",
+      "revision": "b97625b0d8d7f203b1d7ccef529e5b369bd89e95",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/jacoco",
+      "path": "external/jacoco",
+      "revision": "628b88e7006534fc0d82e1d419035168a4a99de3",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/nist-sip",
+      "path": "external/nist-sip",
+      "revision": "788c977217480e51c11d9484c77594b518fa9540",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/ims",
+      "path": "external/ims",
+      "revision": "f25338249186d77071c488bb2b45bd785062aab1",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
