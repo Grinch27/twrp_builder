@@ -971,6 +971,24 @@
       "path": "prebuilts/ndk",
       "revision": "bef705681e8b8a34de4a530e14523c695466b13b",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libcups",
+      "path": "external/libcups",
+      "revision": "fe0ba0081e2188662679f6c97f5904ce1ac51c9e",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/Nfc",
+      "path": "packages/apps/Nfc",
+      "revision": "d1c8551b31965fbc50513ade9e034209038e0f59",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/pdfium",
+      "path": "external/pdfium",
+      "revision": "7e830b781be02c634e63e0012ab5b89fa3622737",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
