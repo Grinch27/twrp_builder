@@ -917,6 +917,12 @@
       "path": "frameworks/minikin",
       "revision": "6816c3856cd0ff46dfec461e36ba3ecfa7f4ce64",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/cpu_features",
+      "path": "external/cpu_features",
+      "revision": "1fa3785a766cf3a009edd5048e0b4a2c48f788c3",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
