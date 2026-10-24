@@ -1157,6 +1157,24 @@
       "path": "packages/apps/PhoneCommon",
       "revision": "8cfe17c2aa6972af863e7a78de1b364c783a3a39",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/wilhelm",
+      "path": "frameworks/wilhelm",
+      "revision": "c62ed86e8a9a4b627f3df39c64604a7eedfc53cf",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/system/libartpalette",
+      "path": "system/libartpalette",
+      "revision": "77055a71c70b08ba706c40733149fa5449da2a9b",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/oboe",
+      "path": "external/oboe",
+      "revision": "79ec5d57a7aa727fb696996ef0f5531976ff6780",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
