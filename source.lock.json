@@ -911,6 +911,12 @@
       "path": "frameworks/libs/net",
       "revision": "b94846db0fd58ffcbd10e692ca0d2a3472929705",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/minikin",
+      "path": "frameworks/minikin",
+      "revision": "6816c3856cd0ff46dfec461e36ba3ecfa7f4ce64",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
