@@ -851,6 +851,12 @@
       "path": "frameworks/compile/slang",
       "revision": "74399fa0cd28275c4f7cdf213b66bbd4c64e021e",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libopus",
+      "path": "external/libopus",
+      "revision": "e00ebcdb4328689e18676d25f4fcbccfd125747c",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

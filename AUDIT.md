@@ -178,13 +178,19 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 423 项提交前，本地 74 项标准库测试、Bash、两份 YAML 及内嵌 shell、actionlint 1.7.7、实际归档 manifest 的 423 项组合、原有 pin/输入契约比较和 git diff --check 均通过。Docker 仍只有手动入口；实际完整构建结果待第 11 轮验证。
 
+[423 项原生第 11 轮 40043134500](https://github.com/Grinch27/twrp_builder/actions/runs/40043134500) 使用 `d7d631b531ab31219499b808075670b2492df0f5`，远端标准库测试、actionlint、公开 smoke 与完整源码校验通过。source_sync 605.645s、checkout 49.369s、preflight 6.169s 后，compile 129.710s 返回 exit 1；作业已确认 failure。受限摘要本轮报告 `external/webrtc/Android.bp:215` 引用的 libopus 未定义，未生成可交付镜像。该名字已存在于 423 项公开字面量索引，实际失败再次说明名字出现不证明可用命名空间、模块类型或变体，未据索引跳过真实构建错误。
+
+按官方清单确认正确项目路径为 external/libopus，锁定同一 android-12.1.0_r4 的完整 `platform/external/libopus@e00ebcdb4328689e18676d25f4fcbccfd125747c`，430 个 Git 文件、4,270,318 bytes；官方 tag、FETCH_HEAD、完整 Git tree 和 libopus 的真实模块定义均已核对，其已识别 Blueprint 引用没有额外缺席的名字。另从原锁定 Eigen 的 blas/Android.bp 复核 libF77blas 和 libF77blasV8 的真实定义，未误加不存在的 blas 项目。当前共 424 项；原项目 SHA、十个私有输入、12 条 copy/link、构建目标和镜像验收均不变。
+
+424 项提交前，本地 74 项标准库测试、Bash、YAML/内嵌 shell、actionlint 1.7.7、真实锁定 manifest 的 424 项组合及原有 pin/输入契约比较均通过，git diff --check 无错误。Docker 触发仍仅 workflow_dispatch；实际完整构建待第 12 轮验证。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：423 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：424 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
