@@ -3,20 +3,21 @@
   "run_id": 40107188457,
   "builder_commit": "b4a179f5083da1a09105558123d292223763510e",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "swap_free_mib": 2907,
-    "elapsed_seconds": 735.3,
-    "log_idle_seconds": 0.3,
-    "memory_available_mib": 14675,
-    "stage_elapsed_seconds": 11.4,
-    "log_bytes": 17503,
-    "load_1m": 2.33,
-    "disk_free_mib": 54752,
+    "swap_free_mib": 2883,
+    "log_bytes": 31346,
+    "log_idle_seconds": 10.8,
+    "memory_available_mib": 14918,
+    "elapsed_seconds": 834.0,
+    "stage_elapsed_seconds": 110.1,
+    "disk_free_mib": 54322,
+    "load_1m": 8.47,
     "progress": {
       "kind": "ninja",
-      "completed": 131,
+      "completed": 244,
       "total": 244,
-      "percent": 53.7
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.061,
@@ -25,7 +26,21 @@
       "repo_tool_verification": 0.046,
       "source_sync": 576.65,
       "checkout_verification": 137.848,
-      "preflight": 6.609
+      "preflight": 6.609,
+      "compile": 99.575
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "packages/modules/Wifi/service/Android.bp",
+      "line": 52
+    }
+  ],
+  "public_dependencies": [
+    "ksoap2"
+  ]
 }
