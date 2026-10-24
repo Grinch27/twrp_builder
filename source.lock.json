@@ -695,6 +695,162 @@
       "path": "prebuilts/cmdline-tools",
       "revision": "859a41090160f26e46438cd32f284ee1bab0d7ef",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/flac",
+      "path": "external/flac",
+      "revision": "702c7e785c9b8b6f587eb5deb827571f5a188d6a",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/jsmn",
+      "path": "external/jsmn",
+      "revision": "52365eb6cb4019b843f51c274ea0048c10ab03fa",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/aac",
+      "path": "external/aac",
+      "revision": "e9b8782d61c3a506ee4c32b6f1887d56b60a40b1",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libaom",
+      "path": "external/libaom",
+      "revision": "7737a2f7518e2b155448dfa8d1202a33c0bc3cea",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libavc",
+      "path": "external/libavc",
+      "revision": "b8df3ad020b38d37fffbed8e3f16fdce6786a7c5",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libgav1",
+      "path": "external/libgav1",
+      "revision": "2868cde58040823dae27371510e160810e9ee37a",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libgsm",
+      "path": "external/libgsm",
+      "revision": "838f0c54c4814a02935627ac231fbb63f69caed7",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libhevc",
+      "path": "external/libhevc",
+      "revision": "f793837150528d7b9e31cdd60b127939823e0c6f",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libmpeg2",
+      "path": "external/libmpeg2",
+      "revision": "788e92a9f2679649ac15498833bbeec82a4b4e15",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libvpx",
+      "path": "external/libvpx",
+      "revision": "4d870e159c43ef3dcea4044cf3ef7235e4483fce",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libxaac",
+      "path": "external/libxaac",
+      "revision": "9f0a35822e9275ebc4ce058d54d6e4cd9ad571a3",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libyuv",
+      "path": "external/libyuv",
+      "revision": "715a8b0584d482569ed39ee95291cfa9061c6aaf",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/sonic",
+      "path": "external/sonic",
+      "revision": "bf7315e6adb4510d9c104445a56a6ef60552607f",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/webrtc",
+      "path": "external/webrtc",
+      "revision": "567426a319812cfa95cf28d92cfc77480cd4344e",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/rs",
+      "path": "frameworks/rs",
+      "revision": "07a46c4d22c9ad9ff471e5ee644a7c85f6c4b096",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libogg",
+      "path": "external/libogg",
+      "revision": "5f4292b0380ef0e7f309a729b98238c9f25e2ee2",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/dynamic_depth",
+      "path": "external/dynamic_depth",
+      "revision": "1e460fed8c009ff2cc0d976617dbd5316d8ca0af",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/image_io",
+      "path": "external/image_io",
+      "revision": "376851a4e7470cf917953e2572479c9fc1293234",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libsrtp2",
+      "path": "external/libsrtp2",
+      "revision": "15fe3fd5acc7e2eefe98408fbdd99b437655d0ab",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/pffft",
+      "path": "external/pffft",
+      "revision": "2f01fecb71045759a4edcdeec2e717581157ca71",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rnnoise",
+      "path": "external/rnnoise",
+      "revision": "26b2d45e9211ac19d52d992963d38c0db21a0df0",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/usrsctp",
+      "path": "external/usrsctp",
+      "revision": "e8ab3d8a39b222119c8e4b24a7531c092fdfd0f3",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/cblas",
+      "path": "external/cblas",
+      "revision": "465fc8ddcec174fe63c68b2ff98dd167ef815fec",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/gemmlowp",
+      "path": "external/gemmlowp",
+      "revision": "44238cd045b2cc0307a278944b50016ebd712124",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/compile/libbcc",
+      "path": "frameworks/compile/libbcc",
+      "revision": "c3bf3d2db0d614959cbe21344120100e153d2c37",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/compile/slang",
+      "path": "frameworks/compile/slang",
+      "revision": "74399fa0cd28275c4f7cdf213b66bbd4c64e021e",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

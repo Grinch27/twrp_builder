@@ -170,13 +170,21 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 397 项提交前，本地 74 项标准库测试、全部 Bash 语法、两份 YAML 及其内嵌 shell、actionlint 1.7.7、实际锁定归档 manifest 组合和差异检查全部通过；逐项比较确认先前所有 public pin 与其余输入/设备/验收契约均未改变。Docker 触发仍仅 workflow_dispatch。上述静态结果不能替代下一轮实际构建。
 
+[397 项原生第 10 轮 40041039792](https://github.com/Grinch27/twrp_builder/actions/runs/40041039792) 使用 `15e4c1a1089df2c2a8f976c33c0a8ccbb48b6335`，远端标准库测试、actionlint 和公开 smoke 均通过。完整同步 379.790s、checkout 44.778s、预检 5.816s 后，compile 126.708s 返回 exit 1；作业已确认 failure。受限摘要本轮仅报告锁定 `frameworks/av/media/libstagefright/flac/dec/Android.bp:20` 的 libFLAC 未定义。未进入镜像静态验收，没有成品。
+
+继续锁定同一 android-12.1.0_r4 的完整 external/flac@702c7e785c9b8b6f587eb5deb827571f5a188d6a，原始 Blueprint 定义 libFLAC。另从 frameworks/av 的原锁定提交 ae5c3b1fe0c949fde91c585e00876dac8e32edfd 获取完整公开 Git 对象，对 314 份 Blueprint 做了直接引用预检，再沿实际提供方的公开定义检查传递引用。本轮共增加 26 项：FLAC、JSMN、AAC、AOM、AVC、GAV1、GSM、HEVC、MPEG2、VPX、XAAC、YUV、Sonic、WebRTC、Ogg、dynamic_depth、image_io，WebRTC 直接引用的 libsrtp2/pffft/rnnoise/usrsctp，以及 RenderScript 所需的 rs、cblas、gemmlowp、compile/libbcc 和 compile/slang。完整路径与 SHA 逐项记录在 source.lock.json。除 libFLAC 外的 25 项来自公开直接/传递引用预检，不是本轮实际报错新增报告的模块。
+
+26 项共 19,491 个 Git 文件、277,907,679 bytes；官方清单路径、同版本 tag/commit、FETCH_HEAD、完整 Git tree 和预期模块定义均已核对。image_io 的路径按官方清单确认；libwebm 实际由 AOM/VPX 提供，未加入不提供该目标模块的独立 external/libwebm 候选项目。其余已识别的普通 Blueprint 引用均能在现有字面量集合或本批提供方中找到；RenderScript 的 SDK 自动生成 stubs 和 native_bridge 条件引用仍需实际 Soong 解析，未通过占位库、删除引用、测试禁用或放宽缺项规则处理。合计 423 项，原 282 项身份、十个私有输入、12 条 copy/link 与镜像验收不变。
+
+423 项提交前，本地 74 项标准库测试、Bash、两份 YAML 及内嵌 shell、actionlint 1.7.7、实际归档 manifest 的 423 项组合、原有 pin/输入契约比较和 git diff --check 均通过。Docker 仍只有手动入口；实际完整构建结果待第 11 轮验证。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：397 项图是否闭合，以及实际 Soong、镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：423 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
