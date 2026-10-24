@@ -3,20 +3,21 @@
   "run_id": 40103120938,
   "builder_commit": "45729bff04a8161433cd1d0e98169840f6718179",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "swap_free_mib": 2888,
-    "load_1m": 3.15,
-    "log_bytes": 22299,
-    "log_idle_seconds": 0.4,
-    "memory_available_mib": 14220,
-    "disk_free_mib": 55271,
-    "stage_elapsed_seconds": 14.8,
-    "elapsed_seconds": 579.0,
+    "elapsed_seconds": 654.9,
+    "log_bytes": 31483,
+    "load_1m": 9.01,
+    "disk_free_mib": 54948,
+    "memory_available_mib": 14625,
+    "swap_free_mib": 2841,
+    "log_idle_seconds": 3.0,
+    "stage_elapsed_seconds": 90.6,
     "progress": {
       "kind": "ninja",
-      "completed": 172,
+      "completed": 244,
       "total": 244,
-      "percent": 70.5
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.053,
@@ -25,7 +26,22 @@
       "repo_tool_verification": 0.035,
       "source_sync": 502.724,
       "checkout_verification": 47.148,
-      "preflight": 4.432
+      "preflight": 4.432,
+      "compile": 87.748
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "frameworks/base/packages/SystemUI/Android.bp",
+      "line": 69
+    }
+  ],
+  "public_dependencies": [
+    "kotlinx_coroutines",
+    "kotlinx_coroutines_android"
+  ]
 }
