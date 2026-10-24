@@ -869,6 +869,42 @@
       "path": "external/openscreen",
       "revision": "264d76c60389dae367672f2ddb2a5987c0bf043a",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/caliper",
+      "path": "external/caliper",
+      "revision": "c531cf7b5e51975b779ed461b926a05de91afb80",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/apache-commons-math",
+      "path": "external/apache-commons-math",
+      "revision": "747555d98f8709cea8bee699cc86b278f1c9f598",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/tremolo",
+      "path": "external/tremolo",
+      "revision": "fe21bc1f0e2d1b64b4024acdda6949510c2a3bc6",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libexif",
+      "path": "external/libexif",
+      "revision": "3aadaf7a55e2586760606f73cf32d5539ad9b775",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libldac",
+      "path": "external/libldac",
+      "revision": "bca837ee64afa4113e61b3718cb454ae26db6ba2",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/speex",
+      "path": "external/speex",
+      "revision": "6af04891263cf41d54b47121d604c168a0846c86",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

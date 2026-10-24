@@ -200,13 +200,23 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 426 项提交前，本地 75 项标准库测试、Bash、YAML/内嵌 shell、actionlint 1.7.7、实际锁定 manifest 组合和原有 pin/输入契约比较通过；git diff --check 无错误。新增索引字段和 BUILD_CATALOG 计数待第 14 轮实测，不能据本地测试认定完整镜像构建成功。
 
+[426 项原生第 14 轮 40059009918](https://github.com/Grinch27/twrp_builder/actions/runs/40059009918) 使用 `042f37b41b4dcf1723187f01877eeec36036f5e5`，远端 75 项测试、actionlint、公开 smoke 和完整源码校验通过。source_sync 578.372s、checkout 66.042s、preflight 5.963s 后，compile 100.796s 返回 exit 1；作业已确认 failure。摘要本轮报告 `external/conscrypt/Android.bp:606` 引用的 caliper-api-target 未定义，未进入镜像静态验收。新增来源分类已实际生成：17,129 个名字，979 个仅来自 prebuilts 项目；GitHub 日志的 BUILD_CATALOG 与分支数据一致。Tremolo/Libexif 的候选名字属于该集合，已添加源码的 libopus/libcurl 已不属于该集合；这仍不证明可用变体或命名空间。
+
+为加快提供方研究，从同一官方 Android 清单的缺席顶层 external 项目中限时读取根 Blueprint；170 个候选中成功读取 142 份，共 835 个字面量名字。未读取的项目不作缺项判断，选中的提供方另取完整 Git 对象并逐一核对根 blob 与索引一致。该研究数据不是完整模块图，也不自动决定补入项目。
+
+本轮增加同一 android-12.1.0_r4 的六个完整项目：external/caliper 提供实际缺项 caliper-api-target；其直接引用的 external/apache-commons-math 提供 apache-commons-math；沿原锁定 frameworks/av 的实际 Blueprint 引用补齐 external/tremolo（libvorbisidec）与 external/libexif（libexif）；沿原锁定 system/bt@9827945fd41eb3c7940b5ce983e21757fdbae5f6 的 95 份 Blueprint 中 main/Android.bp 的 required 引用，补齐 external/libldac 的两个 LDAC 模块；沿 system/media@612d1707ddd53b341512a8de9b3255c314e7c0b2 的 audio_utils/Android.bp 直接引用补齐 external/speex 的 libspeexresampler。只有 Caliper 是本轮实际错误报告项，其余五项来自直接/传递引用预检。
+
+六项合计 1,207 个 Git 文件、19,957,529 bytes，官方路径、tag/commit、FETCH_HEAD、完整 Git tree、预期模块与根 blob 均已核对，SHA 逐项记录在 source.lock.json。已识别普通 Blueprint 引用在现有字面量集合或本批提供方中均可找到；蓝牙中的 AIDL 生成名字等仍由实际构建验证。未将只出现在预编译项目中的名字视为必然缺项，没有增加未找到当前引用依据的其他候选。当前共 432 项，原项目身份、十个私有输入、12 条 copy/link 和镜像验收均不变。
+
+432 项提交前，本地 75 项标准库测试、Bash、YAML/内嵌 shell、actionlint 1.7.7、实际锁定 manifest 组合及原有 pin/输入契约比较通过，git diff --check 无错误。新增六项来源均为同版本官方公开项目，Docker 仍仅手动入口；实际结果待第 15 轮验证。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：426 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：432 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
