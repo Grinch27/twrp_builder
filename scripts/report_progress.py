@@ -2,7 +2,7 @@
 # Requirements: safe progress, visible diagnostics and an Actions task summary.
 # Ambiguity: this checkpoint is telemetry, never proof of image/device success.
 # Research: revalidate diagnostic identities before exposing any public names.
-# Optimization: phase-transition writes; bounded metrics, no raw log publication.
+# Optimization: one Git scan for all names and prebuilts-project-only names.
 # Risks: token redirects, stale file revisions, accidental private-field copying.
 # Validation: strict metadata allowlist, fixed API host, public Git blob checks.
 """Mirror restricted build progress without placing credentials in the container."""
@@ -28,9 +28,9 @@ from build_telemetry import STAGES, read_json, sanitize_metrics
 BRANCH = 'build-progress'
 
 
-def public_module_names(manifest, source):
-    """Index only literal names from pinned public Git blobs, never worktree text."""
-    names = set()
+def public_module_catalog(manifest, source):
+    """Classify literal names by project path, never infer module availability."""
+    names, prebuilts_names, other_names = set(), set(), set()
     for project in ET.fromstring(manifest).findall('project'):
         name = project.get('path', project.get('name', ''))
         relative_path(name)
@@ -53,9 +53,16 @@ def public_module_names(manifest, source):
             value = json.loads(literal)
             if re.fullmatch(r'[A-Za-z0-9_.@+:/-]{1,160}', value):
                 names.add(value)
+                (prebuilts_names if name.startswith('prebuilts/') else other_names).add(value)
         if len(names) > 100000:
             raise ValueError('module catalog size limit')
-    return sorted(names)
+    return {'public_module_names': sorted(names),
+            'public_prebuilts_project_only_names': sorted(prebuilts_names - other_names)}
+
+
+def public_module_names(manifest, source):
+    """Compatibility interface for the pinned literal-name index."""
+    return public_module_catalog(manifest, source)['public_module_names']
 
 
 def record(status, run_id, commit, summary=None, source=None, manifest=None, excluded=(),
@@ -226,9 +233,11 @@ def main():
     client.publish(value)
     # The pinned catalog is needed once per attempt, not on every heartbeat/exit.
     if status['stage'] == 'compile' and 'exit_code' not in status:
-        names = public_module_names(manifest_data, args.work / 'android')
+        catalog = public_module_catalog(manifest_data, args.work / 'android')
+        print('BUILD_CATALOG ' + json.dumps({key: len(names) for key, names in catalog.items()},
+                                          sort_keys=True), flush=True)
         client.publish({'schema': 1, 'run_id': run_id, 'builder_commit': commit,
-                        'kind': 'literal-public-bp-names', 'public_module_names': names}, 'catalogs')
+                        'kind': 'literal-public-bp-names', **catalog}, 'catalogs')
 
 
 if __name__ == '__main__':

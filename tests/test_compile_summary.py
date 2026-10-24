@@ -1,7 +1,7 @@
 # Requirements: synthetic public Git data and compiler errors only.
 # Ambiguity: private or unverified diagnostic values must be omitted.
 # Research: dependencies are eligible only when literal in a pinned public blob.
-# Optimization: one tiny repository per test case; no Android source downloads.
+# Optimization: tiny synthetic repositories; no Android source downloads.
 # Risks: arbitrary paths, edited overlays, untracked files and source disclosure.
 # Validation: exact Git revision, excluded overlays and non-disclosure assertions.
 import json
@@ -13,7 +13,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 from summarize_compile_failure import summarize
-from report_progress import public_module_names, record
+from report_progress import public_module_catalog, public_module_names, record
 
 
 class CompileSummaryTests(unittest.TestCase):
@@ -86,6 +86,40 @@ class CompileSummaryTests(unittest.TestCase):
         manifest = self.manifest.replace(self.revision.encode(), b'1' * 40)
         with self.assertRaises(ValueError):
             public_module_names(manifest, self.source)
+
+    def test_catalog_distinguishes_project_origins_without_exporting_worktree_data(self):
+        (self.project / 'Names.bp').write_text(
+            'cc_library {\n name: "source_only",\n}\n'
+            'cc_library {\n name: "shared_name",\n}\n')
+        self.git('add', '.')
+        self.git('commit', '--quiet', '-m', 'source origin fixture')
+        manifest = self.manifest.replace(self.revision.encode(), self.git('rev-parse', 'HEAD').strip().encode())
+        prebuilt = self.source / 'prebuilts/public'
+        prebuilt.mkdir(parents=True)
+
+        def git(*args):
+            return subprocess.check_output([
+                'git', '-C', str(prebuilt), '-c', 'user.name=test',
+                '-c', 'user.email=test@example.invalid', *args],
+                text=True, stderr=subprocess.DEVNULL)
+
+        git('init', '--quiet')
+        (prebuilt / 'Android.bp').write_text(
+            'cc_prebuilt_library {\n name: "prebuilt_only",\n}\n'
+            'cc_prebuilt_library {\n name: "shared_name",\n}\n')
+        git('add', '.')
+        git('commit', '--quiet', '-m', 'prebuilts origin fixture')
+        revision = git('rev-parse', 'HEAD').strip()
+        manifest = manifest.replace(b'</manifest>', (
+            '<project name="platform/prebuilts/public" path="prebuilts/public" revision="'
+            + revision + '"/></manifest>').encode())
+        (self.project / 'Names.bp').write_text('name: "private_source_worktree"\n')
+        (prebuilt / 'Android.bp').write_text('name: "private_prebuilt_worktree"\n')
+        (prebuilt / 'Untracked.bp').write_text('name: "private_untracked"\n')
+        catalog = public_module_catalog(manifest, self.source)
+        self.assertEqual(catalog['public_module_names'], ['prebuilt_only', 'shared_name', 'source_only'])
+        self.assertEqual(catalog['public_prebuilts_project_only_names'], ['prebuilt_only'])
+        self.assertNotIn('private_', json.dumps(catalog))
 
     def test_private_values_and_messages_are_not_returned(self):
         result = summarize('error: external/public/Android.bp:1:1: depends on undefined module "secretvalue". '

@@ -192,13 +192,21 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 425 项提交前，本地 74 项标准库测试、Bash、YAML/内嵌 shell、actionlint 1.7.7、实际归档 manifest 组合及原有 pin/输入契约比较通过，git diff --check 无错误。Docker 仍仅手动入口；实际完整构建待第 13 轮验证。
 
+针对 libopus/libcurl 两次出现“字面量已收录、实际仍未定义”的结果，补充公开索引的来源信息：同一次 pinned Git 扫描中记录 `prebuilts/` 项目与其他项目的名字集合，新增 public_prebuilts_project_only_names，排除同时在其他项目出现的名字；进入 compile 时另输出 BUILD_CATALOG 的两个数值计数。该分类不判断模块类型或可用性，也不推断本轮失败名字的具体出处。75 项本地标准库测试通过，新增场景同时验证来源交集、两个项目的私有工作树改动及未跟踪文件均不能进入输出；现有错误 HEAD、manifest 身份和隐私边界检查继续通过。此项尚待后续实际运行验证。
+
+[425 项原生第 13 轮 40057518761](https://github.com/Grinch27/twrp_builder/actions/runs/40057518761) 使用 `4a56d01c3bad8df279cb29832520caba1fc972c0`，远端标准库测试、actionlint、公开 smoke 与完整源码校验通过。source_sync 442.582s、checkout 48.682s、preflight 5.819s 后，compile 126.513s 返回 exit 1；作业已确认 failure。受限摘要来自 `packages/modules/adb/Android.bp:260`，实际缺项为 libopenscreen-discovery 和 libopenscreen-platform-impl；尚无成品。
+
+补齐同一 android-12.1.0_r4 的完整 `external/openscreen@264d76c60389dae367672f2ddb2a5987c0bf043a`，2,414 个 Git 文件、48,685,217 bytes。官方项目路径、tag/commit、FETCH_HEAD、完整 Git tree、两个实际 host static 模块及其内部 Abseil 提供方均已核对，已识别的项目外 Blueprint 模块引用没有额外缺席名字。另读取 ADB 原锁定 TeamWin commit c302c5023ba271cea0b6ece5785bd08e421d1dc1 的根 Blueprint；其 required 项 reboot.recovery 不是现有普通 BP 名字索引中的条目，继续由实际后续构建解析，未据此改名、添加占位模块或关闭该引用。合计 426 项，原有 pin、私有输入和验收契约均不变。
+
+426 项提交前，本地 75 项标准库测试、Bash、YAML/内嵌 shell、actionlint 1.7.7、实际锁定 manifest 组合和原有 pin/输入契约比较通过；git diff --check 无错误。新增索引字段和 BUILD_CATALOG 计数待第 14 轮实测，不能据本地测试认定完整镜像构建成功。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：425 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：426 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 

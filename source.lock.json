@@ -863,6 +863,12 @@
       "path": "external/curl",
       "revision": "96813bdf12a382393ea0646d2beb82e813ad06cd",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/openscreen",
+      "path": "external/openscreen",
+      "revision": "264d76c60389dae367672f2ddb2a5987c0bf043a",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
