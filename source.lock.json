@@ -1115,6 +1115,18 @@
       "path": "external/rust/crates/bencher",
       "revision": "70ce355bcbadc2c2126b132dda787e033667944c",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/no-panic",
+      "path": "external/rust/crates/no-panic",
+      "revision": "287890f55d0d225b176149c0ef2492e4f5fb886b",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/serde_test",
+      "path": "external/rust/crates/serde_test",
+      "revision": "32fb05f66668b8efd0b6422b405294b6ec7f21e1",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

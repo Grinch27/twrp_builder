@@ -210,13 +210,18 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 432 项提交前，本地 75 项标准库测试、Bash、YAML/内嵌 shell、actionlint 1.7.7、实际锁定 manifest 组合及原有 pin/输入契约比较通过，git diff --check 无错误。新增六项来源均为同版本官方公开项目，Docker 仍仅手动入口；实际结果待第 15 轮验证。
 
+
+[467 项原生运行 40084243338](https://github.com/Grinch27/twrp_builder/actions/runs/40084243338) 使用 e8ae71f4f7dde52a6f5aabd5e1cfcf7befc33d25，runner-image 的标准库测试、actionlint 和公开 smoke 成功；原生 Job 已确认 failure。source_sync 493.650s、checkout 57.307s、preflight 4.760s 后，compile 98.476s 以 exit 1 结束。受限摘要来自 external/rust/crates/unicode-bidi/Android.bp:74 和 external/rust/crates/libm/Android.bp:66，实际缺项为 libserde_test、libno_panic；Ninja 244/244 仅是 bootstrap 批次完成，没有新 boot.img 或静态验收结果。
+
+本轮以最新 e8ae71f 为基线，保留此前并发合入的 35 个公开项目及 AGENTS Part I 1.2.0，未重复覆盖原来的网络库修复。补齐同一 android-12.1.0_r4 的完整 external/rust/crates/no-panic@287890f55d0d225b176149c0ef2492e4f5fb886b（18 文件、35,293 bytes）与 external/rust/crates/serde_test@32fb05f66668b8efd0b6422b405294b6ec7f21e1（20 文件、120,663 bytes）。官方 tag、FETCH_HEAD、完整 Git tree 及实际 rust_proc_macro/libno_panic、rust_library/libserde_test 定义已核对；两者的普通 Blueprint 直接引用均在当前公开名字索引中，但仍不据此认定完整 Soong 图有效。共 469 项，其中原始 282 项、187 项公开补充；所有已有 pin、十个私有输入、12 条 copy/link、编译目标和静态验收不变。 提交前本地 75 项标准库测试、全部 Bash 语法、两份 YAML/20 段内嵌 shell、actionlint 1.7.7、真实锁定 manifest 组合与 git diff --check 均通过，原交付私钥公钥与收件证书匹配；这些结果不代替下一轮完整构建。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：432 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：469 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
