@@ -3,20 +3,21 @@
   "run_id": 40061689975,
   "builder_commit": "90a284aa7b73137de89e939794503085031fb953",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "stage_elapsed_seconds": 16.0,
-    "disk_free_mib": 56015,
-    "load_1m": 4.62,
-    "log_idle_seconds": 0.3,
-    "swap_free_mib": 2948,
-    "memory_available_mib": 14310,
-    "log_bytes": 20540,
-    "elapsed_seconds": 578.2,
+    "swap_free_mib": 2943,
+    "memory_available_mib": 14859,
+    "elapsed_seconds": 699.4,
+    "log_bytes": 31537,
+    "disk_free_mib": 55624,
+    "stage_elapsed_seconds": 137.2,
+    "load_1m": 8.91,
+    "log_idle_seconds": 10.9,
     "progress": {
       "kind": "ninja",
-      "completed": 157,
+      "completed": 244,
       "total": 244,
-      "percent": 64.3
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.072,
@@ -25,7 +26,26 @@
       "repo_tool_verification": 0.052,
       "source_sync": 509.649,
       "checkout_verification": 44.069,
-      "preflight": 5.815
+      "preflight": 5.815,
+      "compile": 126.437
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "packages/modules/NetworkStack/common/networkstackclient/Android.bp",
+      "line": 145
+    },
+    {
+      "path": "packages/modules/Connectivity/framework/Android.bp",
+      "line": 58
+    }
+  ],
+  "public_dependencies": [
+    "net-utils-device-common",
+    "net-utils-framework-common"
+  ]
 }
