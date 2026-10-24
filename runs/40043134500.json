@@ -3,15 +3,22 @@
   "run_id": 40043134500,
   "builder_commit": "d7d631b531ab31219499b808075670b2492df0f5",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "swap_free_mib": 2923,
-    "memory_available_mib": 14822,
-    "log_idle_seconds": 0.6,
-    "disk_free_mib": 56376,
-    "elapsed_seconds": 667.7,
-    "stage_elapsed_seconds": 3.1,
-    "log_bytes": 2386,
-    "load_1m": 2.52,
+    "memory_available_mib": 14890,
+    "disk_free_mib": 55779,
+    "swap_free_mib": 2924,
+    "stage_elapsed_seconds": 137.4,
+    "load_1m": 8.79,
+    "log_bytes": 33926,
+    "elapsed_seconds": 802.0,
+    "log_idle_seconds": 7.9,
+    "progress": {
+      "kind": "ninja",
+      "completed": 244,
+      "total": 244,
+      "percent": 100.0
+    },
     "stage_seconds": {
       "initialization": 0.077,
       "repo_tool": 0.336,
@@ -19,7 +26,21 @@
       "repo_tool_verification": 0.054,
       "source_sync": 605.645,
       "checkout_verification": 49.369,
-      "preflight": 6.169
+      "preflight": 6.169,
+      "compile": 129.71
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "external/webrtc/Android.bp",
+      "line": 215
+    }
+  ],
+  "public_dependencies": [
+    "libopus"
+  ]
 }
