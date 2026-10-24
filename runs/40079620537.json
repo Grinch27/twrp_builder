@@ -3,20 +3,21 @@
   "run_id": 40079620537,
   "builder_commit": "74cf49a847988ba4ef381b862ac6ddf5e5981e53",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "disk_free_mib": 55674,
-    "load_1m": 1.57,
-    "memory_available_mib": 14716,
-    "log_idle_seconds": 0.0,
-    "swap_free_mib": 2889,
-    "elapsed_seconds": 715.0,
-    "stage_elapsed_seconds": 6.4,
-    "log_bytes": 13066,
+    "log_idle_seconds": 13.7,
+    "load_1m": 8.27,
+    "log_bytes": 31804,
+    "memory_available_mib": 14808,
+    "disk_free_mib": 55150,
+    "swap_free_mib": 2847,
+    "stage_elapsed_seconds": 116.0,
+    "elapsed_seconds": 824.6,
     "progress": {
       "kind": "ninja",
-      "completed": 91,
+      "completed": 244,
       "total": 244,
-      "percent": 37.3
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.057,
@@ -25,7 +26,41 @@
       "repo_tool_verification": 0.042,
       "source_sync": 566.891,
       "checkout_verification": 132.868,
-      "preflight": 5.793
+      "preflight": 5.793,
+      "compile": 102.652
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "cts/tests/security/Android.bp",
+      "line": 19
+    },
+    {
+      "path": "frameworks/opt/net/voip/Android.bp",
+      "line": 35
+    },
+    {
+      "path": "frameworks/base/services/coverage/Android.bp",
+      "line": 17
+    },
+    {
+      "path": "frameworks/base/apex/media/framework/Android.bp",
+      "line": 24
+    },
+    {
+      "path": "frameworks/opt/net/ims/Android.bp",
+      "line": 43
+    }
+  ],
+  "public_dependencies": [
+    "cbor-java",
+    "exoplayer2-extractor",
+    "jacocoagent",
+    "nist-sip",
+    "ucepresencelib"
+  ]
 }
