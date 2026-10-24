@@ -1277,6 +1277,42 @@
       "path": "frameworks/opt/setupwizard",
       "revision": "8a1063519e8cc0529e0b55fa3d2bdcc1a3530839",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/tensorflow",
+      "path": "external/tensorflow",
+      "revision": "2334215c2f3fb57dccd4cd1a950d7a0618ae522f",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/ruy",
+      "path": "external/ruy",
+      "revision": "1921442fc185b4d6ebcbf54b637d0ae3cd30b4aa",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libtextclassifier",
+      "path": "external/libtextclassifier",
+      "revision": "be51d516f665267a1bc1fd9fc6661e964e8b1a03",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/marisa-trie",
+      "path": "external/marisa-trie",
+      "revision": "627dea58d55e302266a5fb3399b46b7bf66a709f",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libutf",
+      "path": "external/libutf",
+      "revision": "39547c9d9307d4ce7b72b74e7443414bf1d2374d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/tflite-support",
+      "path": "external/tflite-support",
+      "revision": "3812149ba9f7e82aa37e6f0ba6b623afc7095500",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

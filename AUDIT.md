@@ -248,13 +248,22 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 15 项合计 4,410 个 Git 文件、61,327,754 bytes，官方清单路径、tag/commit、完整 Git tree 和预期定义均已核对，已识别普通 Blueprint 引用均有当前字面量提供方；余下 Android test SDK stubs、HIDL/AIDL 版本名均有当前公开索引中的生成器名字，但这不证明具体生成变体、命名空间或整个 Soong 图有效。当前共 494 项，原始 282 项身份、全部既有公开 pin、十个私有输入、12 条 copy/link、编译目标及镜像静态验收契约不变，继续按 12 分钟后每分钟一次检查。 提交前本地 75 项标准库测试、Bash、两份 YAML/20 段内嵌 shell、actionlint 1.7.7、严格本地的实际 manifest 身份组合、15 项官方清单/commit 身份复核及 git diff --check 全部通过。
 
+
+[494 项原生运行 40105439621](https://github.com/Grinch27/twrp_builder/actions/runs/40105439621) 使用 04fa77d326dee350e5aac1bfaa3e90d34aec3fcb，远端标准库测试、actionlint、公开 smoke、主机准备与源码身份校验通过。source_sync 580.467s、checkout 77.379s、preflight 6.388s 后，compile 102.079s 以 exit 1 结束。受限摘要仅报告 packages/modules/NeuralNetworks/common/random/Android.bp:33 引用的 tensorflow_headers 未定义；尚无镜像。
+
+等待该轮首次查询期间，继续仅按公开 source.lock.json 获取、复核公开项目，完整检查了 209 个公开补充项目的 Git Blueprint/Make 定义与已识别直接引用，覆盖前述 CTS 预检批次。三个未取完整 Git 对象的补充项目是二进制预编译仓库；原有公开索引仍参与名字核对。所检查的普通 Blueprint 引用均能找到现有名字提供方；余下 SDK stubs、AIDL/HIDL 版本名与 RenderScript native_bridge 条件引用继续留给实际构建，未据字面量或生成器名字宣称整个图有效。该研究不覆盖全部原始 282 项，因此没有据此忽略 NeuralNetworks 的真实新错误，也没有新增缺项绕过或源版本替换。
+
+本轮补齐同一 android-12.1.0_r4 的完整 external/tensorflow@2334215c2f3fb57dccd4cd1a950d7a0618ae522f，根 Blueprint 实际定义 tensorflow_headers。沿其 TensorFlow Lite 的直接引用，补入 external/ruy@1921442fc185b4d6ebcbf54b637d0ae3cd30b4aa、external/libtextclassifier@be51d516f665267a1bc1fd9fc6661e964e8b1a03；再沿 libtextclassifier 的实际引用补入 external/marisa-trie@627dea58d55e302266a5fb3399b46b7bf66a709f、external/libutf@39547c9d9307d4ce7b72b74e7443414bf1d2374d 与 external/tflite-support@3812149ba9f7e82aa37e6f0ba6b623afc7095500。只有 tensorflow_headers 是本轮实际错误，其余五项来自直接/传递引用预检。六项官方路径、tag/commit、FETCH_HEAD、完整 Git tree、27,165 文件与 347,222,417 bytes 已核对；实际模块定义及已识别普通引用在合并集合中均有提供方，仍不证明变体、命名空间或全图正确。
+
+当前共 500 项（原始 282 项、218 项公开补充），所有既有 pin、十个私有输入、12 条 copy/link、构建目标和镜像静态验收不变。继续保持 Native、publish=false、同一收件证书和首查 12 分钟后每分钟一次的检查节奏。 提交前本地 75 项标准库测试、Bash、两份 YAML/20 段内嵌 shell、actionlint 1.7.7、严格本地的实际 manifest 身份组合、六项官方清单/commit 身份复核及 git diff --check 全部通过。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：494 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：500 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
