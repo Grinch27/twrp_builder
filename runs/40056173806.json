@@ -3,20 +3,21 @@
   "run_id": 40056173806,
   "builder_commit": "32f01bf3deef38216a1dcc0eecc318ed5addcbb3",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "log_bytes": 16299,
-    "elapsed_seconds": 503.4,
-    "swap_free_mib": 2960,
-    "stage_elapsed_seconds": 11.8,
-    "load_1m": 2.87,
-    "memory_available_mib": 14211,
-    "disk_free_mib": 56016,
-    "log_idle_seconds": 0.0,
+    "memory_available_mib": 14563,
+    "stage_elapsed_seconds": 133.6,
+    "elapsed_seconds": 625.2,
+    "log_idle_seconds": 3.1,
+    "log_bytes": 31328,
+    "disk_free_mib": 55522,
+    "swap_free_mib": 2958,
+    "load_1m": 10.9,
     "progress": {
       "kind": "ninja",
-      "completed": 119,
+      "completed": 244,
       "total": 244,
-      "percent": 48.8
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.074,
@@ -25,7 +26,21 @@
       "repo_tool_verification": 0.052,
       "source_sync": 426.749,
       "checkout_verification": 55.745,
-      "preflight": 6.059
+      "preflight": 6.059,
+      "compile": 130.685
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "external/libbrillo/Android.bp",
+      "line": 251
+    }
+  ],
+  "public_dependencies": [
+    "libcurl"
+  ]
 }
