@@ -3,20 +3,21 @@
   "run_id": 40099732022,
   "builder_commit": "412ae9faba20c5634badeb91f6afdcb8fe2fa7bd",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "memory_available_mib": 14745,
-    "stage_elapsed_seconds": 16.3,
-    "disk_free_mib": 55296,
-    "log_idle_seconds": 0.1,
-    "elapsed_seconds": 566.1,
-    "log_bytes": 23982,
-    "swap_free_mib": 2889,
-    "load_1m": 5.27,
+    "elapsed_seconds": 641.8,
+    "log_idle_seconds": 9.1,
+    "memory_available_mib": 15006,
+    "disk_free_mib": 55020,
+    "stage_elapsed_seconds": 92.1,
+    "swap_free_mib": 2863,
+    "load_1m": 8.51,
+    "log_bytes": 31485,
     "progress": {
       "kind": "ninja",
-      "completed": 186,
+      "completed": 244,
       "total": 244,
-      "percent": 76.2
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.048,
@@ -25,7 +26,26 @@
       "repo_tool_verification": 0.033,
       "source_sync": 495.965,
       "checkout_verification": 46.889,
-      "preflight": 4.427
+      "preflight": 4.427,
+      "compile": 83.151
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "frameworks/base/libs/WindowManager/Shell/Android.bp",
+      "line": 114
+    },
+    {
+      "path": "frameworks/libs/net/common/testutils/Android.bp",
+      "line": 19
+    }
+  ],
+  "public_dependencies": [
+    "iconloader_base",
+    "libnanohttpd"
+  ]
 }
