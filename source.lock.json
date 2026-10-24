@@ -1139,6 +1139,24 @@
       "path": "frameworks/libs/systemui",
       "revision": "d68101a3e72cb65afc9b3f1279942cdc62d14b58",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/opt/net/wifi",
+      "path": "frameworks/opt/net/wifi",
+      "revision": "f11dcd29a20a842da1ab09715ce2ebbc45c1baec",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/services/Telephony",
+      "path": "packages/services/Telephony",
+      "revision": "ffe7afdfe3f17a4e1915bdd56da74678e4669ef6",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/PhoneCommon",
+      "path": "packages/apps/PhoneCommon",
+      "revision": "8cfe17c2aa6972af863e7a78de1b364c783a3a39",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

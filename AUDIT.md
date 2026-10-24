@@ -222,13 +222,18 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 本轮补齐同一 android-12.1.0_r4 的完整 external/nanohttpd@66670dfc0fb50cb769a9a1ca62dbe8c6e7d5a84a 与 frameworks/libs/systemui@d68101a3e72cb65afc9b3f1279942cdc62d14b58。前者根 Blueprint 定义 libnanohttpd；后者 iconloaderlib/Android.bp 实际定义 iconloader_base。官方 tag、FETCH_HEAD、完整 Git tree、149 个文件及 743,000 bytes 已核对；全部已识别普通 Blueprint 引用均有现存字面量提供方，仍须实际构建验收。总计 471 项，原始 282 项与所有既有 pin、十个私有输入、12 条 copy/link 和镜像验收契约不变。 提交前本地 75 项标准库测试、Bash、两份 YAML/20 段内嵌 shell、actionlint 1.7.7、仅在本地进行的实际 manifest 身份组合及 git diff --check 均通过。
 
+
+[471 项原生运行 40100887810](https://github.com/Grinch27/twrp_builder/actions/runs/40100887810) 使用 b82be420aea6a27c45fcde51b848eb71e221fd77，远端 75 项测试、actionlint、公开 smoke、主机准备及完整源码校验通过。source_sync 365.066s、checkout 49.582s、preflight 5.844s 后，compile 126.587s 以 exit 1 结束，Job 已确认 failure。受限摘要报告 frameworks/base/packages/SettingsLib/Android.bp:10 与 frameworks/opt/telephony/Android.bp:81 的 WifiTrackerLib、ecc-protos-lite 未定义；没有生成通过静态验收的新镜像。
+
+本轮增加同一 android-12.1.0_r4 的完整 frameworks/opt/net/wifi@f11dcd29a20a842da1ab09715ce2ebbc45c1baec（libs/WifiTrackerLib/Android.bp 定义 WifiTrackerLib）、packages/services/Telephony@ffe7afdfe3f17a4e1915bdd56da74678e4669ef6（ecc/conversion_toolset_v1/proto/Android.bp 定义 ecc-protos-lite），以及 Telephony 根 Blueprint 直接引用的 packages/apps/PhoneCommon@8cfe17c2aa6972af863e7a78de1b364c783a3a39（com.android.phone.common-lib）。只有前两个模块是本轮实际摘要报告项。官方 tag、完整 Git tree 与 FETCH_HEAD 均已核对，合计 1,654 文件、21,391,693 bytes；已识别的普通 Blueprint 引用无额外缺席名字，生成模块/命名空间仍交由实际构建验证。没有加入不提供 WifiTrackerLib 的 packages/modules/Wifi 候选项目。合计 474 项；原始 282 项、全部既有 pin、十个私有输入、12 条 copy/link 和镜像静态验收不变。 本地 75 项标准库测试、Bash、两份 YAML/20 段内嵌 shell、actionlint 1.7.7、仅本地的实际 manifest 身份组合及 git diff --check 均通过；完整结果待下一次实际运行。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：471 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：474 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
