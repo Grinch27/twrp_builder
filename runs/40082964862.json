@@ -3,20 +3,21 @@
   "run_id": 40082964862,
   "builder_commit": "1db3d7563163673548faf55be4a67b1b2a0cf45b",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "memory_available_mib": 14228,
-    "log_bytes": 16455,
-    "elapsed_seconds": 503.9,
-    "stage_elapsed_seconds": 11.7,
-    "log_idle_seconds": 0.2,
-    "disk_free_mib": 55500,
-    "load_1m": 3.12,
-    "swap_free_mib": 2963,
+    "log_idle_seconds": 2.6,
+    "disk_free_mib": 55032,
+    "elapsed_seconds": 625.1,
+    "swap_free_mib": 2962,
+    "log_bytes": 31639,
+    "load_1m": 10.37,
+    "stage_elapsed_seconds": 133.0,
+    "memory_available_mib": 14413,
     "progress": {
       "kind": "ninja",
-      "completed": 121,
+      "completed": 244,
       "total": 244,
-      "percent": 49.6
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.077,
@@ -25,7 +26,24 @@
       "repo_tool_verification": 0.054,
       "source_sync": 432.935,
       "checkout_verification": 49.678,
-      "preflight": 6.346
+      "preflight": 6.346,
+      "compile": 130.543
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "external/rust/crates/url/Android.bp",
+      "line": 40
+    }
+  ],
+  "public_dependencies": [
+    "libform_urlencoded",
+    "libidna",
+    "libmatches",
+    "libpercent_encoding"
+  ]
 }
