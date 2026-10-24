@@ -1019,6 +1019,24 @@
       "path": "external/ims",
       "revision": "f25338249186d77071c488bb2b45bd785062aab1",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/quiche",
+      "path": "external/rust/crates/quiche",
+      "revision": "0d07a28a43fcd6b67cb8abd4673b1af34bfff978",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/ring",
+      "path": "external/rust/crates/ring",
+      "revision": "7d9f324982d85b5acc39b2d51305db81c1a0f3c9",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/url",
+      "path": "external/rust/crates/url",
+      "revision": "24615742dbf46d9cd9b2a64d449417d7e67900b1",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
