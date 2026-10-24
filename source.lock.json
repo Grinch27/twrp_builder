@@ -1187,6 +1187,96 @@
       "path": "external/kotlinx.atomicfu",
       "revision": "4b155e4f2fb7ca1d776171331553580978c16276",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/ex",
+      "path": "frameworks/ex",
+      "revision": "236524b4c12374db8697a7bce455a2abc5f57d82",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/androidplot",
+      "path": "external/androidplot",
+      "revision": "2d00fd6c9e084493226f5b98f908ff1add5ce770",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/apache-commons-compress",
+      "path": "external/apache-commons-compress",
+      "revision": "76547aa2d3b5a1aaafe033b572bff4f03f90cc69",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/glide",
+      "path": "external/glide",
+      "revision": "8e7c074de72a48f020a551988ec8cfebd5708faa",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/wycheproof",
+      "path": "external/wycheproof",
+      "revision": "b0eff4643bdbece269dea55f648e8d41a2c338cb",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/system/bpf",
+      "path": "system/bpf",
+      "revision": "860fa57e5ad47e1be73061834e96b8331166bde1",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/Car/RotaryController",
+      "path": "packages/apps/Car/RotaryController",
+      "revision": "6c3f5d0bad5f8e5f8d138fa25fb005a9d16ddd3e",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/seccomp-tests",
+      "path": "external/seccomp-tests",
+      "revision": "6e980c4c5cec72a78a093f29cadcd519669f0203",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/Launcher3",
+      "path": "packages/apps/Launcher3",
+      "revision": "62d30d71f487069d6ecb0ce7d7b1beab15d00a87",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/giflib",
+      "path": "external/giflib",
+      "revision": "09d48966e9f887172d48624158c31e7ef14442af",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/xz-java",
+      "path": "external/xz-java",
+      "revision": "09e355f5d7afb47ed27048ee93964aedd0a0c36a",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/volley",
+      "path": "external/volley",
+      "revision": "685176ba8e6f6f0faec763e51c171cdf3fbb1f46",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/system/bpfprogs",
+      "path": "system/bpfprogs",
+      "revision": "eb41c37aeb2ca436cdf504f444a529b7a962c673",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/bcc",
+      "path": "external/bcc",
+      "revision": "81e0412bff37c240654fd090b94b0b8419677a5d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/opt/setupwizard",
+      "path": "frameworks/opt/setupwizard",
+      "revision": "8a1063519e8cc0529e0b55fa3d2bdcc1a3530839",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
