@@ -3,20 +3,21 @@
   "run_id": 40105439621,
   "builder_commit": "04fa77d326dee350e5aac1bfaa3e90d34aec3fcb",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "swap_free_mib": 2884,
-    "disk_free_mib": 55431,
-    "log_bytes": 3129,
-    "stage_elapsed_seconds": 3.7,
-    "elapsed_seconds": 670.1,
-    "log_idle_seconds": 0.2,
-    "memory_available_mib": 14662,
-    "load_1m": 7.36,
+    "disk_free_mib": 54839,
+    "stage_elapsed_seconds": 111.2,
+    "swap_free_mib": 2866,
+    "memory_available_mib": 14975,
+    "load_1m": 10.12,
+    "log_idle_seconds": 9.8,
+    "log_bytes": 31364,
+    "elapsed_seconds": 777.6,
     "progress": {
       "kind": "ninja",
-      "completed": 5,
+      "completed": 244,
       "total": 244,
-      "percent": 2.0
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.06,
@@ -25,7 +26,21 @@
       "repo_tool_verification": 0.044,
       "source_sync": 580.467,
       "checkout_verification": 77.379,
-      "preflight": 6.388
+      "preflight": 6.388,
+      "compile": 102.079
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "packages/modules/NeuralNetworks/common/random/Android.bp",
+      "line": 33
+    }
+  ],
+  "public_dependencies": [
+    "tensorflow_headers"
+  ]
 }
