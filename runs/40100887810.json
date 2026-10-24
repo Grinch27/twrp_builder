@@ -3,15 +3,22 @@
   "run_id": 40100887810,
   "builder_commit": "b82be420aea6a27c45fcde51b848eb71e221fd77",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "elapsed_seconds": 425.1,
-    "log_bytes": 1715,
-    "memory_available_mib": 14674,
-    "log_idle_seconds": 0.0,
-    "load_1m": 2.63,
-    "stage_elapsed_seconds": 2.5,
-    "swap_free_mib": 2953,
-    "disk_free_mib": 55891,
+    "load_1m": 9.06,
+    "elapsed_seconds": 559.3,
+    "log_bytes": 31463,
+    "disk_free_mib": 55288,
+    "stage_elapsed_seconds": 136.7,
+    "swap_free_mib": 2947,
+    "log_idle_seconds": 10.3,
+    "memory_available_mib": 14911,
+    "progress": {
+      "kind": "ninja",
+      "completed": 244,
+      "total": 244,
+      "percent": 100.0
+    },
     "stage_seconds": {
       "initialization": 0.074,
       "repo_tool": 0.203,
@@ -19,7 +26,26 @@
       "repo_tool_verification": 0.051,
       "source_sync": 365.066,
       "checkout_verification": 49.582,
-      "preflight": 5.844
+      "preflight": 5.844,
+      "compile": 126.587
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "frameworks/base/packages/SettingsLib/Android.bp",
+      "line": 10
+    },
+    {
+      "path": "frameworks/opt/telephony/Android.bp",
+      "line": 81
+    }
+  ],
+  "public_dependencies": [
+    "WifiTrackerLib",
+    "ecc-protos-lite"
+  ]
 }
