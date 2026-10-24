@@ -3,20 +3,21 @@
   "run_id": 40084243338,
   "builder_commit": "e8ae71f4f7dde52a6f5aabd5e1cfcf7befc33d25",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "disk_free_mib": 55607,
-    "elapsed_seconds": 561.7,
-    "log_bytes": 3696,
-    "load_1m": 2.84,
-    "stage_elapsed_seconds": 3.8,
-    "log_idle_seconds": 0.5,
-    "swap_free_mib": 2901,
-    "memory_available_mib": 14489,
+    "memory_available_mib": 14837,
+    "disk_free_mib": 55022,
+    "stage_elapsed_seconds": 106.5,
+    "elapsed_seconds": 664.4,
+    "log_bytes": 31481,
+    "swap_free_mib": 2895,
+    "load_1m": 9.32,
+    "log_idle_seconds": 8.2,
     "progress": {
       "kind": "ninja",
-      "completed": 9,
+      "completed": 244,
       "total": 244,
-      "percent": 3.7
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.057,
@@ -25,7 +26,26 @@
       "repo_tool_verification": 0.042,
       "source_sync": 493.65,
       "checkout_verification": 57.307,
-      "preflight": 4.76
+      "preflight": 4.76,
+      "compile": 98.476
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "external/rust/crates/unicode-bidi/Android.bp",
+      "line": 74
+    },
+    {
+      "path": "external/rust/crates/libm/Android.bp",
+      "line": 66
+    }
+  ],
+  "public_dependencies": [
+    "libno_panic",
+    "libserde_test"
+  ]
 }
