@@ -3,20 +3,21 @@
   "run_id": 40072345784,
   "builder_commit": "239d5bf07eeff800f5f11bde3275f4f531153bd7",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "elapsed_seconds": 622.7,
-    "stage_elapsed_seconds": 6.8,
-    "log_idle_seconds": 1.0,
-    "swap_free_mib": 2891,
-    "memory_available_mib": 14478,
-    "log_bytes": 14878,
-    "disk_free_mib": 55905,
-    "load_1m": 3.35,
+    "disk_free_mib": 55391,
+    "stage_elapsed_seconds": 110.7,
+    "memory_available_mib": 14876,
+    "swap_free_mib": 2883,
+    "load_1m": 9.5,
+    "log_bytes": 31331,
+    "log_idle_seconds": 6.9,
+    "elapsed_seconds": 726.6,
     "progress": {
       "kind": "ninja",
-      "completed": 108,
+      "completed": 244,
       "total": 244,
-      "percent": 44.3
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.061,
@@ -25,7 +26,21 @@
       "repo_tool_verification": 0.042,
       "source_sync": 550.728,
       "checkout_verification": 57.545,
-      "preflight": 4.856
+      "preflight": 4.856,
+      "compile": 103.986
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "frameworks/base/libs/hwui/Android.bp",
+      "line": 615
+    }
+  ],
+  "public_dependencies": [
+    "libminikin"
+  ]
 }
