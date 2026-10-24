@@ -923,6 +923,36 @@
       "path": "external/cpu_features",
       "revision": "1fa3785a766cf3a009edd5048e0b4a2c48f788c3",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/mockftpserver",
+      "path": "external/mockftpserver",
+      "revision": "86f6b7d841a5025fb14bfb2e6de9367cca987f0f",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/mockwebserver",
+      "path": "external/mockwebserver",
+      "revision": "3636059264e07e0526caeb35b5973570c43698e1",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/nist-pkits",
+      "path": "external/nist-pkits",
+      "revision": "2cc1761ce02c0d784309ceccd3a840dc59725f88",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/slf4j",
+      "path": "external/slf4j",
+      "revision": "a33893011bbdde59dce2a37f0a5f8a80c8a2ae89",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/javasqlite",
+      "path": "external/javasqlite",
+      "revision": "aaeca777c7e7c12d019d5a2e71718ea31aaaebc6",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
