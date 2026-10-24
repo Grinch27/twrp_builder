@@ -3,20 +3,21 @@
   "run_id": 40074751533,
   "builder_commit": "d137db9acf53deb516c8c1e39cd210c6e1c49045",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "log_idle_seconds": 0.0,
-    "disk_free_mib": 52989,
-    "load_1m": 4.15,
-    "log_bytes": 21908,
-    "stage_elapsed_seconds": 16.2,
-    "swap_free_mib": 2861,
-    "memory_available_mib": 14441,
-    "elapsed_seconds": 795.8,
+    "log_idle_seconds": 9.8,
+    "swap_free_mib": 2851,
+    "stage_elapsed_seconds": 122.0,
+    "disk_free_mib": 52652,
+    "elapsed_seconds": 901.5,
+    "log_bytes": 31697,
+    "load_1m": 8.14,
+    "memory_available_mib": 14915,
     "progress": {
       "kind": "ninja",
-      "completed": 168,
+      "completed": 244,
       "total": 244,
-      "percent": 68.9
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.068,
@@ -25,7 +26,25 @@
       "repo_tool_verification": 0.05,
       "source_sync": 690.5,
       "checkout_verification": 80.751,
-      "preflight": 5.188
+      "preflight": 5.188,
+      "compile": 112.297
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "libcore/JavaLibrary.bp",
+      "line": 565
+    }
+  ],
+  "public_dependencies": [
+    "mockftpserver",
+    "mockwebserver",
+    "nist-pkix-tests",
+    "slf4j-jdk14",
+    "sqlite-jdbc"
+  ]
 }
