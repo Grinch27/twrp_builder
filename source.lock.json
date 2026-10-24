@@ -953,6 +953,24 @@
       "path": "external/javasqlite",
       "revision": "aaeca777c7e7c12d019d5a2e71718ea31aaaebc6",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/system/libsysprop",
+      "path": "system/libsysprop",
+      "revision": "e412578c5d32dea993330bb7ce6be14a7cf2d864",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/vulkan-headers",
+      "path": "external/vulkan-headers",
+      "revision": "612952c8741b9ea3abaaf327e2b231f8038cf7ae",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/prebuilts/ndk",
+      "path": "prebuilts/ndk",
+      "revision": "bef705681e8b8a34de4a530e14523c695466b13b",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
