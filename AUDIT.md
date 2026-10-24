@@ -264,13 +264,18 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 本地工作区因自动维护清理丢失，包括旧交付私钥；已从公开 main 恢复 builder，并仅从已锁定的只读归档输入恢复 default.xml，用于严格本地身份验证。旧收件私钥没有归档副本，且此前没有成功成品；依照 AGENTS 交付约定，为后续构建生成新的本地 3072 位 RSA 私钥与对应收件证书，逐字节比对导出公钥一致。密钥强度与旧证书相同，私钥仍在仓库及 Runner 之外；本次只提交公共 delivery-recipient.pem，CMS AES-256-GCM/RSA-OAEP 和 publish=false 不变。原清理前的研究数据不作为本轮已经重新执行的本地检查证据。 本轮新环境中 75 项标准库测试、Bash、两份 YAML/20 段内嵌 shell、经官方校验和验证的 actionlint 1.7.7、锁定 manifest 的本地 501 项组合、既有 pin/输入契约比较和 git diff --check 均通过；收件公钥与本地私钥再次匹配。
 
+
+[501 项原生运行 40141921753](https://github.com/Grinch27/twrp_builder/actions/runs/40141921753) 使用 d2d11d6d81f489ff5ffa586190328cf9247b1e9f，远端 75 项标准库测试、actionlint、公开 smoke、主机准备与源码身份校验通过。source_sync 447.876s、checkout 53.819s、preflight 6.339s 后，compile 134.650s 以 exit 1 结束。受限摘要仅报告 packages/modules/NetworkStack/tests/unit/jni/Android.bp:21 引用的 libapf、libpcap 未定义；尚无可交付镜像。
+
+补齐同一 android-12.1.0_r4 的完整 hardware/google/apf@ecccd0be025d8b6212ef5e5f3b8c1af1b2b0c34e 和 external/libpcap@b07fcc4515671dc3602fa433f4bbbfed29e4ea5a。前者根 Blueprint 定义实际 cc_library_static/libapf（SDK 24），其主机工具直接引用 libpcap；后者根 Blueprint 定义实际 cc_library/libpcap，支持 host、vendor 和 SDK 29 的 NetworkStack 测试。官方清单路径、tag/commit、FETCH_HEAD、完整 Git tree、368 文件与 4,100,108 bytes 已核对；已识别普通 Blueprint 引用在合并集合中没有额外缺席名字，仍须实际 Soong 变体和全图验证。共 503 项，原始 282 项、所有既有 pin、十个私有输入、12 条 copy/link、静态验收及当前配对收件证书不变。 提交前本地 75 项标准库测试、Bash、两份 YAML/20 段内嵌 shell、actionlint 1.7.7、官方路径/commit 复核、严格本地的实际 manifest 503 项组合、既有 pin/输入契约比较及收件密钥配对验证均通过。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：501 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：503 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 

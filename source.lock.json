@@ -1319,6 +1319,18 @@
       "path": "external/ksoap2",
       "revision": "93a77e277f823796a75ad9e8915dd28349e39023",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/hardware/google/apf",
+      "path": "hardware/google/apf",
+      "revision": "ecccd0be025d8b6212ef5e5f3b8c1af1b2b0c34e",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libpcap",
+      "path": "external/libpcap",
+      "revision": "b07fcc4515671dc3602fa433f4bbbfed29e4ea5a",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
