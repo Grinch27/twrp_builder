@@ -905,6 +905,12 @@
       "path": "external/speex",
       "revision": "6af04891263cf41d54b47121d604c168a0846c86",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/libs/net",
+      "path": "frameworks/libs/net",
+      "revision": "b94846db0fd58ffcbd10e692ca0d2a3472929705",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
