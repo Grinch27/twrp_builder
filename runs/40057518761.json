@@ -3,15 +3,22 @@
   "run_id": 40057518761,
   "builder_commit": "4a56d01c3bad8df279cb29832520caba1fc972c0",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "swap_free_mib": 2959,
-    "log_idle_seconds": 0.3,
-    "disk_free_mib": 56094,
-    "log_bytes": 1329,
-    "memory_available_mib": 14828,
-    "elapsed_seconds": 517.7,
-    "load_1m": 2.77,
-    "stage_elapsed_seconds": 2.3,
+    "disk_free_mib": 55492,
+    "stage_elapsed_seconds": 136.6,
+    "swap_free_mib": 2955,
+    "load_1m": 8.36,
+    "log_idle_seconds": 10.3,
+    "log_bytes": 31461,
+    "memory_available_mib": 14882,
+    "elapsed_seconds": 652.1,
+    "progress": {
+      "kind": "ninja",
+      "completed": 244,
+      "total": 244,
+      "percent": 100.0
+    },
     "stage_seconds": {
       "initialization": 0.076,
       "repo_tool": 0.302,
@@ -19,7 +26,22 @@
       "repo_tool_verification": 0.05,
       "source_sync": 442.582,
       "checkout_verification": 48.682,
-      "preflight": 5.819
+      "preflight": 5.819,
+      "compile": 126.513
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "packages/modules/adb/Android.bp",
+      "line": 260
+    }
+  ],
+  "public_dependencies": [
+    "libopenscreen-discovery",
+    "libopenscreen-platform-impl"
+  ]
 }
