@@ -1175,6 +1175,18 @@
       "path": "external/oboe",
       "revision": "79ec5d57a7aa727fb696996ef0f5531976ff6780",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/kotlinx.coroutines",
+      "path": "external/kotlinx.coroutines",
+      "revision": "78dd9159461464bde631bd1bc2289440949179c4",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/kotlinx.atomicfu",
+      "path": "external/kotlinx.atomicfu",
+      "revision": "4b155e4f2fb7ca1d776171331553580978c16276",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

@@ -1,6 +1,6 @@
 name: TWRP Selene (Native)
 
-# Requirements: one native workflow; 477 locked projects and unchanged boot validation.
+# Requirements: one native workflow; 479 locked projects and unchanged boot validation.
 # Ambiguity: only a real successful bootimage build establishes a native baseline.
 # Research: reviewed shared actions; official Ubuntu legacy ABI binary packages.
 # Optimization: live safe telemetry, visible host setup and encrypted delivery.

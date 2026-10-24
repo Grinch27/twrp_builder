@@ -234,13 +234,18 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 继续锁定同一 android-12.1.0_r4 的完整 frameworks/wilhelm@c62ed86e8a9a4b627f3df39c64604a7eedfc53cf、system/libartpalette@77055a71c70b08ba706c40733149fa5449da2a9b 与 external/oboe@79ec5d57a7aa727fb696996ef0f5531976ff6780。三者根 Blueprint 实际定义上述三个模块；官方 tag、FETCH_HEAD、完整 Git tree、1,530 文件及 20,894,236 bytes 已核对。普通 Blueprint 引用除 framework-permission-aidl-cpp 这个生成名字外均能找到已核对的字面量提供方；现有公开索引包含 framework-permission-aidl 生成器名字，但不据此证明 C++ 生成变体可用，继续由实际构建验证。合计 477 项，所有既有 pin、原始 282 项、十个私有输入、12 条 copy/link 与镜像验收均不变。 提交前本地 75 项标准库测试、Bash、两份 YAML/20 段内嵌 shell、actionlint 1.7.7、严格本地的实际 manifest 身份组合及 git diff --check 通过。
 
+
+[477 项原生运行 40103120938](https://github.com/Grinch27/twrp_builder/actions/runs/40103120938) 使用 45729bff04a8161433cd1d0e98169840f6718179，远端标准库测试、actionlint、公开 smoke、主机准备与源码身份校验通过。source_sync 502.724s、checkout 47.148s、preflight 4.432s 后，compile 87.748s 以 exit 1 结束。受限摘要报告 frameworks/base/packages/SystemUI/Android.bp:69 引用的 kotlinx_coroutines、kotlinx_coroutines_android 未定义，仍无可交付镜像。
+
+补齐同一 android-12.1.0_r4 的完整 external/kotlinx.coroutines@78dd9159461464bde631bd1bc2289440949179c4（根 Blueprint 实际定义上述两个 java_library），以及它直接引用的 external/kotlinx.atomicfu@4b155e4f2fb7ca1d776171331553580978c16276（kotlinx_atomicfu）。AtomicFU 不是本轮摘要的额外报错，而是已核对的直接依赖。两个项目合计 1,286 文件、5,873,554 bytes，官方 tag、FETCH_HEAD、完整 Git tree、模块定义与普通 Blueprint 引用均已核对；与现有字面量集合合并后未发现其他普通引用名字缺席，这仍不证明整个 Soong 图或可用变体正确。当前共 479 项，全部既有 pin、282 项原始身份、十个私有输入、12 条 copy/link、编译目标和镜像静态验收不变；继续采用首查等待 12 分钟、此后每分钟一次的轮询节奏。 提交前本地 75 项标准库测试、Bash、两份 YAML/20 段内嵌 shell、actionlint 1.7.7、严格本地的实际 manifest 身份组合及 git diff --check 通过。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：477 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：479 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
