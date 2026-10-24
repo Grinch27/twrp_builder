@@ -3,15 +3,22 @@
   "run_id": 40073557813,
   "builder_commit": "d7d6386f4b1b4903c5b7733d661831b5343a0109",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "stage_elapsed_seconds": 2.2,
-    "log_idle_seconds": 0.0,
-    "disk_free_mib": 55978,
-    "memory_available_mib": 14803,
-    "elapsed_seconds": 486.5,
-    "log_bytes": 1329,
-    "swap_free_mib": 2907,
-    "load_1m": 2.44,
+    "disk_free_mib": 55372,
+    "log_bytes": 31414,
+    "elapsed_seconds": 621.0,
+    "load_1m": 8.89,
+    "memory_available_mib": 14853,
+    "log_idle_seconds": 9.4,
+    "swap_free_mib": 2904,
+    "stage_elapsed_seconds": 136.8,
+    "progress": {
+      "kind": "ninja",
+      "completed": 244,
+      "total": 244,
+      "percent": 100.0
+    },
     "stage_seconds": {
       "initialization": 0.076,
       "repo_tool": 0.307,
@@ -19,7 +26,21 @@
       "repo_tool_verification": 0.051,
       "source_sync": 418.872,
       "checkout_verification": 56.694,
-      "preflight": 6.043
+      "preflight": 6.043,
+      "compile": 127.561
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "art/runtime/Android.bp",
+      "line": 570
+    }
+  ],
+  "public_dependencies": [
+    "libcpu_features"
+  ]
 }
