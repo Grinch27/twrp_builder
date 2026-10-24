@@ -857,6 +857,12 @@
       "path": "external/libopus",
       "revision": "e00ebcdb4328689e18676d25f4fcbccfd125747c",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/curl",
+      "path": "external/curl",
+      "revision": "96813bdf12a382393ea0646d2beb82e813ad06cd",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

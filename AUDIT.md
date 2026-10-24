@@ -184,13 +184,21 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 424 项提交前，本地 74 项标准库测试、Bash、YAML/内嵌 shell、actionlint 1.7.7、真实锁定 manifest 的 424 项组合及原有 pin/输入契约比较均通过，git diff --check 无错误。Docker 触发仍仅 workflow_dispatch；实际完整构建待第 12 轮验证。
 
+[424 项原生第 12 轮 40056173806](https://github.com/Grinch27/twrp_builder/actions/runs/40056173806) 使用 `32f01bf3deef38216a1dcc0eecc318ed5addcbb3`，远端标准库测试、actionlint、公开 smoke 与完整源码校验通过。source_sync 426.749s、checkout 55.745s、preflight 6.059s 后，compile 130.685s 返回 exit 1；作业已确认 failure。摘要报告 `external/libbrillo/Android.bp:251` 引用的 libcurl 未定义，未进入镜像静态验收。该字面量也已存在于公开索引，仍以真实 Soong 解析结果为准。
+
+补齐同一 android-12.1.0_r4 的完整 `external/curl@96813bdf12a382393ea0646d2beb82e813ad06cd`，3,238 个 Git 文件、19,557,364 bytes。官方路径、tag/commit、FETCH_HEAD、完整 Git tree 及 libcurl 实际定义均已核对；其已识别 Blueprint 引用没有新增缺席名字。另完整读取原锁定 libbrillo@c96dd99374b194a4ea3759b4447b16ed9fa1bc98 的公开 Git 对象，其 Blueprint 的普通引用在现有字面量集合或本批 Curl 中均可找到，仍不证明变体或命名空间正确。当前共 425 项，原有 pin、私有输入和验收契约不变。
+
+为核对是否遗漏基础源码路径，读取官方 minimal-manifest-twrp/platform_manifest_twrp_aosp 的 twrp-12.1@6dc117d9cbd08430daa16db2013560e1c4017fa8。按 default.xml、twrp-default.xml 和 remove-minimal.xml 的 include/移除顺序计算后，有效清单为 249 个项目路径，当前图已覆盖全部这些路径；没有把原始 default.xml 的 1,061 项误作最小清单整体补入，也没有替换原锁定版本。其 README 使用缺依赖绕过的示例与本项目约束不符，继续不采用。
+
+425 项提交前，本地 74 项标准库测试、Bash、YAML/内嵌 shell、actionlint 1.7.7、实际归档 manifest 组合及原有 pin/输入契约比较通过，git diff --check 无错误。Docker 仍仅手动入口；实际完整构建待第 13 轮验证。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：424 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：425 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
