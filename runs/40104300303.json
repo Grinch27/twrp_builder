@@ -3,15 +3,22 @@
   "run_id": 40104300303,
   "builder_commit": "e6190e59a708ad58e17499fe04212945c438f9a4",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "log_idle_seconds": 0.7,
-    "stage_elapsed_seconds": 3.2,
-    "elapsed_seconds": 441.2,
-    "memory_available_mib": 14683,
-    "log_bytes": 2386,
-    "load_1m": 2.06,
-    "swap_free_mib": 2958,
-    "disk_free_mib": 55799,
+    "memory_available_mib": 14821,
+    "log_idle_seconds": 10.5,
+    "stage_elapsed_seconds": 137.3,
+    "load_1m": 8.8,
+    "elapsed_seconds": 575.4,
+    "log_bytes": 32186,
+    "disk_free_mib": 55204,
+    "swap_free_mib": 2949,
+    "progress": {
+      "kind": "ninja",
+      "completed": 244,
+      "total": 244,
+      "percent": 100.0
+    },
     "stage_seconds": {
       "initialization": 0.074,
       "repo_tool": 0.251,
@@ -19,7 +26,45 @@
       "repo_tool_verification": 0.052,
       "source_sync": 363.177,
       "checkout_verification": 66.728,
-      "preflight": 5.917
+      "preflight": 5.917,
+      "compile": 127.097
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "frameworks/base/tests/RenderThreadTest/Android.bp",
+      "line": 10
+    },
+    {
+      "path": "frameworks/base/packages/SimAppDialog/Android.bp",
+      "line": 10
+    },
+    {
+      "path": "frameworks/base/packages/PackageInstaller/Android.bp",
+      "line": 34
+    },
+    {
+      "path": "frameworks/base/packages/WAPPushManager/Android.bp",
+      "line": 22
+    },
+    {
+      "path": "frameworks/base/packages/services/CameraExtensionsProxy/Android.bp",
+      "line": 26
+    },
+    {
+      "path": "frameworks/base/tests/TransitionTests/Android.bp",
+      "line": 12
+    }
+  ],
+  "public_dependencies": [
+    "android-common",
+    "androidx.camera.extensions.impl",
+    "androidx.camera.extensions.stub",
+    "setup-wizard-lib",
+    "xz-java"
+  ]
 }
