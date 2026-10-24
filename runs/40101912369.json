@@ -3,20 +3,21 @@
   "run_id": 40101912369,
   "builder_commit": "11ae4644a2232bd18f8aca236f19385da4dc83d7",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "stage_elapsed_seconds": 5.1,
-    "load_1m": 3.11,
-    "log_bytes": 14878,
-    "log_idle_seconds": 0.5,
-    "memory_available_mib": 14516,
-    "swap_free_mib": 2937,
-    "disk_free_mib": 55498,
-    "elapsed_seconds": 561.5,
+    "disk_free_mib": 54984,
+    "log_bytes": 31688,
+    "swap_free_mib": 2928,
+    "load_1m": 8.07,
+    "memory_available_mib": 14944,
+    "elapsed_seconds": 649.7,
+    "stage_elapsed_seconds": 93.3,
+    "log_idle_seconds": 15.0,
     "progress": {
       "kind": "ninja",
-      "completed": 108,
+      "completed": 244,
       "total": 244,
-      "percent": 44.3
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.05,
@@ -25,7 +26,31 @@
       "repo_tool_verification": 0.035,
       "source_sync": 506.126,
       "checkout_verification": 43.662,
-      "preflight": 4.164
+      "preflight": 4.164,
+      "compile": 78.481
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "cts/tests/tests/media/libndkaudio/Android.bp",
+      "line": 20
+    },
+    {
+      "path": "art/libartpalette/Android.bp",
+      "line": 46
+    },
+    {
+      "path": "cts/apps/CtsVerifier/jni/megaaudio/Android.bp",
+      "line": 21
+    }
+  ],
+  "public_dependencies": [
+    "libOpenSLES",
+    "libartpalette-system",
+    "oboe"
+  ]
 }
