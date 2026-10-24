@@ -3,20 +3,21 @@
   "run_id": 40076637887,
   "builder_commit": "241a0c608b012ad2b74978c94a212b10df3f45df",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "swap_free_mib": 2899,
-    "elapsed_seconds": 630.4,
-    "memory_available_mib": 14507,
-    "log_bytes": 21697,
-    "load_1m": 3.84,
-    "log_idle_seconds": 0.5,
-    "disk_free_mib": 56226,
-    "stage_elapsed_seconds": 14.5,
+    "log_idle_seconds": 7.8,
+    "memory_available_mib": 14302,
+    "stage_elapsed_seconds": 110.4,
+    "swap_free_mib": 2867,
+    "elapsed_seconds": 726.3,
+    "log_bytes": 31827,
+    "load_1m": 9.75,
+    "disk_free_mib": 55861,
     "progress": {
       "kind": "ninja",
-      "completed": 166,
+      "completed": 244,
       "total": 244,
-      "percent": 68.0
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.062,
@@ -25,7 +26,44 @@
       "repo_tool_verification": 0.045,
       "source_sync": 523.972,
       "checkout_verification": 84.437,
-      "preflight": 5.293
+      "preflight": 5.293,
+      "compile": 102.856
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "cts/tests/signature/api-check/Android.bp",
+      "line": 19
+    },
+    {
+      "path": "frameworks/base/Android.bp",
+      "line": 224
+    },
+    {
+      "path": "frameworks/native/vulkan/vkjson/Android.bp",
+      "line": 38
+    }
+  ],
+  "public_dependency_sources": [
+    {
+      "path": "build/soong/cc/stl.go",
+      "line": 32,
+      "dependencies": [
+        "ndk_libc++_static",
+        "ndk_libc++abi",
+        "ndk_libunwind"
+      ]
+    }
+  ],
+  "public_dependencies": [
+    "PlatformProperties",
+    "ndk_libc++_static",
+    "ndk_libc++abi",
+    "ndk_libunwind",
+    "vulkan_headers"
+  ]
 }
