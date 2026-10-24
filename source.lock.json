@@ -1037,6 +1037,84 @@
       "path": "external/rust/crates/url",
       "revision": "24615742dbf46d9cd9b2a64d449417d7e67900b1",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/form_urlencoded",
+      "path": "external/rust/crates/form_urlencoded",
+      "revision": "30b80d44f379328de68798227e22a32f8a442b0a",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/idna",
+      "path": "external/rust/crates/idna",
+      "revision": "c0590e5185acfcff83d93de3919bb37362d43ffc",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/matches",
+      "path": "external/rust/crates/matches",
+      "revision": "2a8b6452b5653cfc2725cd8d86c86fe3e07d4b8c",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/percent-encoding",
+      "path": "external/rust/crates/percent-encoding",
+      "revision": "8abc288fcc4b53ce82a1a25b69e6739c00cb3c69",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/unicode-bidi",
+      "path": "external/rust/crates/unicode-bidi",
+      "revision": "1da4053922773b5e56c0d5e21c99889b37d11244",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/unicode-normalization",
+      "path": "external/rust/crates/unicode-normalization",
+      "revision": "df4e39e8369dfe54b35d0135182cc4e482cf33d2",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/tinyvec",
+      "path": "external/rust/crates/tinyvec",
+      "revision": "f5e6016ac1c6df655d1ea7096d1ad3f0b3ddbae8",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/tinyvec_macros",
+      "path": "external/rust/crates/tinyvec_macros",
+      "revision": "972bf8630144094eee8218c115be030cc0e38589",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/once_cell",
+      "path": "external/rust/crates/once_cell",
+      "revision": "ffcf21ac95783d536e0c67f2d991500652dd3efc",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/spin",
+      "path": "external/rust/crates/spin",
+      "revision": "e53c0fe704e763fc9d9688e3a155ade0a04b17ea",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/untrusted",
+      "path": "external/rust/crates/untrusted",
+      "revision": "c4b249413cebe879268e03e104b38dd96e1237e0",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/libm",
+      "path": "external/rust/crates/libm",
+      "revision": "e21e61b77823df67af87725eae51d56f280e259f",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/bencher",
+      "path": "external/rust/crates/bencher",
+      "revision": "70ce355bcbadc2c2126b132dda787e033667944c",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
