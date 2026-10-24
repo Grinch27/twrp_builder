@@ -3,20 +3,21 @@
   "run_id": 40143163358,
   "builder_commit": "5be05c9faf6cb994bbdd99fab0446c993b4f24b8",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "load_1m": 3.06,
-    "elapsed_seconds": 486.4,
-    "log_idle_seconds": 1.1,
-    "memory_available_mib": 14429,
-    "log_bytes": 14878,
-    "disk_free_mib": 54812,
-    "swap_free_mib": 2945,
-    "stage_elapsed_seconds": 8.5,
+    "elapsed_seconds": 606.6,
+    "disk_free_mib": 54297,
+    "log_bytes": 31340,
+    "load_1m": 9.72,
+    "swap_free_mib": 2932,
+    "log_idle_seconds": 2.2,
+    "memory_available_mib": 14697,
+    "stage_elapsed_seconds": 128.7,
     "progress": {
       "kind": "ninja",
-      "completed": 108,
+      "completed": 244,
       "total": 244,
-      "percent": 44.3
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.072,
@@ -25,7 +26,21 @@
       "repo_tool_verification": 0.051,
       "source_sync": 404.584,
       "checkout_verification": 64.71,
-      "preflight": 6.078
+      "preflight": 6.078,
+      "compile": 126.664
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "system/media/audio_route/Android.bp",
+      "line": 36
+    }
+  ],
+  "public_dependencies": [
+    "libtinyalsav2"
+  ]
 }
