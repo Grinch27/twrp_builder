@@ -269,13 +269,18 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 补齐同一 android-12.1.0_r4 的完整 hardware/google/apf@ecccd0be025d8b6212ef5e5f3b8c1af1b2b0c34e 和 external/libpcap@b07fcc4515671dc3602fa433f4bbbfed29e4ea5a。前者根 Blueprint 定义实际 cc_library_static/libapf（SDK 24），其主机工具直接引用 libpcap；后者根 Blueprint 定义实际 cc_library/libpcap，支持 host、vendor 和 SDK 29 的 NetworkStack 测试。官方清单路径、tag/commit、FETCH_HEAD、完整 Git tree、368 文件与 4,100,108 bytes 已核对；已识别普通 Blueprint 引用在合并集合中没有额外缺席名字，仍须实际 Soong 变体和全图验证。共 503 项，原始 282 项、所有既有 pin、十个私有输入、12 条 copy/link、静态验收及当前配对收件证书不变。 提交前本地 75 项标准库测试、Bash、两份 YAML/20 段内嵌 shell、actionlint 1.7.7、官方路径/commit 复核、严格本地的实际 manifest 503 项组合、既有 pin/输入契约比较及收件密钥配对验证均通过。
 
+
+[503 项原生运行 40143163358](https://github.com/Grinch27/twrp_builder/actions/runs/40143163358) 使用 5be05c9faf6cb994bbdd99fab0446c993b4f24b8，已确认 Job failure；远端标准库测试、actionlint、公开 smoke、主机准备与源码身份校验通过。source_sync 404.584s、checkout 64.710s、preflight 6.078s 后，compile 126.664s 以 exit 1 结束。受限摘要仅报告 system/media/audio_route/Android.bp:36 引用的 libtinyalsav2 未定义；尚无成功镜像。
+
+补齐同一 android-12.1.0_r4 的完整 external/tinyalsa_new@aa15f54e97e2a4cf1a4a72e344f4df546cb783c3，75 文件、459,819 bytes。官方清单同时列出 external/tinyalsa 与 external/tinyalsa_new；本轮保持既有 TinyALSA pin，新增完整后者。其根 Blueprint 实际定义 cc_library/libtinyalsav2，支持 host 与 vendor，工具模块名称以 2 结尾；声明的 system_shared_libs 为已有 libc、libdl，已识别普通 Blueprint 引用均有提供方。官方路径、tag/commit、FETCH_HEAD、完整 Git tree、实际定义已核对，仍须实际 Soong 变体及全图验证。共 504 项，原始 282 项、全部既有 pin、十个私有输入、12 条 copy/link、当前配对收件证书及镜像验收均不变。 提交前本地 75 项标准库测试、Bash、两份 YAML/20 段内嵌 shell、actionlint 1.7.7、官方路径/commit 复核、严格本地的实际 manifest 504 项组合、既有 pin/输入契约及收件密钥配对检查全部通过。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：503 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：504 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
