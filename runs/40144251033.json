@@ -3,20 +3,21 @@
   "run_id": 40144251033,
   "builder_commit": "ebda5ad8b2e0e680648048195811d4ea6e2c98bd",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "swap_free_mib": 2972,
-    "disk_free_mib": 55096,
-    "load_1m": 3.41,
-    "memory_available_mib": 14481,
-    "log_idle_seconds": 0.3,
-    "elapsed_seconds": 439.8,
-    "stage_elapsed_seconds": 7.9,
-    "log_bytes": 14878,
+    "log_idle_seconds": 13.7,
+    "load_1m": 9.05,
+    "elapsed_seconds": 576.3,
+    "log_bytes": 31385,
+    "memory_available_mib": 14847,
+    "stage_elapsed_seconds": 144.4,
+    "swap_free_mib": 2967,
+    "disk_free_mib": 54582,
     "progress": {
       "kind": "ninja",
-      "completed": 108,
+      "completed": 244,
       "total": 244,
-      "percent": 44.3
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.073,
@@ -25,7 +26,21 @@
       "repo_tool_verification": 0.052,
       "source_sync": 366.631,
       "checkout_verification": 56.948,
-      "preflight": 6.271
+      "preflight": 6.271,
+      "compile": 130.944
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "hardware/interfaces/confirmationui/1.0/vts/functional/Android.bp",
+      "line": 26
+    }
+  ],
+  "public_dependencies": [
+    "libcn-cbor"
+  ]
 }
