@@ -3,20 +3,21 @@
   "run_id": 40148911648,
   "builder_commit": "a995859fdd9bde44fda788162e503bf89bf21fd4",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "log_idle_seconds": 0.1,
-    "elapsed_seconds": 717.1,
-    "load_1m": 3.38,
-    "swap_free_mib": 2893,
-    "memory_available_mib": 14324,
-    "disk_free_mib": 54573,
-    "stage_elapsed_seconds": 13.6,
-    "log_bytes": 21697,
+    "memory_available_mib": 14762,
+    "disk_free_mib": 54207,
+    "stage_elapsed_seconds": 106.9,
+    "elapsed_seconds": 810.4,
+    "load_1m": 10.02,
+    "log_bytes": 31338,
+    "swap_free_mib": 2854,
+    "log_idle_seconds": 5.8,
     "progress": {
       "kind": "ninja",
-      "completed": 166,
+      "completed": 244,
       "total": 244,
-      "percent": 68.0
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.061,
@@ -25,7 +26,19 @@
       "repo_tool_verification": 0.042,
       "source_sync": 623.378,
       "checkout_verification": 70.834,
-      "preflight": 6.608
+      "preflight": 6.608,
+      "compile": 104.211
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "build/soong/Android.bp",
+      "line": 49
+    }
+  ],
+  "public_dependencies": []
 }
