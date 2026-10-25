@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Requirements: classify a failed compile without exporting private log text.
 # Ambiguity: unknown diagnostics remain unclassified; no guessed source fixes.
-# Research: inherited/generated dependencies need proof in other pinned public blobs.
+# Research: exact module names and :module labels need proof in pinned public blobs.
 # Optimization: bounded log fragments, 64 locations and a 45-second literal search.
 # Risks: private overlay contents, paths, identifiers or credentials in errors.
 # Validation: fixed categories and Git-confirmed public metadata; synthetic tests.
@@ -31,7 +31,7 @@ RULES = {
     'NATIVE_COMPILER_FAILURE': r'clang: error:|ld.lld: error:|undefined reference to',
 }
 LOCATION = re.compile(r'(?<![\w/.-])([A-Za-z0-9_./+-]+):([0-9]{1,7})(?::[0-9]+)?:')
-DEPENDENCY = re.compile(r'(?:undefined module|missing dependencies:)\s*"([A-Za-z0-9_.+-]{1,128})"')
+DEPENDENCY = re.compile(r'(?:undefined module|missing dependencies:)\s*":?([A-Za-z0-9_.+-]{1,128})"')
 NAME = re.compile(r'[A-Za-z0-9_.+-]{1,128}\Z')
 
 
@@ -71,13 +71,24 @@ def public_file(source, name, projects, excluded, timeout=10):
     return None
 
 
+def dependency_literals(name):
+    """Accept only an exact quoted module name or a local :module source label."""
+    if not isinstance(name, str) or not NAME.fullmatch(name):
+        return ()
+    return (json.dumps(name), json.dumps(':' + name))
+
+
+def has_public_dependency(text, name):
+    return any(literal in text for literal in dependency_literals(name))
+
+
 def dependency_names(line):
     """Recognize quoted Blueprint names and Soong's bare comma-separated list."""
     result = set(DEPENDENCY.findall(line))
     missing = re.search(r'missing dependencies:\s*(.*)$', line)
     if missing:
-        result.update(name.strip() for name in missing[1].split(',')[:128]
-                      if NAME.fullmatch(name.strip()))
+        result.update(name.strip().removeprefix(':') for name in missing[1].split(',')[:128]
+                      if NAME.fullmatch(name.strip().removeprefix(':')))
     return result
 
 
@@ -106,7 +117,8 @@ def public_dependency_sources(source, projects, candidates, excluded):
                                            timeout=min(2, remaining)).decode().strip()
             if head != revision:
                 continue
-            patterns = [arg for name in sorted(pending)[:128] for arg in ('-e', json.dumps(name))]
+            patterns = [arg for name in sorted(pending)[:128]
+                        for literal in dependency_literals(name) for arg in ('-e', literal)]
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
@@ -130,10 +142,10 @@ def public_dependency_sources(source, projects, candidates, excluded):
                                    timeout=min(2, remaining / 3))
                 if text is None:
                     continue
-                hits = sorted(dep for dep in pending if json.dumps(dep) in text)
+                hits = sorted(dep for dep in pending if has_public_dependency(text, dep))
                 if hits:
                     line = next(i + 1 for i, value in enumerate(text.splitlines())
-                                if any(json.dumps(dep) in value for dep in hits))
+                                if any(has_public_dependency(value, dep) for dep in hits))
                     evidence.append({'path': name, 'line': line, 'dependencies': hits})
                     verified.update(hits)
                     pending.difference_update(hits)
@@ -162,7 +174,7 @@ def summarize(text, manifest, source, excluded=()):
             candidates.update(names)
             for dependency in names:
                 # Only a literal present in this exact public Git blob is eligible.
-                if json.dumps(dependency) in public:
+                if has_public_dependency(public, dependency):
                     dependencies.add(dependency)
     evidence, inherited = public_dependency_sources(source, projects, candidates - dependencies, excluded)
     result = {'categories': categories or ['UNCLASSIFIED_COMPILE_FAILURE'],

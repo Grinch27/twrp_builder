@@ -237,3 +237,66 @@ class CompileSummaryTests(unittest.TestCase):
                            self.manifest, self.source)
         self.assertEqual(result['public_dependencies'], [])
         self.assertNotIn('private_worktree_value', json.dumps(result))
+
+    def commit_public_label(self, name='Android.bp', value='libpublic'):
+        (self.project / name).write_text(
+            'filegroup { name: "public_sources", srcs: [":' + value + '"] }\n')
+        self.git('add', name)
+        self.git('commit', '--quiet', '-m', 'public source label fixture')
+        revision = self.git('rev-parse', 'HEAD').strip()
+        return self.manifest.replace(self.revision.encode(), revision.encode())
+
+    def test_source_label_is_confirmed_and_rechecked_by_progress(self):
+        manifest = self.commit_public_label()
+        for message in ('depends on undefined module "libpublic"',
+                        'depends on undefined module ":libpublic"',
+                        'module demo missing dependencies: :libpublic, private_value'):
+            with self.subTest(message=message):
+                summary = summarize('external/public/Android.bp:1: ' + message,
+                                    manifest, self.source)
+                self.assertEqual(summary['public_dependencies'], ['libpublic'])
+                value = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                               summary, self.source, manifest)
+                self.assertEqual(value['public_dependencies'], ['libpublic'])
+                self.assertNotIn('private_value', json.dumps(value))
+
+    def test_inherited_source_label_requires_pinned_evidence(self):
+        manifest = self.commit_public_label('inherited.bp', 'libinherited')
+        summary = summarize('external/public/Android.bp:1: '
+                            'depends on undefined module "libinherited"',
+                            manifest, self.source)
+        self.assertEqual(summary['public_dependencies'], ['libinherited'])
+        self.assertEqual(summary['public_dependency_sources'], [
+            {'path': 'external/public/inherited.bp', 'line': 1,
+             'dependencies': ['libinherited']}])
+        value = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                       summary, self.source, manifest)
+        self.assertEqual(value['public_dependencies'], ['libinherited'])
+        excluded = summarize('external/public/Android.bp:1: '
+                             'depends on undefined module "libinherited"',
+                             manifest, self.source, {'external/public/inherited.bp'})
+        self.assertEqual(excluded['public_dependencies'], [])
+
+    def test_private_source_labels_in_worktree_do_not_authorize_names(self):
+        manifest = self.commit_public_label()
+        (self.project / 'Android.bp').write_text('srcs: [":private_label"]\n')
+        (self.project / 'Untracked.bp').write_text('srcs: [":private_label"]\n')
+        summary = summarize('external/public/Android.bp:1: '
+                            'depends on undefined module ":private_label"',
+                            manifest, self.source)
+        self.assertEqual(summary['public_dependencies'], [])
+        forged = dict(summary, public_dependencies=['private_label'])
+        value = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                       forged, self.source, manifest)
+        self.assertEqual(value['public_dependencies'], [])
+        self.assertNotIn('private_label', json.dumps(value))
+
+    def test_source_label_partial_matches_and_path_labels_remain_unverified(self):
+        manifest = self.commit_public_label(value='libpublic_suffix')
+        for name in ('libpublic', 'public_suffix', 'path/to/libpublic',
+                     '//namespace:libpublic'):
+            with self.subTest(name=name):
+                summary = summarize('external/public/Android.bp:1: '
+                                    'depends on undefined module "' + name + '"',
+                                    manifest, self.source)
+                self.assertEqual(summary['public_dependencies'], [])

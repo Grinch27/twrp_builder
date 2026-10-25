@@ -323,6 +323,15 @@ ARC 的 libarcbridge、libarcbridgeservice 确在 product_variables.arc 条件�
 
 当前 521 项（282 原始、239 公开补充），云端逐字段比较确认既有 pin、输入/设备/镜像验收契约和收件证书不变。本轮执行环境仍未恢复，未声称新的本地测试、私有 manifest 组合或密钥配对通过；由现有 runner-image 的测试/Bash/actionlint/公开 smoke 门槛和完整 Job 的真实 manifest/checkout 校验继续验证。publish=false、只读十个输入、Native 和 12 分钟后每分钟一次检查均不变。
 
+
+[521 项原生运行 40148911648](https://github.com/Grinch27/twrp_builder/actions/runs/40148911648) 使用 a995859fdd9bde44fda788162e503bf89bf21fd4，runner-image 检查成功，完整 Job failure。source_sync 623.378s、checkout 70.834s、preflight 6.608s 后，compile 104.211s 以 exit 1 结束。受限摘要仅输出 build/soong/Android.bp:49 和 UNDEFINED_MODULE / SOONG_BOOTSTRAP_FAILURE，public_dependencies 为空，未获得成功镜像。
+
+同版本公开 AOSP Soong 和当前 TeamWin android-12.1 的根 Android.bp 均为 Git blob 8f7f3e2258687e04b11d1e59ed9bf1abaaded66b；第 49 行为 toolchain_library/libwinpthread，notice 属性采用 :mingw-libwinpthread-notice 标签。但这只是公开源码位置研究，不能据此把该名字宣称为本轮已提取的实际缺项，未添加猜测提供方。
+
+已从代码确认诊断器缺口：依赖在错误中通常只有名字，而公开源中可能以精确带引号的 :name 标签出现；旧版 json.dumps(name) 的 literal 验证和跨项目 grep 会丢弃这种证据。新增共享的严格字面量匹配，仅接受完全相同的 quoted name 或 quoted :name；quoted/bare 错误中的一个前导冒号被规范化。摘要提取、限时 Git 证据搜索和 report_progress 的发布前二次核验均使用同一规则；NAME 语法、64 位置/32 证据/128 名字限额、锁定 HEAD/blob、排除覆盖/工作树及 45 秒搜索限制不变。不导出源码或任意日志，也不支持未知路径/命名空间标签。
+
+新增四项合成 Git 测试，覆盖同文件 source label 的真实摘要与发布、继承文件 source label 的再次核验与排除、工作树/未跟踪注入和伪造摘要拒绝，以及部分名字/路径标签拒绝。本地环境仍不可用，测试尚未在本地执行；本轮交由现有 runner-image 的完整标准库测试、Bash、actionlint 和公开 smoke 验证，全部通过后才执行完整作业。此次仅改诊断，不修改 source.lock.json、521 项项目、十个输入、12 条 copy/link、收件证书或任何构建/镜像验收条件。switcher4 已进一步定位到同版本 tools/doc_generation 的实际 python_binary_host，标签/commit/tree/根 blob 已交叉核对，但仍只作为后续候选，未写入本轮源码锁。继续 Native、publish=false 和 12 分钟后每分钟一次检查。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。

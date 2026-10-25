@@ -21,7 +21,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 
 from source_inputs import NoRedirect, SHA, compose_manifest, load_lock, relative_path
-from summarize_compile_failure import RULES, public_file
+from summarize_compile_failure import RULES, has_public_dependency, public_file
 from summarize_repo_failure import RULES as REPO_RULES
 from build_telemetry import STAGES, read_json, sanitize_metrics
 
@@ -112,7 +112,7 @@ def record(status, run_id, commit, summary=None, source=None, manifest=None, exc
                 continue
             names = sorted({dep for dep in evidence.get('dependencies', [])
                             if isinstance(dep, str) and re.fullmatch(r'[A-Za-z0-9_.+-]{1,128}', dep)
-                            and json.dumps(dep) in text})[:128]
+                            and has_public_dependency(text, dep)})[:128]
             if names:
                 sources.append({'path': name, 'line': line, 'dependencies': names})
                 texts.append(text)
@@ -120,7 +120,7 @@ def record(status, run_id, commit, summary=None, source=None, manifest=None, exc
             result['public_dependency_sources'] = sources
         result['public_dependencies'] = sorted({name for name in summary.get('public_dependencies', [])
             if isinstance(name, str) and re.fullmatch(r'[A-Za-z0-9_.+-]{1,128}', name)
-            and any(json.dumps(name) in text for text in texts)})[:128]
+            and any(has_public_dependency(text, name) for text in texts)})[:128]
     return result
 
 
