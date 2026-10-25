@@ -3,20 +3,21 @@
   "run_id": 40195813154,
   "builder_commit": "9edd6cb63db0f8a815abb455bbf33d361d208bdc",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "swap_free_mib": 2895,
-    "stage_elapsed_seconds": 6.5,
-    "log_idle_seconds": 0.9,
-    "disk_free_mib": 52895,
-    "elapsed_seconds": 638.4,
-    "load_1m": 2.85,
-    "log_bytes": 14878,
-    "memory_available_mib": 14469,
+    "elapsed_seconds": 730.2,
+    "load_1m": 10.92,
+    "log_bytes": 31342,
+    "memory_available_mib": 14863,
+    "stage_elapsed_seconds": 98.3,
+    "disk_free_mib": 52381,
+    "swap_free_mib": 2868,
+    "log_idle_seconds": 1.8,
     "progress": {
       "kind": "ninja",
-      "completed": 108,
+      "completed": 244,
       "total": 244,
-      "percent": 44.3
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.055,
@@ -26,7 +27,21 @@
       "source_sync": 565.384,
       "checkout_verification": 57.127,
       "public_resources": 2.183,
-      "preflight": 4.891
+      "preflight": 4.891,
+      "compile": 96.597
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "system/bt/apex/Android.bp",
+      "line": 10
+    }
+  ],
+  "public_dependencies": [
+    "Bluetooth"
+  ]
 }
