@@ -395,13 +395,21 @@ res-testdata 是源码资源缺失：同版本 AOSP 根 Blueprint blob 52de77038
 
 当前共 530 项（282 原始、248 公开补充）。本地真实 manifest 组合通过：530 项、12 条 copy/link；字段比较确认只新增此项目，原公开测试资源、十个私有输入、目标和镜像验收不变。没有构建/测试代码变化，继续沿用远端检查门槛；Native、publish=false、启动后 15 分钟首查及之后每分钟一次不变。
 
+[530 项原生运行 40195813154](https://github.com/Grinch27/twrp_builder/actions/runs/40195813154) 使用 9edd6cb63db0f8a815abb455bbf33d361d208bdc，runner-image、主机准备和源码身份校验通过，完整 Job failure。source_sync 565.384s、checkout 57.127s、public_resources 2.183s、preflight 4.891s 后，compile 96.597s 以 exit 1 结束。实际公开缺项为 system/bt/apex/Android.bp:10 引用的 Bluetooth；尚无成功 boot.img。
+
+补齐同一 android-12.1.0_r4 的完整 packages/apps/Bluetooth@3309ec0b75ef5e3757f21749571bd99b75294c1e；根 Blueprint 定义 android_app/Bluetooth。沿其实际 Java 引用一并加入 frameworks/opt/vcard@99ba408af2a2548cbfa99251223ca3a270958980（java_library/com.android.vcard）和 hardware/ril@52bdb3d68fc5fbca2d2211476c32aec1d93b098a（librilutils/Android.bp 定义 sap-api-java-static）。三个公开同标签提供方的完整 Git tree、模块定义和普通引用已审查，共 1,154 个文件、10,258,022 bytes；没有替换原项目、添加空模块或禁用测试。字面量预检仍不证明变体或命名空间解析。
+
+工作区维护清理了此前临时文件；从远端恢复当前 builder 和唯一需要的允许列表 default.xml，不恢复整份私有归档。旧本地交付私钥已不可用，依照 Part II 在仓库之外建立新的 RSA 3072 交付密钥，并只替换仓库的公开收件证书，保持既有 CMS AES-256-GCM / RSA-OAEP 交付方式。未执行冗余证书、SHA256、DEX 或版本标记检查。
+
+当前 533 项（282 原始、251 公开补充）。实际 manifest 本地组合通过：533 项、十个私有输入、12 条 copy/link；逐字段比较确认仅追加三个公开项目，原输入与公开测试资源锁不变。构建/测试逻辑未改，使用现有远端检查门槛，不重复运行已通过的全套本地测试。Native、publish=false、每轮启动后 15 分钟首查及之后每分钟一次不变。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：530 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：533 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 

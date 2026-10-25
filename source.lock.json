@@ -1631,6 +1631,24 @@
       "path": "prebuilts/runtime",
       "revision": "9f18ff7a9984bcd4a1f7fbe9f1ec8a9697a08678",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/Bluetooth",
+      "path": "packages/apps/Bluetooth",
+      "revision": "3309ec0b75ef5e3757f21749571bd99b75294c1e",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/opt/vcard",
+      "path": "frameworks/opt/vcard",
+      "revision": "99ba408af2a2548cbfa99251223ca3a270958980",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/hardware/ril",
+      "path": "hardware/ril",
+      "revision": "52bdb3d68fc5fbca2d2211476c32aec1d93b098a",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
