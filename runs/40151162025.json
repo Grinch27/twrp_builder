@@ -3,15 +3,22 @@
   "run_id": 40151162025,
   "builder_commit": "9f6cf9af9ce1dad567c4fc7ab34d0960c25107e4",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "load_1m": 2.45,
-    "disk_free_mib": 54405,
-    "swap_free_mib": 2885,
-    "elapsed_seconds": 532.0,
-    "stage_elapsed_seconds": 0.2,
-    "memory_available_mib": 14899,
-    "log_bytes": 46,
-    "log_idle_seconds": 0.1,
+    "memory_available_mib": 14974,
+    "elapsed_seconds": 680.7,
+    "stage_elapsed_seconds": 148.8,
+    "load_1m": 9.53,
+    "swap_free_mib": 2857,
+    "log_bytes": 31369,
+    "log_idle_seconds": 14.3,
+    "disk_free_mib": 53799,
+    "progress": {
+      "kind": "ninja",
+      "completed": 244,
+      "total": 244,
+      "percent": 100.0
+    },
     "stage_seconds": {
       "initialization": 0.075,
       "repo_tool": 0.33,
@@ -19,7 +26,21 @@
       "repo_tool_verification": 0.053,
       "source_sync": 457.299,
       "checkout_verification": 65.418,
-      "preflight": 6.222
+      "preflight": 6.222,
+      "compile": 134.715
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "frameworks/base/wifi/java/Android.bp",
+      "line": 35
+    }
+  ],
+  "public_dependencies": [
+    "libwificond_ipc_aidl"
+  ]
 }
