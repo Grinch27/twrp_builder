@@ -3,20 +3,21 @@
   "run_id": 40153189218,
   "builder_commit": "790e2c7cc35ef50ca2ca7e28a3fb9692ad33b034",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "elapsed_seconds": 670.6,
-    "swap_free_mib": 2898,
-    "memory_available_mib": 14543,
-    "load_1m": 3.39,
-    "log_idle_seconds": 0.3,
-    "log_bytes": 21697,
-    "stage_elapsed_seconds": 14.6,
-    "disk_free_mib": 54136,
+    "swap_free_mib": 2866,
+    "stage_elapsed_seconds": 109.6,
+    "memory_available_mib": 14568,
+    "log_idle_seconds": 5.6,
+    "disk_free_mib": 53783,
+    "log_bytes": 31342,
+    "load_1m": 9.88,
+    "elapsed_seconds": 765.6,
     "progress": {
       "kind": "ninja",
-      "completed": 166,
+      "completed": 244,
       "total": 244,
-      "percent": 68.0
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.064,
@@ -25,7 +26,21 @@
       "repo_tool_verification": 0.072,
       "source_sync": 573.72,
       "checkout_verification": 74.248,
-      "preflight": 5.389
+      "preflight": 5.389,
+      "compile": 104.21
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "bootable/recovery/tests/Android.bp",
+      "line": 124
+    }
+  ],
+  "public_dependencies": [
+    "res-testdata"
+  ]
 }
