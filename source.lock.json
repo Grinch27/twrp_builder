@@ -1649,6 +1649,12 @@
       "path": "hardware/ril",
       "revision": "52bdb3d68fc5fbca2d2211476c32aec1d93b098a",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/replicaisland",
+      "path": "external/replicaisland",
+      "revision": "55474b826586641a8a265751a60fd162819839d0",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

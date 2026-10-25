@@ -403,13 +403,21 @@ res-testdata 是源码资源缺失：同版本 AOSP 根 Blueprint blob 52de77038
 
 当前 533 项（282 原始、251 公开补充）。实际 manifest 本地组合通过：533 项、十个私有输入、12 条 copy/link；逐字段比较确认仅追加三个公开项目，原输入与公开测试资源锁不变。构建/测试逻辑未改，使用现有远端检查门槛，不重复运行已通过的全套本地测试。Native、publish=false、每轮启动后 15 分钟首查及之后每分钟一次不变。
 
+[533 项原生运行 40243031911](https://github.com/Grinch27/twrp_builder/actions/runs/40243031911) 使用 7e5fe0f0b30637b4c6000e3953af284530afdf64，runner-image 成功，完整 Job failure。source_sync 399.006s、checkout 62.094s、public_resources 1.800s、preflight 6.136s 后，compile 138.253s 以 exit 1 结束。受限摘要明确报告 cts/tests/tests/openglperf/Android.bp:19 引用的 com.replica.replicaisland 未定义；没有成功镜像。
+
+官方同标签清单定位到完整 external/replicaisland@55474b826586641a8a265751a60fd162819839d0，共 759 个 Git 文件、7,329,636 bytes。完整公开 Git tree 和唯一 Blueprint 已读取，根 Android.bp blob 5775d9b9fdbea29f37d38fd7ce7e759190edf8b2 实际定义 android_test_helper_app/com.replica.replicaisland，直接 static_libs/junit 已有提供方。保留官方源码和原有测试设置，没有编写占位模块或改动 CTS 测试。
+
+公开预查另读取七个固定 AOSP tag 项目的 Blueprint/Make；离线与当前有效 manifest 比较，六个消费者版本相同，其余一个 ExtServices 不在当前清单内，因此没有加入其候选 libfft2d。生成 AIDL/SDK 名字继续交由真实构建验证，不将字面量候选全部视为缺项。
+
+当前 534 项（282 原始、252 公开补充）。本地真实 manifest 组合通过，原十个私有输入、12 条 copy/link、所有既有 pin 和公开测试资源锁不变；仅追加上述公开提供方。沿用现有远端测试门槛，Native、publish=false、15 分钟首查及其后每分钟一次不变。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：533 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：534 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
