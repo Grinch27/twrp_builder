@@ -387,13 +387,21 @@ res-testdata 是源码资源缺失：同版本 AOSP 根 Blueprint blob 52de77038
 
 当前共 529 项（282 原始、247 公开补充），公开测试资源锁及十个私有输入完全不变。实际锁定 manifest 的本地组合通过：529 项、12 条 copy/link；逐字段比较确认仅追加这个项目。构建/测试代码未改，继续沿用现有远端检查门槛，不重复运行已经通过的本地测试。Native、publish=false、原镜像验收和每轮启动后 15 分钟首查、此后每分钟一次均不变。
 
+[529 项原生运行 40194255459](https://github.com/Grinch27/twrp_builder/actions/runs/40194255459) 使用 2d950cbfe070b48649f8c1d810c6024268d7b25f，runner-image 检查、主机准备和源码身份校验成功，完整 Job failure。source_sync 386.488s、checkout 90.950s、public_resources 1.737s、preflight 6.395s 后，compile 136.344s 以 exit 1 结束。明确缺项为 frameworks/base/startop/iorap/functional_tests/Android.bp:24 引用的 iorap-functional-test-apps；尚无成功 boot.img。
+
+按实际测试引用找到同版本 platform/prebuilts/runtime，官方 android-12.1.0_r4 tag 对应 commit 9f18ff7a9984bcd4a1f7fbe9f1ec8a9697a08678。iorap/test/Android.bp 的 filegroup/iorap-functional-test-apps 引用三份官方测试 APK，完整公开 Git tree 中均为普通文件；该提供方未在原始或公开补充项目中。此次加入完整 prebuilts/runtime，保留所有原项目 pin，不摘取空文件组或禁用测试。
+
+来源审查读取官方 tag 元数据、未截断的递归 Git tree 清单和全部 17 份 Blueprint；公开清单为 8,959 个 Git 文件、1,059,087,439 bytes，新增源码由 runner 完整同步与 checkout 验证。本地未为核验下载 APK、执行 DEX/签名/版本标记检查或重复成品校验。该项目已有 prefer:false 声明保持原状，没有通过配置强制用预编译替换现有源码；已识别普通引用没有额外缺席提供方，模块生成和变体仍由真实构建验证。
+
+当前共 530 项（282 原始、248 公开补充）。本地真实 manifest 组合通过：530 项、12 条 copy/link；字段比较确认只新增此项目，原公开测试资源、十个私有输入、目标和镜像验收不变。没有构建/测试代码变化，继续沿用远端检查门槛；Native、publish=false、启动后 15 分钟首查及之后每分钟一次不变。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：529 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：530 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
