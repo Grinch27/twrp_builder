@@ -3,20 +3,21 @@
   "run_id": 40244297878,
   "builder_commit": "2aa590a0dddb13dbf0b8a9239137710a138ea002",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "stage_elapsed_seconds": 15.9,
-    "log_idle_seconds": 1.0,
-    "disk_free_mib": 52687,
-    "elapsed_seconds": 734.0,
-    "load_1m": 3.25,
-    "memory_available_mib": 14252,
-    "log_bytes": 22190,
-    "swap_free_mib": 2886,
+    "log_idle_seconds": 13.5,
+    "disk_free_mib": 52350,
+    "stage_elapsed_seconds": 127.4,
+    "elapsed_seconds": 845.5,
+    "memory_available_mib": 14945,
+    "log_bytes": 31394,
+    "swap_free_mib": 2879,
+    "load_1m": 7.0,
     "progress": {
       "kind": "ninja",
-      "completed": 171,
+      "completed": 244,
       "total": 244,
-      "percent": 70.1
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.06,
@@ -26,7 +27,18 @@
       "source_sync": 611.591,
       "checkout_verification": 95.011,
       "public_resources": 3.202,
-      "preflight": 5.464
+      "preflight": 5.464,
+      "compile": 114.036
     }
-  }
+  },
+  "categories": [
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "external/e2fsprogs/lib/Android.bp",
+      "line": 37
+    }
+  ],
+  "public_dependencies": []
 }
