@@ -1451,6 +1451,12 @@
       "path": "tools/doc_generation",
       "revision": "ae81e21a4c6de7562f7718d063e1fde1a89f7919",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/system/connectivity/wificond",
+      "path": "system/connectivity/wificond",
+      "revision": "dfd60f8706b928b3d7d014fc9e06926ab6c45abd",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

@@ -346,13 +346,20 @@ ARC 的 libarcbridge、libarcbridgeservice 确在 product_variables.arc 条件�
 
 当前共 523 项（282 原始、241 公开补充）；云端逐字段检查确认 source.lock.json 只追加这两项，既有 pin、十个私有输入、12 条 copy/link、收件证书和镜像验收全部不变。诊断修正的 79 项测试已有上述实际 runner 通过证据；本轮新增 pin 的检查继续由现有 runner-image 门槛与完整 Job 的实际 manifest/checkout 校验执行，不把先前通过结果记为本轮已经执行。本地环境和收件密钥可访问性尚待恢复，私钥不进入 Runner 或公开仓库。Native、publish=false、每轮 12 分钟首查和此后每分钟一次均不变。
 
+
+[523 项原生运行 40151162025](https://github.com/Grinch27/twrp_builder/actions/runs/40151162025) 使用 9f6cf9af9ce1dad567c4fc7ab34d0960c25107e4，远端 79 项标准库测试、actionlint、公开初始化/同步 smoke、主机准备及完整源码身份校验通过，完整 Job failure。source_sync 457.299s、checkout 65.418s、preflight 6.222s 后，compile 134.715s 以 exit 1 结束。受限摘要仅报告 frameworks/base/wifi/java/Android.bp:35 引用的 libwificond_ipc_aidl 未定义；尚无通过静态验收的 boot.img。
+
+补齐同一 android-12.1.0_r4 的完整 system/connectivity/wificond@dfd60f8706b928b3d7d014fc9e06926ab6c45abd，115 个 Git 文件、846,607 bytes。根 Android.bp 的 filegroup/libwificond_ipc_aidl 实际包含十份 nl80211 AIDL，libwificond_ipc 也使用相同 :libwificond_ipc_aidl 引用。公开同标签 platform_manifest path/name、两镜像 annotated tag 0bb8eacdfeb7a9e7178fcd6601e8cd514391f36f、peeled commit、未截断的完整递归 tree 清单和根 Blueprint blob e417aaf403cedc0d034a6d499db17304c6dd6e52 均已核对。全部 Blueprint 已识别普通引用在既有名字集合与本项目定义中都有提供方；android.security.legacykeystore-ndk_platform 是已有 android.security.legacykeystore AIDL interface 的生成引用，同版本公开 system/security/keystore2/aidl/Android.bp 明确启用 NDK backend，但仍不据生成器名字或另一个公开 tag 的配置保证当前生成变体可用，交由真实 Soong 验证，未重复添加 system/security。
+
+当前 524 项（282 原始、242 公开补充），source.lock.json 只追加这一项，所有既有 pin、十个私有输入、12 条 copy/link、收件证书和镜像验收保持原值。本地环境仍不可用，未声称本轮本地完整 Git checkout、单元测试、私有 manifest 组合或收件密钥复核；由现有 runner-image 检查门槛和完整 Job 的真实 manifest/checkout 校验执行。继续 Native、publish=false 和每轮首查等待 12 分钟、此后每分钟一次。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：523 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：524 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
