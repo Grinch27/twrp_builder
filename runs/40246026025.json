@@ -3,20 +3,21 @@
   "run_id": 40246026025,
   "builder_commit": "c6449a5a5998e34a8fef890e667897f05239c34c",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "load_1m": 3.9,
-    "disk_free_mib": 52741,
-    "memory_available_mib": 14183,
+    "elapsed_seconds": 659.6,
     "swap_free_mib": 2966,
-    "stage_elapsed_seconds": 16.4,
-    "log_idle_seconds": 0.1,
-    "log_bytes": 20540,
-    "elapsed_seconds": 520.4,
+    "stage_elapsed_seconds": 155.6,
+    "log_idle_seconds": 10.7,
+    "log_bytes": 31394,
+    "memory_available_mib": 14898,
+    "disk_free_mib": 52350,
+    "load_1m": 8.58,
     "progress": {
       "kind": "ninja",
-      "completed": 157,
+      "completed": 244,
       "total": 244,
-      "percent": 64.3
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.073,
@@ -26,7 +27,21 @@
       "source_sync": 424.019,
       "checkout_verification": 68.964,
       "public_resources": 2.357,
-      "preflight": 6.255
+      "preflight": 6.255,
+      "compile": 145.087
     }
-  }
+  },
+  "categories": [
+    "INVALID_APEX_AVAILABLE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "external/e2fsprogs/lib/Android.bp",
+      "line": 37
+    }
+  ],
+  "public_dependencies": [
+    "com.android.virt"
+  ]
 }
