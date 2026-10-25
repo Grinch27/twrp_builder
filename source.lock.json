@@ -1337,6 +1337,12 @@
       "path": "external/tinyalsa_new",
       "revision": "aa15f54e97e2a4cf1a4a72e344f4df546cb783c3",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/cn-cbor",
+      "path": "external/cn-cbor",
+      "revision": "b1412f245b5256c30e3757ac9e8cf245deaf5040",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
