@@ -18,7 +18,7 @@ import tempfile
 import time
 
 STAGES = {'initialization', 'repo_tool', 'repo_initialization', 'repo_tool_verification',
-          'source_sync', 'checkout_verification', 'preflight', 'compile',
+          'source_sync', 'checkout_verification', 'public_resources', 'preflight', 'compile',
           'static_validation', 'complete'}
 LIMIT = 256 * 1024
 ANSI = re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')

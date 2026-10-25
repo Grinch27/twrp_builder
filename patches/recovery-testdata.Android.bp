@@ -1,0 +1,20 @@
+// Restore the AOSP android-12.1.0_r4 recovery test resource filegroup.
+package {
+    default_applicable_licenses: ["selene_stock_recovery_testdata_license"],
+}
+
+license {
+    name: "selene_stock_recovery_testdata_license",
+    visibility: [":__subpackages__"],
+    license_kinds: [
+        "SPDX-license-identifier-Apache-2.0",
+        "SPDX-license-identifier-MIT",
+        "SPDX-license-identifier-OFL",
+    ],
+    license_text: ["NOTICE"],
+}
+
+filegroup {
+    name: "res-testdata",
+    srcs: ["res-*/images/*_text.png"],
+}

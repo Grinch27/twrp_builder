@@ -21,6 +21,7 @@ flowchart TD
 | Runner | 共享 `resolve-runner-image@main` 动态解析 Ubuntu x64 |
 | 编译环境 | 原生 Ubuntu Runner，使用锁定源码中的 JDK / Clang；旧主机 ABI 通过官方归档二进制包安装 |
 | 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和 246 项公开补充项目 SHA，共 528 项 |
+| 公开测试资源 | 同版本 AOSP Recovery 的 25 张测试图片和 NOTICE；单独锁定，恢复 `res-testdata` 文件组，十项私有输入不变 |
 | 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j4` |
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；四任务。原生路线使用 Runner 可用内存，Docker 路线另限 14 GiB |
 | 磁盘检查 | 清理后至少 50 GiB；编译前至少 18 GiB；不足立即失败 |
@@ -46,7 +47,9 @@ flowchart TD
 4. 完整任务会清理该次临时 GitHub runner 的预装 Android SDK、hostedtoolcache、dotnet、PowerShell 四个目录，以获得空间；不会在本地或 self-hosted runner 上运行该清理脚本。若空间门槛仍不满足，任务停止，不自动购买或选择付费 runner。
 5. 成功并通过静态验收后，总是用 `delivery-recipient.pem` 的公钥将三个成品文件打包为 AES-256-GCM / RSA-OAEP 的 CMS 密文，保留加密 Actions Artifact 七天。私钥只在交付方本地，不进入仓库或 Runner；`publish=false` 不公开镜像明文。只有明确勾选 `publish` 才另行上传明文 Artifact 和实验性 prerelease。完整日志仍不上传。
 
-维护时的工作流查询频率：每轮启动后先等 12 分钟，再每 60 秒检查一次，直至结束。每次重试重新计时；工作流自身的心跳输出与构建限时不变。
+维护时的工作流查询频率：每轮启动后先等 15 分钟，再每 60 秒检查一次，直至结束。每次重试重新计时；工作流自身的心跳输出与构建限时不变。
+
+528 项运行随后明确报告 Recovery 测试缺少 `res-testdata`。现在从单独锁定的同版本公开 AOSP commit 恢复 25 张测试图片与 NOTICE，在新目录中提供原有文件组，保留原测试和全部项目版本。资源恢复单独记录为 `public_resources` 阶段，限时六分钟；此修正仍需完整构建验证。
 
 原生工作流现在提供更直观的调试信息：
 

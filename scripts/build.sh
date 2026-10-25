@@ -93,6 +93,10 @@ python3 "${SELF}/scripts/source_inputs.py" checkout \
 cp -a "${WORK}/inputs/overlay/." "${WORK}/android/"
 cp -a "${WORK}/inputs/prebuilts" "${WORK}/prebuilts"
 
+set_stage public_resources
+timeout --signal=TERM --kill-after=30s 6m \
+  python3 "${SELF}/scripts/restore_public_testdata.py" --source "${WORK}/android"
+
 set_stage preflight
 [[ "$(df --output=avail -B1 "${WORK}" | tail -n 1)" -ge 19327352832 ]]
 test -s prebuilts/jdk/jdk11/linux-x86/lib/modules

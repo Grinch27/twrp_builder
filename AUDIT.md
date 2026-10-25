@@ -369,6 +369,18 @@ ARC 的 libarcbridge、libarcbridgeservice 确在 product_variables.arc 条件�
 
 当前 528 项（282 原始、246 公开补充），云端逐字段比较确认 source.lock.json 只追加以上四项；既有 pin、十个私有输入、12 条 copy/link、收件证书、编译目标和镜像静态验收不变。本地执行环境仍不可用，未声称本轮本地完整 Git checkout、标准库测试、实际私有 manifest 组合或收件密钥配对通过；新提交仍由现有 runner-image 检查门槛及完整 Job 的实际身份校验验证。保持 Native、publish=false，首查等待 12 分钟后每分钟一次。
 
+[528 项原生运行 40153189218](https://github.com/Grinch27/twrp_builder/actions/runs/40153189218) 使用 790e2c7cc35ef50ca2ca7e28a3fb9692ad33b034，远端检查、主机准备和源码身份校验通过，完整 Job failure。source_sync 573.720s、checkout 74.248s、preflight 5.389s 后，compile 104.210s 以 exit 1 结束。受限摘要明确报告 bootable/recovery/tests/Android.bp:124 引用的 res-testdata 未定义；没有成功镜像。
+
+公开研究分支的 [40153512614](https://github.com/Grinch27/twrp_builder/actions/runs/40153512614) 已成功，83 项合成测试、actionlint 和公开 smoke 通过，完整 Native Job skipped。固定公开 Frameworks Base tag 的 721 份 Blueprint/Make 已扫描，报告 180 个字面量候选，主要为 AIDL/HIDL/SDK 生成模块、Make 目标和 ARC 条件引用；未将这些名字直接当成真实缺项。研究工具保留在独立分支，没有并入主线或修改本轮输入。
+
+res-testdata 是源码资源缺失：同版本 AOSP 根 Blueprint blob 52de77038ca87af8b923a7ec4fff8e7a62ad0ac3 定义该 filegroup，srcs 为 res-*/images/*_text.png；公开 TWRP android-12.1 分支缺少定义和这些图片。本轮保留全部 528 项原锁定项目和十个私有输入，在 source.lock.json 新增独立 public_test_resources，固定 platform/bootable/recovery@e8aadb8b03fca3c1e0fd938e8f8486de4bafd965 的 25 张 PNG 与原 NOTICE，共 26 个公开资源文件、4,504,715 bytes。只下载测试实际引用的数据，不替换 Recovery 项目或其源码。新的 bootable/recovery/builder-testdata 目录保存原密度/图片相对路径，并提供与 AOSP 一致的非空 filegroup；独立声明原许可种类并保留 NOTICE。原测试仍启用，没有空模块或测试绕过。
+
+新增 restore_public_testdata.py 按既有 Git 输入身份函数读取这份公开资源锁，四个有界读取器从固定官方 AOSP commit 下载，只接受预期图片路径和 NOTICE，在全部下载有效后才写入新目录和模块定义；已存在的目标目录、符号链接、错误来源或空资源集合直接失败。build.sh 在 checkout 后进入 public_resources 阶段，限时六分钟；该阶段加入既有遥测白名单，便于定位资源获取失败。没有新增 SHA256、签名证书、DEX、版本标记或成品扫描步骤。编译目标、十个私有输入、282 项原项目及全部既有 pin 保持原值。
+
+本地六项新增测试通过，覆盖真实资源恢复、原源码保留、下载身份错误、目标冲突、许可/空数据、路径/来源和链接逃逸；实际公开下载与恢复 26 个资源成功，Bash 语法和差异检查通过。现有 runner-image 仍执行完整检查后才允许下一轮完整构建，不把局部测试或公开资源预检认定为镜像成功。执行环境已恢复，原交付私钥文件仍在，收件证书未变；未增加重复证书检查。
+
+2026-10-25 用户将监控频率改为每轮启动后先等待 15 分钟，再每 60 秒检查一次；本轮已更新 Part II 和 README。此规则取代前述 12 分钟约定，适用于后续每次重试，不改变构建心跳和限时。继续仅推进 Native，publish=false；Docker 暂缓。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。

@@ -1,5 +1,143 @@
 {
   "schema": 1,
+  "public_test_resources": {
+    "project": "platform/bootable/recovery",
+    "revision": "e8aadb8b03fca3c1e0fd938e8f8486de4bafd965",
+    "upstream": "refs/tags/android-12.1.0_r4",
+    "destination": "bootable/recovery/builder-testdata",
+    "files": [
+      {
+        "path": "NOTICE",
+        "blob": "c5b1efa7aac764ae6d8da63476a2d5cec02a6a5d",
+        "size": 10695
+      },
+      {
+        "path": "res-hdpi/images/erasing_text.png",
+        "blob": "34c56a96600d4b500a6b2c3e025aa5fccb7c15be",
+        "size": 51214
+      },
+      {
+        "path": "res-hdpi/images/error_text.png",
+        "blob": "2a96053dab08c35f25f156484c956cd7b94f1198",
+        "size": 36610
+      },
+      {
+        "path": "res-hdpi/images/installing_security_text.png",
+        "blob": "97e1f11b388c8a94af73d40ff1aa1d8500bb5555",
+        "size": 115058
+      },
+      {
+        "path": "res-hdpi/images/installing_text.png",
+        "blob": "1d591eb8b8d910a877f541de0cac78cea08767e8",
+        "size": 105531
+      },
+      {
+        "path": "res-hdpi/images/no_command_text.png",
+        "blob": "977fcfaffc75075fdc4a0b63afb20dd94578008e",
+        "size": 62331
+      },
+      {
+        "path": "res-mdpi/images/erasing_text.png",
+        "blob": "dcd0ea656a98fc5e50fd70fd04793ff8814be759",
+        "size": 30027
+      },
+      {
+        "path": "res-mdpi/images/error_text.png",
+        "blob": "2152dad83e51899867495b251d5759380fe33983",
+        "size": 21546
+      },
+      {
+        "path": "res-mdpi/images/installing_security_text.png",
+        "blob": "d1ac4cad6ad2bd87d6d04a9d8e1967828c77c1ec",
+        "size": 70491
+      },
+      {
+        "path": "res-mdpi/images/installing_text.png",
+        "blob": "c9b6d7185312eee26cfe62bb67279d63d1297770",
+        "size": 62100
+      },
+      {
+        "path": "res-mdpi/images/no_command_text.png",
+        "blob": "f77ad132533524c1cd95b67699a43f8fd6fd6972",
+        "size": 34772
+      },
+      {
+        "path": "res-xhdpi/images/erasing_text.png",
+        "blob": "e22b27479b4cbfb5cc6fb441a4e480a37fd0860b",
+        "size": 74450
+      },
+      {
+        "path": "res-xhdpi/images/error_text.png",
+        "blob": "e4c27e1fcf44463662e4c28c89b0058d62676088",
+        "size": 53331
+      },
+      {
+        "path": "res-xhdpi/images/installing_security_text.png",
+        "blob": "7ba12b6676222bf231c78fa5a70099360d4a11c3",
+        "size": 201207
+      },
+      {
+        "path": "res-xhdpi/images/installing_text.png",
+        "blob": "567988e7fed949f8f362211b6251aa6691862cf5",
+        "size": 178087
+      },
+      {
+        "path": "res-xhdpi/images/no_command_text.png",
+        "blob": "a682abbef1d8f517340403ae185675358b972ceb",
+        "size": 88037
+      },
+      {
+        "path": "res-xxhdpi/images/erasing_text.png",
+        "blob": "6cc953b6d8ef526f634d851eaa406624274e7933",
+        "size": 123362
+      },
+      {
+        "path": "res-xxhdpi/images/error_text.png",
+        "blob": "0d5cea8439f650dd34b1b371485c79e75d958d7e",
+        "size": 86841
+      },
+      {
+        "path": "res-xxhdpi/images/installing_security_text.png",
+        "blob": "5d105986ae6da1195997fea24f30eee63678006f",
+        "size": 453013
+      },
+      {
+        "path": "res-xxhdpi/images/installing_text.png",
+        "blob": "6e94fa28bbaa376c1de6e891b8ad75aa7369a843",
+        "size": 420313
+      },
+      {
+        "path": "res-xxhdpi/images/no_command_text.png",
+        "blob": "40ab484d91792dac42090761c2def76973cb2e56",
+        "size": 247462
+      },
+      {
+        "path": "res-xxxhdpi/images/erasing_text.png",
+        "blob": "cc730992b66d8d5486037bb21e130bda9ab930c7",
+        "size": 267640
+      },
+      {
+        "path": "res-xxxhdpi/images/error_text.png",
+        "blob": "fea3cfc953cc1b789b4d49b69da2be8b39a6f419",
+        "size": 181450
+      },
+      {
+        "path": "res-xxxhdpi/images/installing_security_text.png",
+        "blob": "ed77d08893d681ea62b8359857d691dcf1e63a1b",
+        "size": 618212
+      },
+      {
+        "path": "res-xxxhdpi/images/installing_text.png",
+        "blob": "96591064813d749fc0e3bfc943f3516b70558ac7",
+        "size": 574440
+      },
+      {
+        "path": "res-xxxhdpi/images/no_command_text.png",
+        "blob": "4e6f3639dfaa877255db8b15b98771fdd9194cdc",
+        "size": 336495
+      }
+    ]
+  },
   "source": {
     "repository": "Grinch27/twrp_selene",
     "commit": "b0aef415d0a5eabf66663c8882d16e1e227381dd",
