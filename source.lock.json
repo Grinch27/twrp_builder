@@ -1343,6 +1343,54 @@
       "path": "external/cn-cbor",
       "revision": "b1412f245b5256c30e3757ac9e8cf245deaf5040",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/chrono",
+      "path": "external/rust/crates/chrono",
+      "revision": "35633fa1226ef05eb47ad54429ebbab8d897b40a",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/macaddr",
+      "path": "external/rust/crates/macaddr",
+      "revision": "efc9bb88df45a8bf5840874c828537d1d7a64f71",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/uuid",
+      "path": "external/rust/crates/uuid",
+      "revision": "621eaf85d35127eb9ca35fc17f0b9597dbbccaa7",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/zip",
+      "path": "external/rust/crates/zip",
+      "revision": "767cae43e318f7b3319c3350e3b359df99dded18",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/num-integer",
+      "path": "external/rust/crates/num-integer",
+      "revision": "c72f03e26b6742eee471428005c81e1f98d89951",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/byteorder",
+      "path": "external/rust/crates/byteorder",
+      "revision": "2a0cc4020d08e109081d8a561c94b339bc2f8749",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/crc32fast",
+      "path": "external/rust/crates/crc32fast",
+      "revision": "b5ef892746e22c6a9bb17af18d9289c284fdea70",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/flate2",
+      "path": "external/rust/crates/flate2",
+      "revision": "c4d185c8aacc1abfba4a8b49901b4acb30fbcd34",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

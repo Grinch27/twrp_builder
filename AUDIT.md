@@ -279,13 +279,33 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 补齐同一 android-12.1.0_r4 的完整 external/cn-cbor@b1412f245b5256c30e3757ac9e8cf245deaf5040，33 文件、109,514 bytes。公开官方根 Blueprint 索引提供定位线索后，再取得完整 Git 对象，核对官方路径、tag、FETCH_HEAD 与根 Blueprint blob 9ca75f9de224acc8cc017def67e1f5d71aa678fe 完全一致；实际 cc_library/libcn-cbor 支持 host、vendor、VNDK，未声明额外的项目外模块库依赖。已识别普通 Blueprint 引用均有现有提供方，仍须实际变体、命名空间及完整图验证。当前共 505 项，原始 282 项、全部既有 pin、十个私有输入、12 条 copy/link、当前收件证书及镜像验收均不变。 提交前本地 75 项标准库测试、Bash、两份 YAML/20 段内嵌 shell、actionlint 1.7.7、官方路径/commit/根 blob 身份复核、严格本地的实际 manifest 505 项组合、既有 pin/输入契约及收件密钥配对检查全部通过。
 
+
+[505 项原生运行 40145320510](https://github.com/Grinch27/twrp_builder/actions/runs/40145320510) 使用 f4d2d0d24d34606a9b9c786076f1e41f9a5c8367，runner-image 检查成功，完整 Job failure。source_sync 381.887s、checkout 52.348s、preflight 6.308s 后，compile 128.193s 以 exit 1 结束。受限摘要仅报告 system/extras/profcollectd/libprofcollectd/Android.bp:37 引用的 libchrono、libmacaddr、libuuid、libzip 未定义；尚无成功镜像。
+
+本轮补齐同一 android-12.1.0_r4 的完整 external/rust/crates/{chrono,macaddr,uuid,zip}，其根 Blueprint 均实际定义对应 rust_library，支持 host。沿 chrono 的 rustlibs 补入 num-integer；沿 zip 的 rustlibs 补入 byteorder、crc32fast、flate2。后四项是公开源码声明的直接/传递依赖，不是运行摘要额外报告的缺项。flate2 的 liblibz_sys、liblibc、libcfg_if 等名字已在既有公开索引中，未重复添加它们的项目；字面量存在不证明可用变体。
+
+本地执行环境在研究期间断开。本轮通过 aosp-mirror-neo 和 Microsoft 的 msft-mirror-aosp 两份公开 AOSP 镜像，交叉核对八个 android-12.1.0_r4 annotated tag 对象 SHA 完全一致，读取其 peeled commit、未截断的完整递归 Git tree 清单及实际根 Android.bp blob；同标签公开 platform_manifest/default.xml 确认八个 path/name。没有声称本地取得完整 Git 对象或验证 tag 的 PGP 签名。八项共 287 个 Git 文件、1,883,409 bytes。构建仍从官方 AOSP remote 取得锁定 commit，并逐项验证实际 checkout HEAD/clean，镜像来源不替代 runner 的源码身份检查。
+
+| 项目 | commit | tag object | Android.bp blob |
+| --- | --- | --- | --- |
+| external/rust/crates/chrono | 35633fa1226ef05eb47ad54429ebbab8d897b40a | 026ea552e9688dbd09e824a4e4ed4dbcf3e8d8cc | ecc8ca0ea6f8c81cc1952351876002936507ba26 |
+| external/rust/crates/macaddr | efc9bb88df45a8bf5840874c828537d1d7a64f71 | cf6bb5fe0ee5b1a3f82d16b558fae092d87e7a65 | 7430a0f59829735ee8c58f82d6c93de5793573bb |
+| external/rust/crates/uuid | 621eaf85d35127eb9ca35fc17f0b9597dbbccaa7 | ad39d1b4be953475b03f946d4d417c62efedc53a | aafe9e07918be8c703d0305d9da6cef297df229c |
+| external/rust/crates/zip | 767cae43e318f7b3319c3350e3b359df99dded18 | a0bb8e9a6b959511d4eeefd63f6ac047e7f98d42 | e5b607d3f48dbd61395b1dc22e34563e47626e10 |
+| external/rust/crates/num-integer | c72f03e26b6742eee471428005c81e1f98d89951 | 91db858a906cb27d2c5e9e07da0c6d9e1cca2d26 | b97f98c5cd16aef8e041ab5c7f206c7179c35cc2 |
+| external/rust/crates/byteorder | 2a0cc4020d08e109081d8a561c94b339bc2f8749 | 8f76add7ee41d2889592877f1bdb6c54c501147d | 3efba93c39cf48b602eabb0e99c374a5605723c4 |
+| external/rust/crates/crc32fast | b5ef892746e22c6a9bb17af18d9289c284fdea70 | 488c94f8c55f88a47178940600f9c8a529ca2e8e | 678f976cc45a9b2c8c55a472b8a007af6aea3d8e |
+| external/rust/crates/flate2 | c4d185c8aacc1abfba4a8b49901b4acb30fbcd34 | d335c2d491302e05a47582efd644d19ba04c7670 | 649ce3bcfe17e994c5c8233aa52b054ae373b136 |
+
+当前共 513 项（原始 282 项、231 项公开补充）。云端比较确认 source.lock.json 仅追加这八项，其余输入契约及既有 pin 完全相同；十个输入、12 条 copy/link、目标、CMS 收件证书、publish=false 与镜像静态验收不变。本轮未执行新的本地测试、实际私有 manifest 组合或收件密钥配对检查；同一持续交付期间，私钥在 505 项提交前已确认配对，本次环境断开只说明当前不能访问，不能据此认定它已丢失。标准库测试、Bash、actionlint 和公开 smoke 由现有 runner-image Job 执行，全部成功才允许完整 Job；实际 manifest 组合与 checkout 校验由完整 Job 执行。后续恢复本地环境时仍须确认收件私钥可用，取得密文不等同于完成解密交付。保持每轮首查等待 12 分钟、之后每分钟一次。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：505 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：513 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
