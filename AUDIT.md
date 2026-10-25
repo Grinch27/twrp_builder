@@ -299,13 +299,37 @@ Git Data ref 更新后的 `2d114b734e2111bbe6e2358ad85048ebd404145c` 未登记 A
 
 当前共 513 项（原始 282 项、231 项公开补充）。云端比较确认 source.lock.json 仅追加这八项，其余输入契约及既有 pin 完全相同；十个输入、12 条 copy/link、目标、CMS 收件证书、publish=false 与镜像静态验收不变。本轮未执行新的本地测试、实际私有 manifest 组合或收件密钥配对检查；同一持续交付期间，私钥在 505 项提交前已确认配对，本次环境断开只说明当前不能访问，不能据此认定它已丢失。标准库测试、Bash、actionlint 和公开 smoke 由现有 runner-image Job 执行，全部成功才允许完整 Job；实际 manifest 组合与 checkout 校验由完整 Job 执行。后续恢复本地环境时仍须确认收件私钥可用，取得密文不等同于完成解密交付。保持每轮首查等待 12 分钟、之后每分钟一次。
 
+
+[513 项原生运行 40147542417](https://github.com/Grinch27/twrp_builder/actions/runs/40147542417) 使用 0d9ce7aefcc3ee8002e2e72c7de8651ec9afeef0，远端 75 项标准库测试、actionlint、公开初始化/同步 smoke、主机准备和十个输入校验均通过，完整 Job failure。source_sync 553.443s、checkout 146.612s、preflight 6.880s 后，compile 104.073s 以 exit 1 结束。受限摘要仅报告 system/core/trusty/confirmationui/Android.bp:82 引用的 libteeui_hal_support 未定义；没有通过静态验收的 boot.img。
+
+本轮补齐同一 android-12.1.0_r4 的完整 system/teeui，其 libteeui/Android.bp 实际定义 cc_library/libteeui_hal_support，支持 host/vendor；完整项目的六份 Blueprint 均已读取，与既有名字集合比较后已识别普通引用没有额外缺席名字，HIDL 生成名仍由实际 Soong 验证。
+
+首查等待期继续核对公开依赖，新增七项来自直接/传递源码引用，不是本轮运行摘要额外报告的实际错误。packages/modules/NeuralNetworks/driver/sample/Android.bp:92-93 的样例服务直接引用 libXNNPACK、libpthreadpool，对应完整 external/XNNPACK、external/pthreadpool；沿其静态库和头文件依赖补齐 external/{cpuinfo,FP16,FXdiv}。libclog 由同一 cpuinfo 的 deps/clog/Android.bp 实际提供，无需猜测另一个 external/clog 项目。frameworks/base/apct-tests/perftests/core/Android.bp:51 引用 :GoogleFontDancingScript，由完整 external/google-fonts/dancing-script 的 filegroup 提供；frameworks/base/mime/Android.bp:97 引用 :debian.mime.types.minimized，由完整 external/mime-support 的 java_genrule 提供。这三个公开调用方的同标签源码在断开前已通过严格本地比较，确认与 allowlist manifest 中锁定的 caller 身份相同；本轮只用固定公开 tag 读取相同引用，没有向外部服务发送私有 manifest 派生的 SHA。其 Git blob 分别为 9294b687ea041c70b640dcfbd54b1610c7fa57b0、2182f0bc2501d6706dddc472e2c3b408a880c870、a3ea65cb2efe4835feb7ac2013fb9cd74d9d81a2。
+
+八项均按上一轮的两镜像同标签交叉核对方式，读取未截断的完整递归 Git tree 清单、所有 Blueprint 与实际定义，并由同版本公开 platform_manifest 确认 path/name。共 5103 个 Git 文件、78,942,010 bytes；没有声称本地完整 Git checkout 或 PGP 签名验证。
+
+| 项目 | commit | tag object | 提供方 Blueprint blob |
+| --- | --- | --- | --- |
+| system/teeui | a0ec5efe611788e97f1c5d4673824750dbc19a5b | 0f31c3b38b8b8a26f5607bd441990d5cc33a234d | b349a1088a1aeef9ed0358a8c3ad1f081301ccbd |
+| external/XNNPACK | 0cea1a1e068bd8e413cb7d86e7f5d7b5d8bb4146 | 97910015b3939fdf822b754b52167c5f67321257 | 16b757e16fcbbee85ec498bbba9ba84dbb38a1ba |
+| external/pthreadpool | b505d1624df02b2abd496fb94abdfc7e1bda5877 | be6db6e21e913d97643c0b6469c47f3e47b70dab | a027498865d328a0bf5b83879dee662826e29969 |
+| external/google-fonts/dancing-script | 82e7f54b5b544a62a0215b1e4254904c9489608f | 3dc566e0d085ca1dddb7d7e33e40347b4c0165b4 | a93470f811d9c09b7bd136672893acb1a23de35e |
+| external/mime-support | 983cab4ee2f036103b6d3f365928d2ba836a68c5 | a2124be9b609299c453fc4f529c67882a0cf28f5 | 806821ef38a6e96ee4d237e2b6c03aede9ee3663 |
+| external/cpuinfo | d55f522b37f0caba7509a808387733966d2fe26d | dae639d06a85e94e2d364097540b48b3dab40c3e | 79a901dfe72a313ba923ad7fedc648009fc085ab |
+| external/FP16 | fa719c9ca65bafbec85348690fc03af69309b994 | 70fe58301398af664fc023a403c616a1b4dc2987 | 3aaa01b4ae094a33d7f6c79a5d06d351a0f7d94d |
+| external/FXdiv | c8c0fad85b70aaedd1ce6e21bf3a4fc557dc5a53 | 4bf4213d93b33c316f5345be8154925a4ddaad2f | e4e0bc8c3cd9e487046584c20645f61ade341fd9 |
+
+ARC 的 libarcbridge、libarcbridgeservice 确在 product_variables.arc 条件下，仅凭字面量缺席不能认定当前 selene 缺项，未加入；switcher4 的实际提供方仍未确认，已核对的 doclava 不定义它，未加入猜测项目。八项已识别普通 Blueprint 引用在合并名字集合中均有提供方；这不证明模块生成、命名空间或变体正确。
+
+当前 521 项（282 原始、239 公开补充），云端逐字段比较确认既有 pin、输入/设备/镜像验收契约和收件证书不变。本轮执行环境仍未恢复，未声称新的本地测试、私有 manifest 组合或密钥配对通过；由现有 runner-image 的测试/Bash/actionlint/公开 smoke 门槛和完整 Job 的真实 manifest/checkout 校验继续验证。publish=false、只读十个输入、Native 和 12 分钟后每分钟一次检查均不变。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：513 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：521 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 

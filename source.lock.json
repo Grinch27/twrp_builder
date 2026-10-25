@@ -1391,6 +1391,54 @@
       "path": "external/rust/crates/flate2",
       "revision": "c4d185c8aacc1abfba4a8b49901b4acb30fbcd34",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/system/teeui",
+      "path": "system/teeui",
+      "revision": "a0ec5efe611788e97f1c5d4673824750dbc19a5b",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/XNNPACK",
+      "path": "external/XNNPACK",
+      "revision": "0cea1a1e068bd8e413cb7d86e7f5d7b5d8bb4146",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/pthreadpool",
+      "path": "external/pthreadpool",
+      "revision": "b505d1624df02b2abd496fb94abdfc7e1bda5877",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/google-fonts/dancing-script",
+      "path": "external/google-fonts/dancing-script",
+      "revision": "82e7f54b5b544a62a0215b1e4254904c9489608f",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/mime-support",
+      "path": "external/mime-support",
+      "revision": "983cab4ee2f036103b6d3f365928d2ba836a68c5",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/cpuinfo",
+      "path": "external/cpuinfo",
+      "revision": "d55f522b37f0caba7509a808387733966d2fe26d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/FP16",
+      "path": "external/FP16",
+      "revision": "fa719c9ca65bafbec85348690fc03af69309b994",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/FXdiv",
+      "path": "external/FXdiv",
+      "revision": "c8c0fad85b70aaedd1ce6e21bf3a4fc557dc5a53",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
