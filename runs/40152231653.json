@@ -3,15 +3,22 @@
   "run_id": 40152231653,
   "builder_commit": "34fff53d2ec0756619488d1af04c4284eeb9abac",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "stage_elapsed_seconds": 0.3,
-    "memory_available_mib": 14810,
-    "elapsed_seconds": 473.4,
-    "log_bytes": 46,
-    "load_1m": 2.41,
-    "swap_free_mib": 2899,
-    "disk_free_mib": 54404,
-    "log_idle_seconds": 0.2,
+    "load_1m": 10.82,
+    "swap_free_mib": 2895,
+    "log_bytes": 31357,
+    "elapsed_seconds": 606.1,
+    "stage_elapsed_seconds": 133.0,
+    "log_idle_seconds": 3.1,
+    "disk_free_mib": 53797,
+    "memory_available_mib": 14876,
+    "progress": {
+      "kind": "ninja",
+      "completed": 244,
+      "total": 244,
+      "percent": 100.0
+    },
     "stage_seconds": {
       "initialization": 0.072,
       "repo_tool": 0.316,
@@ -19,7 +26,21 @@
       "repo_tool_verification": 0.05,
       "source_sync": 407.394,
       "checkout_verification": 56.947,
-      "preflight": 6.263
+      "preflight": 6.263,
+      "compile": 130.039
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "frameworks/base/startop/iorap/Android.bp",
+      "line": 31
+    }
+  ],
+  "public_dependencies": [
+    "iorap-aidl"
+  ]
 }
