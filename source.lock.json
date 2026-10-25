@@ -1655,6 +1655,210 @@
       "path": "external/replicaisland",
       "revision": "55474b826586641a8a265751a60fd162819839d0",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "device/generic/goldfish-opengl",
+      "path": "device/generic/goldfish-opengl",
+      "revision": "2dd0f4d156d3eabea3978c0db7c17d9eaa670a2b",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "device/generic/vulkan-cereal",
+      "path": "device/generic/vulkan-cereal",
+      "revision": "1c67746b7008f9db875a65f310b03f23e38cbd6c",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "device/google/cuttlefish",
+      "path": "device/google/cuttlefish",
+      "revision": "02fb67dfce5e2f8ec534aecc8ae812d7aafe74df",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "device/google/cuttlefish_prebuilts",
+      "path": "device/google/cuttlefish_prebuilts",
+      "revision": "2b253e275bd35ff4ad1faece252630b9dc6e8a2c",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/crosvm",
+      "path": "external/crosvm",
+      "revision": "2e3890a4b5d910dbf2b11c36cf0e41fb762fc281",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libepoxy",
+      "path": "external/libepoxy",
+      "revision": "4d62875e1e7fc85e333e5b19e4dcda63e3c2f89a",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libwebm",
+      "path": "external/libwebm",
+      "revision": "85813a28ffe7ce8ff82347815cb46e29bc2bda18",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/libwebsockets",
+      "path": "external/libwebsockets",
+      "revision": "be389bd8f693be333a7a9f59729de36ca51fe78d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/minigbm",
+      "path": "external/minigbm",
+      "revision": "ad7fcdb22ffb98dc08dbea1ac2b286a16ca45031",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/ms-tpm-20-ref",
+      "path": "external/ms-tpm-20-ref",
+      "revision": "de687d6b612e49ac99057d2fce9299a03ffe371d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/async-task",
+      "path": "external/rust/crates/async-task",
+      "revision": "da572dc909d0737a587e6a48cc8efb92355e2712",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/async-trait",
+      "path": "external/rust/crates/async-trait",
+      "revision": "c4bbdc70f67d6f80d7db694161a04d74d6ddb036",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/downcast-rs",
+      "path": "external/rust/crates/downcast-rs",
+      "revision": "17cb8f7af794531b1f65585697b9da2b6cfde14b",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/gdbstub",
+      "path": "external/rust/crates/gdbstub",
+      "revision": "74044028ef4fb1fc8548fa7ae63d1ad71e62c8da",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/gdbstub_arch",
+      "path": "external/rust/crates/gdbstub_arch",
+      "revision": "c994c528c64555e94e7d5f0a04b557ad7d4f61b7",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/heck",
+      "path": "external/rust/crates/heck",
+      "revision": "2b34764d3ca9a0c822a1455079ceedd1245686eb",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/intrusive-collections",
+      "path": "external/rust/crates/intrusive-collections",
+      "revision": "e341cd76b20798f71172a460a584862c5731bad3",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/managed",
+      "path": "external/rust/crates/managed",
+      "revision": "c4fc0f035a82be6aae54a7f352570955c80683dc",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/memoffset",
+      "path": "external/rust/crates/memoffset",
+      "revision": "fae6ca26cf70bbb5ac3d87ecfd8b0d40a60bee5d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/proc-macro-error",
+      "path": "external/rust/crates/proc-macro-error",
+      "revision": "ed3dda7d09a0cf1245b42e42d6fea55504685e3a",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/proc-macro-error-attr",
+      "path": "external/rust/crates/proc-macro-error-attr",
+      "revision": "fd31f5c6c9bad5d5e6f5a04c4f2dfa01c89fecd3",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/remain",
+      "path": "external/rust/crates/remain",
+      "revision": "032557c85440bc31bdb61bd17f274336058747d4",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/shared_child",
+      "path": "external/rust/crates/shared_child",
+      "revision": "27f1c2099729d5b6b40a84462e834c8f309b4154",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/structopt",
+      "path": "external/rust/crates/structopt",
+      "revision": "a3544b998a459dc5f980c30daf4731e1fa0ef12a",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/structopt-derive",
+      "path": "external/rust/crates/structopt-derive",
+      "revision": "41923a960f8ff256840999cd78621113ee7adf00",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/unicode-segmentation",
+      "path": "external/rust/crates/unicode-segmentation",
+      "revision": "ab59a255aa2677c907a247a610aa139ce2043121",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/rust/crates/vmm_vhost",
+      "path": "external/rust/crates/vmm_vhost",
+      "revision": "e888142820fecb866897908cf4144fd0744f5a38",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/tpm2-tss",
+      "path": "external/tpm2-tss",
+      "revision": "84800b714c78d930d74f2bca52bfe476b092fe02",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/virglrenderer",
+      "path": "external/virglrenderer",
+      "revision": "bbc1ba7625a2adeb71ac4a8bc3359e1679200bf3",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/wayland",
+      "path": "external/wayland",
+      "revision": "865496102f485cce6b876cb0cc438bd96be19a7f",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/wayland-protocols",
+      "path": "external/wayland-protocols",
+      "revision": "99d58faeed1f49c3ee208fada92df660435863e4",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "kernel/prebuilts/5.10/arm64",
+      "path": "kernel/prebuilts/5.10/arm64",
+      "revision": "ae9b7a6d7112d105926168e319f23be75d4d8390",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "kernel/prebuilts/5.10/x86-64",
+      "path": "kernel/prebuilts/5.10/x86_64",
+      "revision": "ec23529c6e7fa84261893084e0a06c68d78a72fc",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/modules/Virtualization",
+      "path": "packages/modules/Virtualization",
+      "revision": "d96e60966ff8d29d5beb7891f9c9b3b41c1ff0ae",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

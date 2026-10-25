@@ -417,13 +417,23 @@ res-testdata 是源码资源缺失：同版本 AOSP 根 Blueprint blob 52de77038
 
 两项新合成测试覆盖公开 APEX 名字、发布端复核、错误附带的私有名字、工作树篡改与排除覆盖文件；完整 87 项标准库测试通过。当前保持同一 534 项源码图、收件证书、十个私有输入、目标及静态验收，仅修正诊断能力后再次实际运行，确认失败类型再决定是否加入 Virtualization 等提供方。Native、publish=false、15 分钟首查及其后每分钟一次不变。
 
+[534 项诊断验证运行 40246026025](https://github.com/Grinch27/twrp_builder/actions/runs/40246026025) 使用 c6449a5a5998e34a8fef890e667897f05239c34c，runner-image 成功，完整 Job failure。source_sync 424.019s、checkout 68.964s、public_resources 2.357s、preflight 6.255s 后，compile 145.087s 返回 exit 1。新的受限分类实际报告 INVALID_APEX_AVAILABLE，并从 external/e2fsprogs/lib/Android.bp:37 提取到 com.android.virt；诊断修正已在真实运行验证，没有成功 boot.img。
+
+同版本 packages/modules/Virtualization@d96e60966ff8d29d5beb7891f9c9b3b41c1ff0ae 的 apex/Android.bp 实际定义 apex/com.android.virt。其 authfs、zipfuse 和 vm 等直接引用 crosvm_defaults、libfuse_rust、libtempfile、libstructopt、libshared_child；前三项由同版本完整 external/crosvm 提供。沿实际 Blueprint/Make 引用继续核对 Crosvm、图形后端、Wayland、Rust、Cuttlefish、TPM 和 WebSocket/WebM 提供方，合计追加 34 个完整公开项目；精确 project/name/path、tag 和 commit 见 source.lock.json 新增尾部 34 项。
+
+来源预查读取官方 android-12.1.0_r4 manifest，31 个源码提供方的完整 shallow Git tree 与全部 Blueprint/Make，共 13,340 个文件、262,631,932 bytes。另对较大的 Cuttlefish/5.10 内核预编译提供方只读取官方 tag commit、完整 Gitiles tree 元数据和全部四份构建描述，共 162 个文件记录；没有为核验下载或扫描二进制。它们为 Microdroid 测试提供 kernel_prebuilts-5.10-arm64、kernel_prebuilts-5.10-x86_64、cuttlefish_crosvm_bootloader、mkenvimage_host 等原有模块，不替换 Selene 原厂 kernel/DTB 或十项私有输入。合并现有名字及实际定义后，普通引用没有新增缺席提供方，剩余五个字面量候选是 AIDL/SDK 生成名；此结果不证明变体、命名空间或真实构建闭包。
+
+官方清单中六项公开依赖位于 device/ 或 kernel/ 命名空间。原公开追加项验证器仅允许 platform/，本轮增加六个明确的 name/path 对照项，包含官方 kernel/prebuilts/5.10/x86-64 对应本地 x86_64 的别名；未笼统开放其他命名空间或更换下载主机。新增测试覆盖有效官方别名、私有输入保留、错配路径和未知 device/kernel 名称拒绝。完整 89 项标准库测试通过。
+
+当前 568 项（282 原始、286 公开补充），真实 manifest 本地组合通过，原十个私有输入、12 条 copy/link、既有 pin、公开测试资源锁、Selene 目标和静态验收不变。没有缺依赖绕过、测试禁用或跨版本二进制替换；继续 Native、publish=false、15 分钟首查及其后每分钟一次。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：534 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：568 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 

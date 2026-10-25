@@ -24,6 +24,15 @@ import xml.etree.ElementTree as ET
 
 SHA = re.compile(r"[0-9a-f]{40}\Z")
 ROOT = Path(__file__).resolve().parents[1]
+# Exact non-platform identities from the reviewed public AOSP r4 manifest.
+REVIEWED_AOSP_NAMES = {
+    "device/generic/goldfish-opengl": "device/generic/goldfish-opengl",
+    "device/generic/vulkan-cereal": "device/generic/vulkan-cereal",
+    "device/google/cuttlefish": "device/google/cuttlefish",
+    "device/google/cuttlefish_prebuilts": "device/google/cuttlefish_prebuilts",
+    "kernel/prebuilts/5.10/arm64": "kernel/prebuilts/5.10/arm64",
+    "kernel/prebuilts/5.10/x86-64": "kernel/prebuilts/5.10/x86_64",
+}
 
 
 def relative_path(value):
@@ -64,7 +73,9 @@ def public_projects(lock):
             raise ValueError("invalid public project fields")
         relative_path(project["name"])
         relative_path(project["path"])
-        if (not project["name"].startswith("platform/")
+        reviewed_identity = (project["name"].startswith("platform/")
+                             or REVIEWED_AOSP_NAMES.get(project["name"]) == project["path"])
+        if (not reviewed_identity
                 or not SHA.fullmatch(project["revision"])
                 or not re.fullmatch(r"refs/tags/android-[0-9][0-9A-Za-z._-]*", project["upstream"])):
             raise ValueError("unreviewed public project identity")

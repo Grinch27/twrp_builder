@@ -158,6 +158,30 @@ class InputTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             source.compose_manifest(lock, data + b'\n')
 
+    def test_reviewed_public_device_and_kernel_alias_compose_without_private_changes(self):
+        for name, path in [('device/google/cuttlefish', 'device/google/cuttlefish'),
+                           ('kernel/prebuilts/5.10/x86-64', 'kernel/prebuilts/5.10/x86_64')]:
+            with self.subTest(name=name):
+                data, lock = public_fixture()
+                lock['public_projects'][0].update(name=name, path=path)
+                effective = source.ET.fromstring(source.compose_manifest(lock, data))
+                added = effective.findall('project')[1]
+                self.assertEqual((added.get('name'), added.get('path')), (name, path))
+                self.assertEqual(added.get('remote'), 'builder-reviewed-aosp')
+                self.assertEqual(len(lock['files']), 1)
+                source.verify_blob(data, lock['files'][0])
+
+    def test_nonplatform_public_names_require_the_exact_reviewed_name_path_pair(self):
+        for name, path in [('device/google/cuttlefish', 'device/google/other'),
+                           ('device/unreviewed/project', 'device/google/cuttlefish'),
+                           ('kernel/prebuilts/5.10/x86_64', 'kernel/prebuilts/5.10/x86_64'),
+                           ('kernel/prebuilts/5.10/x86-64', 'kernel/prebuilts/5.10/arm64')]:
+            with self.subTest(name=name, path=path):
+                data, lock = public_fixture()
+                lock['public_projects'][0].update(name=name, path=path)
+                with self.assertRaises(ValueError):
+                    source.compose_manifest(lock, data)
+
     def test_compose_rejects_unlocked_or_unreviewed_public_projects(self):
         for key, value in [('revision', 'main'), ('path', '../escape'),
                            ('name', 'unreviewed/project'), ('upstream', 'main'),
