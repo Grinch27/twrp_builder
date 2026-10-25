@@ -1439,6 +1439,18 @@
       "path": "external/FXdiv",
       "revision": "c8c0fad85b70aaedd1ce6e21bf3a4fc557dc5a53",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/prebuilts/gcc/linux-x86/host/x86_64-w64-mingw32-4.8",
+      "path": "prebuilts/gcc/linux-x86/host/x86_64-w64-mingw32-4.8",
+      "revision": "b1f41225c9b400670ea28bf387cd85849a8c93b4",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/tools/doc_generation",
+      "path": "tools/doc_generation",
+      "revision": "ae81e21a4c6de7562f7718d063e1fde1a89f7919",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

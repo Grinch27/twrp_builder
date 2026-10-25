@@ -332,13 +332,27 @@ ARC 的 libarcbridge、libarcbridgeservice 确在 product_variables.arc 条件�
 
 新增四项合成 Git 测试，覆盖同文件 source label 的真实摘要与发布、继承文件 source label 的再次核验与排除、工作树/未跟踪注入和伪造摘要拒绝，以及部分名字/路径标签拒绝。本地环境仍不可用，测试尚未在本地执行；本轮交由现有 runner-image 的完整标准库测试、Bash、actionlint 和公开 smoke 验证，全部通过后才执行完整作业。此次仅改诊断，不修改 source.lock.json、521 项项目、十个输入、12 条 copy/link、收件证书或任何构建/镜像验收条件。switcher4 已进一步定位到同版本 tools/doc_generation 的实际 python_binary_host，标签/commit/tree/根 blob 已交叉核对，但仍只作为后续候选，未写入本轮源码锁。继续 Native、publish=false 和 12 分钟后每分钟一次检查。
 
+
+[521 项诊断修正运行 40150195255](https://github.com/Grinch27/twrp_builder/actions/runs/40150195255) 使用 4c669326109ce4dc74bbdc0172a1da4a0f250d20，远端 79 项标准库测试、actionlint、公开初始化/同步 smoke、主机准备及源码身份校验通过，完整 Job failure。source_sync 430.058s、checkout 61.448s、preflight 6.237s 后，compile 133.018s 以 exit 1 结束。新的受限摘要在同一 build/soong/Android.bp:49 实际提取并再次核验出 mingw-libwinpthread-notice；这验证了 :module 标签诊断路径，不构成编译成功。
+
+实际缺项由同一 android-12.1.0_r4 的完整 prebuilts/gcc/linux-x86/host/x86_64-w64-mingw32-4.8 提供：根 Android.bp 定义 filegroup/mingw-libwinpthread-notice，引用的 licenses/mingw-w64-svn-r5861/mingw-w64-libraries/winpthreads/COPYING 在该完整 Git tree 中确实存在。同步完整上游项目，不拷贝单个 notice 或使用跨版本工具链，不修改 Windows 模块/测试启用状态，也不改变实际 bootimage 的原工具链选择。
+
+同时纳入公开引用预检已经确认的完整 tools/doc_generation；frameworks/base/ApiDocs.bp:404 明确声明 tools: [switcher4, ...]，其同版本提供方根 Blueprint 定义 python_binary_host/switcher4，保持官方 py2/py3 设置，未修改全局 Python。switcher4 是预检依赖，不是这次运行摘要报告的实际缺项。两个项目的同标签 annotated tag 在 aosp-mirror-neo 与 msft-mirror-aosp 中完全一致；公开同版本 platform_manifest path/name、peeled commit、完整未截断递归 tree 清单和全部 Blueprint 已核对，共 4,005 个 Git 文件、356,879,558 bytes。本地执行环境仍不可用，没有声称本地完整 Git checkout 或 PGP 签名验证；完整构建仍只从官方 AOSP remote 同步锁定 commit，并校验实际 HEAD/clean。
+
+| 项目 | commit | tag object | Android.bp blob |
+| --- | --- | --- | --- |
+| prebuilts/gcc/linux-x86/host/x86_64-w64-mingw32-4.8 | b1f41225c9b400670ea28bf387cd85849a8c93b4 | de00b7ca1f9e2f8ac883f53250847d5e6e6345f5 | ae93b9feaef045a36ee4e0d24aea4acb4cb69ea3 |
+| tools/doc_generation | ae81e21a4c6de7562f7718d063e1fde1a89f7919 | 8ad38f6d0ed6efb73ef4bbd1bc06b7c2f16c2167 | 4f473a082974042a7055d8880172c452575b7efe |
+
+当前共 523 项（282 原始、241 公开补充）；云端逐字段检查确认 source.lock.json 只追加这两项，既有 pin、十个私有输入、12 条 copy/link、收件证书和镜像验收全部不变。诊断修正的 79 项测试已有上述实际 runner 通过证据；本轮新增 pin 的检查继续由现有 runner-image 门槛与完整 Job 的实际 manifest/checkout 校验执行，不把先前通过结果记为本轮已经执行。本地环境和收件密钥可访问性尚待恢复，私钥不进入 Runner 或公开仓库。Native、publish=false、每轮 12 分钟首查和此后每分钟一次均不变。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：521 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：523 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
