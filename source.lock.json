@@ -1457,6 +1457,30 @@
       "path": "system/connectivity/wificond",
       "revision": "dfd60f8706b928b3d7d014fc9e06926ab6c45abd",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/system/iorap",
+      "path": "system/iorap",
+      "revision": "e2fff5521c256e529e0c06832d97ba4c4904241d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/google-fruit",
+      "path": "external/google-fruit",
+      "revision": "163edb54c696ce93dd90072d69ae45e2392f340c",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/Reactive-Extensions/RxCpp",
+      "path": "external/Reactive-Extensions/RxCpp",
+      "revision": "ac5bf92f435fd44bd418de92917454ef02b867b7",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/catch2",
+      "path": "external/catch2",
+      "revision": "a19571a8d820d3851a44dbfc75272360584a5f50",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

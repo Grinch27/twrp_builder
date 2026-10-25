@@ -353,13 +353,29 @@ ARC 的 libarcbridge、libarcbridgeservice 确在 product_variables.arc 条件�
 
 当前 524 项（282 原始、242 公开补充），source.lock.json 只追加这一项，所有既有 pin、十个私有输入、12 条 copy/link、收件证书和镜像验收保持原值。本地环境仍不可用，未声称本轮本地完整 Git checkout、单元测试、私有 manifest 组合或收件密钥复核；由现有 runner-image 检查门槛和完整 Job 的真实 manifest/checkout 校验执行。继续 Native、publish=false 和每轮首查等待 12 分钟、此后每分钟一次。
 
+
+[524 项原生运行 40152231653](https://github.com/Grinch27/twrp_builder/actions/runs/40152231653) 使用 34fff53d2ec0756619488d1af04c4284eeb9abac，远端 79 项标准库测试、actionlint、公开初始化/同步 smoke、主机准备及源码身份校验通过，完整 Job failure。source_sync 407.394s、checkout 56.947s、preflight 6.263s 后，compile 130.039s 以 exit 1 结束。受限摘要仅报告 frameworks/base/startop/iorap/Android.bp:31 引用的 iorap-aidl 未定义；尚无成功 boot.img。
+
+补齐同一 android-12.1.0_r4 的完整 system/iorap；根 Blueprint 实际定义 filegroup/iorap-aidl，包含 IIorap.aidl 与 ITaskListener.aidl，并设置 path 为 binder。沿其实际 shared_libs/header_libs，补入完整 external/google-fruit（cc_library/libfruit）和 external/Reactive-Extensions/RxCpp（cc_library_headers/librxcpp）；再沿 RxCpp 测试的 whole_static_libs 补入完整 external/catch2，提供 libcatch2 与 libcatch2-upstream。这三项是已读取的直接/传递引用，不是该次受限运行摘要额外报告的缺项，没有禁用测试或编写空 defaults。
+
+四项的公开同标签 platform_manifest path/name、两份独立 AOSP 镜像 annotated tag、peeled commit、完整未截断递归 tree 清单及所有 Blueprint/Make 文件均已核对，共 1,215 个 Git 文件、8,590,246 bytes。依赖预检使用保留字符串的注释处理，避免把 src/**/*.cc 中的斜线星号误当成块注释；合并实际定义与既有名字集合后，已识别普通模块引用没有额外缺席名字，但仍不证明生成模块、可用变体或命名空间解析。
+
+| 项目 | commit | tag object | Android.bp blob |
+| --- | --- | --- | --- |
+| system/iorap | e2fff5521c256e529e0c06832d97ba4c4904241d | 430013bb8f8b2aa209c7077cb7326d950181a125 | 736bc401de381d31637a1243fd30aa36f326da8b |
+| external/google-fruit | 163edb54c696ce93dd90072d69ae45e2392f340c | ae5b4c70973450474726cad561df0fdef8d6e86f | 444c19ca7b5a532dcab3aa441259778bed7fc0ca |
+| external/Reactive-Extensions/RxCpp | ac5bf92f435fd44bd418de92917454ef02b867b7 | bfb6c77a1ba188e45c75c1007b103cfc1ba9eafd | 1ba32cae50c8934e4f1beb86219fc426854718dd |
+| external/catch2 | a19571a8d820d3851a44dbfc75272360584a5f50 | 95582facd1e63d3f5ce7d09b2b08c74a7489a3e5 | 99a231e5bae67b15004715d2de903c2b698729f3 |
+
+当前 528 项（282 原始、246 公开补充），云端逐字段比较确认 source.lock.json 只追加以上四项；既有 pin、十个私有输入、12 条 copy/link、收件证书、编译目标和镜像静态验收不变。本地执行环境仍不可用，未声称本轮本地完整 Git checkout、标准库测试、实际私有 manifest 组合或收件密钥配对通过；新提交仍由现有 runner-image 检查门槛及完整 Job 的实际身份校验验证。保持 Native、publish=false，首查等待 12 分钟后每分钟一次。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：524 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：528 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
