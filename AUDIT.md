@@ -411,6 +411,12 @@ res-testdata 是源码资源缺失：同版本 AOSP 根 Blueprint blob 52de77038
 
 当前 534 项（282 原始、252 公开补充）。本地真实 manifest 组合通过，原十个私有输入、12 条 copy/link、所有既有 pin 和公开测试资源锁不变；仅追加上述公开提供方。沿用现有远端测试门槛，Native、publish=false、15 分钟首查及其后每分钟一次不变。
 
+[534 项原生运行 40244297878](https://github.com/Grinch27/twrp_builder/actions/runs/40244297878) 使用 2aa590a0dddb13dbf0b8a9239137710a138ea002，runner-image 成功，完整 Job failure。source_sync 611.591s、checkout 95.011s、public_resources 3.202s、preflight 5.464s 后，compile 114.036s 以 exit 1 结束。摘要仅给出 external/e2fsprogs/lib/Android.bp:37 和 SOONG_BOOTSTRAP_FAILURE，未提取依赖名字；不能声称已有确切新缺项。
+
+同版本公开 e2fsprogs 的该位置为 apex_available，公开 build/soong/android/apex.go 的 checkApexAvailableProperty 在 OtherModuleExists 为假时输出带引号的“is not a valid module name”。现有解析器仅支持 undefined module / missing dependencies，本轮为此新增受限 INVALID_APEX_AVAILABLE 分类及精确名字提取，仍需在锁定公开 Git blob 中有完整字面量证据，发布端仍独立复核。没有输出任意原始诊断、放宽 AllowMissingDependencies 或改动 Android 源码。
+
+两项新合成测试覆盖公开 APEX 名字、发布端复核、错误附带的私有名字、工作树篡改与排除覆盖文件；完整 87 项标准库测试通过。当前保持同一 534 项源码图、收件证书、十个私有输入、目标及静态验收，仅修正诊断能力后再次实际运行，确认失败类型再决定是否加入 Virtualization 等提供方。Native、publish=false、15 分钟首查及其后每分钟一次不变。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。

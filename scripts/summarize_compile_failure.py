@@ -19,6 +19,7 @@ from source_inputs import load_lock, relative_path
 
 RULES = {
     'UNDEFINED_MODULE': r'depends on undefined module|missing dependencies:',
+    'INVALID_APEX_AVAILABLE': r'apex_available:\s*"[^"\r\n]+"\s+is not a valid module name',
     'MISSING_SOURCE_INPUT': r'source path .*does not exist|missing and no known rule to make it',
     'DUPLICATE_MODULE': r'module .*already defined|duplicate module',
     'UNKNOWN_BUILD_PROPERTY': r'unrecognized property|unrecognized module type',
@@ -32,6 +33,7 @@ RULES = {
 }
 LOCATION = re.compile(r'(?<![\w/.-])([A-Za-z0-9_./+-]+):([0-9]{1,7})(?::[0-9]+)?:')
 DEPENDENCY = re.compile(r'(?:undefined module|missing dependencies:)\s*":?([A-Za-z0-9_.+-]{1,128})"')
+APEX_DEPENDENCY = re.compile(r'apex_available:\s*"([A-Za-z0-9_.+-]{1,128})"\s+is not a valid module name\b')
 NAME = re.compile(r'[A-Za-z0-9_.+-]{1,128}\Z')
 
 
@@ -85,6 +87,7 @@ def has_public_dependency(text, name):
 def dependency_names(line):
     """Recognize quoted Blueprint names and Soong's bare comma-separated list."""
     result = set(DEPENDENCY.findall(line))
+    result.update(APEX_DEPENDENCY.findall(line))
     missing = re.search(r'missing dependencies:\s*(.*)$', line)
     if missing:
         result.update(name.strip().removeprefix(':') for name in missing[1].split(',')[:128]

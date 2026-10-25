@@ -57,6 +57,36 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertEqual(result['public_dependencies'], ['libother', 'libpublic'])
         self.assertEqual(len(result['public_locations']), 1)
 
+    def test_invalid_apex_name_requires_public_blob_and_progress_recheck(self):
+        (self.project / 'Android.bp').write_text(
+            'cc_library { name: "demo", apex_available: ["com.android.public"] }\n')
+        self.git('add', '.')
+        self.git('commit', '--quiet', '-m', 'public apex fixture')
+        revision = self.git('rev-parse', 'HEAD').strip()
+        manifest = self.manifest.replace(self.revision.encode(), revision.encode())
+        result = summarize(
+            'external/public/Android.bp:1: module demo: apex_available: '
+            '"com.android.public" is not a valid module name\n'
+            'external/public/Android.bp:1: apex_available: '
+            '"private_value" is not a valid module name', manifest, self.source)
+        self.assertEqual(result['public_dependencies'], ['com.android.public'])
+        self.assertIn('INVALID_APEX_AVAILABLE', result['categories'])
+        value = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                       result, self.source, manifest)
+        self.assertEqual(value['public_dependencies'], ['com.android.public'])
+        self.assertEqual(value['categories'], ['INVALID_APEX_AVAILABLE'])
+        self.assertNotIn('private_value', json.dumps(value))
+
+    def test_invalid_apex_worktree_and_excluded_overlay_never_authorize_names(self):
+        (self.project / 'Android.bp').write_text('apex_available: ["private_value"]\n')
+        message = ('external/public/Android.bp:1: apex_available: '
+                   '"private_value" is not a valid module name')
+        for excluded in ((), ('external/public/Android.bp',)):
+            with self.subTest(excluded=excluded):
+                result = summarize(message, self.manifest, self.source, excluded)
+                self.assertEqual(result['public_dependencies'], [])
+                self.assertNotIn('private_value', json.dumps(result))
+
     def test_progress_mirror_rechecks_names_and_drops_private_content(self):
         value = record({'stage': 'compile', 'exit_code': 1, 'raw': 'private'}, 42, 'a' * 40,
                        {'categories': ['UNDEFINED_MODULE', 'private'],
