@@ -3,20 +3,21 @@
   "run_id": 40192716664,
   "builder_commit": "ee5f4c3a9b7ee52289daac56cb6fb6fe6689ebb4",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "memory_available_mib": 14284,
-    "log_idle_seconds": 0.0,
-    "stage_elapsed_seconds": 16.3,
-    "log_bytes": 20221,
-    "swap_free_mib": 2923,
-    "elapsed_seconds": 486.5,
-    "disk_free_mib": 54450,
-    "load_1m": 3.75,
+    "stage_elapsed_seconds": 139.4,
+    "load_1m": 9.77,
+    "disk_free_mib": 54048,
+    "log_bytes": 31359,
+    "swap_free_mib": 2891,
+    "log_idle_seconds": 3.4,
+    "memory_available_mib": 14738,
+    "elapsed_seconds": 609.7,
     "progress": {
       "kind": "ninja",
-      "completed": 154,
+      "completed": 244,
       "total": 244,
-      "percent": 63.1
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.073,
@@ -26,7 +27,21 @@
       "source_sync": 395.063,
       "checkout_verification": 65.5,
       "public_resources": 1.437,
-      "preflight": 6.177
+      "preflight": 6.177,
+      "compile": 136.177
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "frameworks/opt/telephony/Android.bp",
+      "line": 81
+    }
+  ],
+  "public_dependencies": [
+    "statslog-cellbroadcast-java-gen"
+  ]
 }
