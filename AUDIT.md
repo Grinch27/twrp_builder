@@ -381,13 +381,19 @@ res-testdata 是源码资源缺失：同版本 AOSP 根 Blueprint blob 52de77038
 
 2026-10-25 用户将监控频率改为每轮启动后先等待 15 分钟，再每 60 秒检查一次；本轮已更新 Part II 和 README。此规则取代前述 12 分钟约定，适用于后续每次重试，不改变构建心跳和限时。继续仅推进 Native，publish=false；Docker 暂缓。
 
+[528 项测试资源修复运行 40192716664](https://github.com/Grinch27/twrp_builder/actions/runs/40192716664) 使用 ee5f4c3a9b7ee52289daac56cb6fb6fe6689ebb4，85 项远端测试、actionlint、公开初始化/同步 smoke、主机准备和源码校验通过，完整 Job failure。source_sync 395.063s、checkout 65.500s、public_resources 1.437s、preflight 6.177s 后，compile 136.177s 以 exit 1 结束。公开资源恢复已实际通过；本轮明确缺项为 frameworks/opt/telephony/Android.bp:81 引用的 statslog-cellbroadcast-java-gen，没有成功 boot.img。
+
+补齐同一 android-12.1.0_r4 的完整 packages/modules/CellBroadcastService@43c990d7e845365b526acc8366f44165a8f603cb。根 Blueprint 的 genrule/statslog-cellbroadcast-java-gen 使用已有 stats-log-api-gen，生成 CellBroadcastStatsLog.java；官方清单路径、tag 对应 commit、完整提供方及两份 Blueprint 的实际定义与直接引用已读取。已识别普通引用没有其他缺席提供方。CellBroadcastReceiver 是该生成模块的消费者，本轮没有额外加入。该来源审查用于修复当前明确缺项，没有新增成品校验或重复签名/版本检查。
+
+当前共 529 项（282 原始、247 公开补充），公开测试资源锁及十个私有输入完全不变。实际锁定 manifest 的本地组合通过：529 项、12 条 copy/link；逐字段比较确认仅追加这个项目。构建/测试代码未改，继续沿用现有远端检查门槛，不重复运行已经通过的本地测试。Native、publish=false、原镜像验收和每轮启动后 15 分钟首查、此后每分钟一次均不变。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：528 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：529 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 

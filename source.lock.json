@@ -1619,6 +1619,12 @@
       "path": "external/catch2",
       "revision": "a19571a8d820d3851a44dbfc75272360584a5f50",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/modules/CellBroadcastService",
+      "path": "packages/modules/CellBroadcastService",
+      "revision": "43c990d7e845365b526acc8366f44165a8f603cb",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
