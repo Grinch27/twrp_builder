@@ -28,6 +28,70 @@ def build_environment(parent, builder, work):
     return result
 
 
+# Command names and descriptions are fixed public literals; the file never contains arguments.
+PUBLIC_COMMANDS = {
+    "repo_fetch": "curl -fLsS --retry 2 <locked public git-repo launcher> -o <repo>",
+    "repo_verify": "sha256sum --check --status <locked git-repo launcher digest>",
+    "manifest_compose": "python3 scripts/source_inputs.py compose --manifest <private input> --output <local locked manifest>",
+    "manifest_commit": "git init/add/commit <local locked manifest>",
+    "repo_init": "timeout 180s repo init --manifest-url=<local manifest> --depth=1 --groups=all --no-clone-bundle --no-use-superproject --repo-rev=<locked>",
+    "repo_commit_verify": "git -C .repo/repo rev-parse HEAD == <locked SHA>",
+    "repo_sync": "timeout 140m repo sync -c -j4 --no-clone-bundle --no-tags --fail-fast --retry-fetches=2",
+    "checkout_verify": "python3 scripts/source_inputs.py checkout --manifest <private input> --source <checkout>",
+    "overlay_copy": "cp -a <private reviewed overlay> <checkout>",
+    "stock_prebuilts_copy": "cp -a <private reviewed prebuilts> <local work>",
+    "testdata_restore": "timeout 6m python3 scripts/restore_public_testdata.py --source <checkout>",
+    "recovery_patch_check": "git -C bootable/recovery apply --check patches/recovery-required-modules.patch",
+    "recovery_patch_apply": "git -C bootable/recovery apply patches/recovery-required-modules.patch",
+    "disk_preflight": "df --output=avail -B1 <work> (minimum 18 GiB)",
+    "jdk_preflight": "test -s prebuilts/jdk/jdk11/linux-x86/lib/modules",
+    "monitor_preflight": "test -s prebuilts/tools/common/m2/repository/.../monitor-1.0.2-alpha1.aar",
+    "java_version": "prebuilts/jdk/jdk11/linux-x86/bin/java -version",
+    "envsetup_lunch": "source build/envsetup.sh && lunch twrp_selene-eng",
+    "bootimage_compile": "timeout 160m bash -c 'source build/envsetup.sh; lunch twrp_selene-eng; mka bootimage -j4'",
+    "avb_info": "python3 external/avb/avbtool.py info_image --image <boot.img>",
+    "avb_verify": "python3 external/avb/avbtool.py verify_image --image <boot.img> --key <public AVB test key>",
+    "boot_static_verify": "python3 scripts/verify_boot.py --image <boot.img> --stock <reviewed stock inputs> --report <private work>",
+    "boot_copy": "cp <boot.img> <private output>",
+    "cms_seal": "python3 scripts/seal_output.py --output <private output> --certificate delivery-recipient.pem",
+}
+PUBLIC_TRACE_LIMIT = 8192
+
+
+def safe_command_events(path, offset=0):
+    """Read only reviewed marker IDs; never return source text or dynamic command arguments."""
+    import datetime
+    import re
+    path = Path(path)
+    try:
+        fd = os.open(path, os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0))
+        with os.fdopen(fd, 'rb') as stream:
+            size = os.fstat(stream.fileno()).st_size
+            if size > PUBLIC_TRACE_LIMIT:
+                return [], offset
+            content = stream.read(PUBLIC_TRACE_LIMIT)
+        if not content.endswith(b'\\n'):
+            content = content[:content.rfind(b'\\n') + 1]
+        lines = content.decode('ascii').splitlines()
+        if len(lines) > 128 or offset > len(lines):
+            return [], offset
+        safe = []
+        for line in lines[offset:]:
+            stamp, separator, identifier = line.partition(' ')
+            if not separator or identifier not in PUBLIC_COMMANDS:
+                continue
+            try:
+                datetime.datetime.strptime(stamp, '%Y-%m-%dT%H:%M:%SZ')
+            except ValueError:
+                continue
+            if not re.fullmatch(r'20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z', stamp):
+                continue
+            safe.append((stamp, identifier, PUBLIC_COMMANDS[identifier]))
+        return safe, len(lines)
+    except (OSError, UnicodeError, ValueError):
+        return [], offset
+
+
 class Interrupted(Exception):
     def __init__(self, signum):
         self.status = 128 + signum
@@ -54,9 +118,13 @@ def run_build(builder, work, checkpoint=None, interval=15, heartbeat=60):
     (work / 'output').mkdir(exist_ok=True)
     started = time.monotonic()
     last_stage, last_heartbeat = None, started - heartbeat
+    command_offset = 0
 
     def emit(force=False):
-        nonlocal last_stage, last_heartbeat
+        nonlocal last_stage, last_heartbeat, command_offset
+        events, command_offset = safe_command_events(work / 'output/command-trace.log', command_offset)
+        for stamp, identifier, template in events:
+            print(f'BUILD_COMMAND {stamp} [{identifier}] $ {template}', flush=True)
         try:
             stage, metrics = sample(work, started)
         except (OSError, ValueError, TypeError):
