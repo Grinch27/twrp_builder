@@ -566,3 +566,11 @@ Q3（失败诊断）：本轮仅保留公开安全摘要；完整私有日志的
 公开 TeamWin security/android-12.1 与原pin 14737db1429b8eebc15568bc748b2cd79ccad5c2 一致，其 keystore/Android.bp 只定义 keystore_cli_v2，守护进程为 keystore2。公开 Recovery 源码已确认 init 启动 keystore2；旧 keystore/keystore_cli 仅出现在复制列表，无执行调用。本轮移除三处旧工具复制输入，保留 keystore2、keystore_cli_v2、全部现有加密库与配置，不新增跨版本替代。
 
 诊断再补充 TARGET_RECOVERY_DEVICE_MODULES 的公开字面量、固定公开设备 device.mk 优先取证，以及公开库文件名去 .so 后的完整字面量 stem；不推断 .recovery 等变体、不执行Make表达式、不读取覆盖文本。新增回归实际执行GNU Make，核验设备模块/文件名区别、NTFS自动/显式选择和原有加密工具保留；公开完整设备文件的补丁precheck通过。继续585项目全部原pin、Native/main、publish=false与15分钟/每分钟节奏，实际完整编译待下一轮确认。
+
+## 2026-10-26 — 六个过时共享库打包输入
+
+b0e3825 的40335394699完整同步、三份补丁和预检通过；compile515.430秒后exit1，已确认缺项缩小到6个且无未知候选：libcryptfsfde、liblogcat、libminadbd、libpcrecpp、libsoftkeymaster、libtwrpfscrypt。其公共源码引用均只有prebuilt复制清单，不存在动态加载或链接这些名字的实现。
+
+已核对公开TeamWin vold/android-12.1分支与原pin a164ba05c5fef288059774a776b2e6e1119957cf一致：真实libvold静态编译Decrypt.cpp、cryptfs.cpp、CryptoType.cpp、fscrypt_policy.cpp；Recovery仍链接libvold与libkeystoreinfo，保留原FBE/元数据解密设置及全部有效加密库。当前Recovery minadbd由libminadbd_services静态库和libadbd提供服务，保留实际minadbd/ADB模块。官方AOSP android-12.1.0_r4 logging只提供logcat/logcatd等二进制，无liblogcat；pcre提供libpcre2，无libpcrecpp；keymaster提供libsoftkeymasterdevice和libpuresoftkeymasterdevice，无旧libsoftkeymaster。当前源码不提供上述六个共享库，也没有其运行加载请求。
+
+本轮仅在公开Recovery补丁中移除六条无提供方的.so复制输入；保留对应真实加密、ADB、日志实现、现有功能设置和其他有效文件。未创建空库、回填旧Android库或放宽缺依赖检查。GNU Make回归增加这些真实上下文，核对有效库仍完整保留；公开原始文件patch precheck通过。111项本地套件109通过、2项为既有/proc执行器限制跳过；完整编译仍待重试。Native/main、585原pin、publish=false与15分钟后每分钟检查规则不变。

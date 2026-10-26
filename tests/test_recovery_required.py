@@ -48,6 +48,28 @@ RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libunw
 RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libbinderthreadstate.so
 RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libmdnssd.so
 RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/android.hardware.boot@1.0.so
+RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libminuitwrp.so
+RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libminadbd.so
+RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libz.so
+ifeq ($(TW_INCLUDE_CRYPTO), true)
+    RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libcryptfsfde.so
+    RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libdexfile_support.so
+endif
+    ifeq ($(TW_INCLUDE_CRYPTO_FBE), true)
+        RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libtwrpfscrypt.so
+        RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/android.security.maintenance-ndk_platform.so
+    endif
+        ifeq (true,true)
+        endif
+        RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libsoftkeymaster.so
+        RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/android.hardware.keymaster@4.0.so
+ifeq ($(TWRP_INCLUDE_LOGCAT), true)
+    ifeq ($(TARGET_USES_LOGD), true)
+    endif
+    RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libpcrecpp.so
+	RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/liblogcat.so
+	RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libcap.so
+endif
 RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libevent.so
 RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore
 RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore_auth
@@ -129,6 +151,7 @@ class RecoveryRequiredModulesTests(unittest.TestCase):
             'TARGET_RECOVERY_ROOT_OUT := /recovery\n'
             'TARGET_OUT_SHARED_LIBRARIES := /system/lib64\n'
             'TW_INCLUDE_CRYPTO := true\n'
+            'TW_INCLUDE_CRYPTO_FBE := true\n'
             'TWRP_INCLUDE_LOGCAT := true\n'
             'TARGET_USERIMAGES_USE_F2FS := true\n'
             'include Android.mk\n'
@@ -156,6 +179,12 @@ class RecoveryRequiredModulesTests(unittest.TestCase):
             '/recovery/system/lib64/libunwindstack.so',
             '/recovery/system/lib64/libmdnssd.so',
             '/system/lib64/android.hardware.boot@1.0.so',
+            '/system/lib64/libminuitwrp.so',
+            '/system/lib64/libz.so',
+            '/system/lib64/libdexfile_support.so',
+            '/system/lib64/android.security.maintenance-ndk_platform.so',
+            '/system/lib64/android.hardware.keymaster@4.0.so',
+            '/system/lib64/libcap.so',
             '/system/lib64/libevent.so',
             '/system/lib64/android.system.wifi.keystore@1.0.so',
             '/system/lib64/android.system.suspend@1.0.so',
