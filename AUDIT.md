@@ -437,13 +437,21 @@ res-testdata 是源码资源缺失：同版本 AOSP 根 Blueprint blob 52de77038
 
 本地执行环境暂不可用，未声称本轮实际私有 manifest 本地组合、更新后的测试或产物解密通过；保留现有 runner-image 测试与完整 Job 身份校验门槛。此前在本地建立的交付私钥未被上传或更换，当前可达性仍取决于执行环境恢复。继续 Native、publish=false、每轮 15 分钟首查及之后每分钟一次。
 
+[570 项原生运行 40249307508](https://github.com/Grinch27/twrp_builder/actions/runs/40249307508) 使用 8ffcf053c1c1ba45b598eb65aecbd371534fe63d，runner-image、源码同步和身份校验通过。source_sync 568.953s、checkout 46.688s、public_resources 3.090s、preflight 4.348s 后，compile 89.738s 返回 exit 1。受限摘要实际报告 libnativehelper/Android.bp:187 的 INVALID_APEX_AVAILABLE，缺少 com.android.extservices；尚无成功 boot.img。
+
+补齐同一 android-12.1.0_r4 的完整 packages/modules/ExtServices@8dabea5aafff4e50f58ffcb37167fb6ac10e23b9，其 apex/Android.bp 实际定义 apex/com.android.extservices；一并补齐 native/tests/Android.bp 直接引用的 external/fft2d@bc2ce47fbe073485fd10360187d0a803880ec998，实际定义非空 cc_library_static/libfft2d。后者是先前公开预查发现、当时因消费者不在清单而没有加入的依赖，现在与实际缺失的消费者一起锁定。
+
+两个独立公开镜像的同标签 commit 一致；完整未截断 Git tree 共 201 个文件、833,576 bytes，全部九份 Blueprint/Make 已读取。合并现有公开名字和两项目实际定义后，已识别普通、APEX 和 deps 引用没有其他缺席名字，visibility 的 __subpackages__ 为作用域标记；预查仍不证明生成模块、变体和命名空间解析。保留完整来源及原有许可文件、原有测试和架构设置，没有占位模块或测试绕过。
+
+当前 572 项（282 原始、290 公开补充）。锁定清单仅追加这两项，既有 pin、十项私有输入、12 条 copy/link、公开资源锁及 Selene 目标保持原值。构建/测试实现未变化；本地环境仍不可用，不声称本轮实际 manifest 本地组合或测试通过，继续依赖现有远端门槛与官方源完整同步/HEAD 校验。Native、publish=false、15 分钟首查及其后每分钟一次不变。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：570 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：572 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 

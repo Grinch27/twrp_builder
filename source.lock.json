@@ -1871,6 +1871,18 @@
       "path": "kernel/prebuilts/common-modules/virtual-device/5.10/x86-64",
       "revision": "0ce01fc195f5957db4bcfcd5d5aa904240866239",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/modules/ExtServices",
+      "path": "packages/modules/ExtServices",
+      "revision": "8dabea5aafff4e50f58ffcb37167fb6ac10e23b9",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/fft2d",
+      "path": "external/fft2d",
+      "revision": "bc2ce47fbe073485fd10360187d0a803880ec998",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
