@@ -475,6 +475,16 @@ packages/modules/vndk 实际定义 com.android.vndk.current、vndkcorevariant.li
 
 当前 585 项（282 原始、303 公开补充）。原十个私有输入、12 条 copy/link、全部既有 pin、公开测试资源锁、Selene 原厂 kernel/DTB、编译目标及镜像静态验收保持原值。继续 Native、publish=false、15 分钟首查及其后每分钟一次。
 
+[585 项原生运行 40257561247](https://github.com/Grinch27/twrp_builder/actions/runs/40257561247) 使用 df01c27a602653ce5148f53e491cdccbf076ed6c，94 项远端测试、actionlint、公开 smoke、完整同步/checkout 和真实源码补丁应用均通过。source_sync 485.700s、checkout 66.854s、public_resources 2.635s、preflight 6.483s 后，compile 418.446s 返回 exit 1。Make 缺项由 18 个缩小为唯一 libbinderthreadstate；其余提供方与三个输出名/模块名修正已实际越过检查，但尚无成功 boot.img。
+
+唯一残留来自公开 Recovery prebuilt/Android.mk:73 无条件打包 recovery/system/lib64/libbinderthreadstate.so。当前锁定 frameworks/native 与公开 android-12.1.0_r4@89c808424fbce9e40c0d4e0d1920b3c64a191b7f 严格离线匹配，libs/binderthreadstate/Android.bp 仅定义静态 libbinderthreadstateutils 和测试，libs/binder/Android.bp 已不链接旧 libbinderthreadstate。AOSP 的公开移除记录亦删除该空兼容共享库：https://android.googlesource.com/platform/frameworks/native/+/0d4dfb1c9b6344023495e8916251311415759b12%5E2..0d4dfb1c9b6344023495e8916251311415759b12/ 。VNDK 29 中同名预编译是旧 vendor 快照，不能据此当成当前 Recovery 源码实现或跨版本替代。
+
+本轮在同一公开补丁中仅删除这条已过时的 Recovery 库打包输入，保留其余库、三个真实可执行模块映射、原 OEM 条件和全部功能实现。没有从旧 Android 回填库、创建空模块或关闭 Make 缺依赖检查。合成 GNU Make 测试增加有效库清单的完整比对，确认只移除旧条目、其余库及二进制文件名保持原样；上下文不符仍先失败且不写文件。本地环境不可用，本轮修改后的测试与补丁由现有远端门槛和真实预检验证，不声称本地通过。
+
+准备期间 main 先后并入 722ab99a6de82cb945d7a58d30d7a01ee293ee02 和 dee7f8a43d24537d0a3a4a68e2813e67c7a48c15 的安全命令跟踪及换行修正。已读取完整差异，保留 scripts/build.sh、run_native.py 与新增跟踪测试，不覆盖并发工作。新增跟踪只输出固定允许列表命令模板，不输出私有参数或编译原文。
+
+源码仍为 585 项，全部 pin、十个私有输入、12 条 copy/link、公开测试资源、Selene 内核/DTB、目标和静态验收保持原值。继续 Native、publish=false、每轮 15 分钟首查及之后每分钟一次。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。

@@ -11,7 +11,13 @@ diff --git a/Android.mk b/Android.mk
 diff --git a/prebuilt/Android.mk b/prebuilt/Android.mk
 --- a/prebuilt/Android.mk
 +++ b/prebuilt/Android.mk
-@@ -442,3 +442,6 @@
+@@ -71,5 +71,4 @@
+ RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libminijail.so
+ RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libunwindstack.so
+-RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libbinderthreadstate.so
+ RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libmdnssd.so
+ RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/android.hardware.boot@1.0.so
+@@ -442,3 +441,6 @@
  TARGET_BINARY_RELINK_FILES := $(filter-out bu, $(notdir $(RECOVERY_BINARY_SOURCE_FILES)))
 -LOCAL_REQUIRED_MODULES += $(TARGET_BINARY_RELINK_FILES)
 +TARGET_BINARY_RELINK_MODULES := $(patsubst unzip,ziptool.recovery,$(TARGET_BINARY_RELINK_FILES))
