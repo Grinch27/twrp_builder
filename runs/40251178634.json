@@ -3,20 +3,21 @@
   "run_id": 40251178634,
   "builder_commit": "6ed5a0e76cce0c8510d31418ee99db16520e97c6",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "log_idle_seconds": 0.3,
-    "disk_free_mib": 51537,
-    "log_bytes": 20257,
-    "memory_available_mib": 14406,
-    "swap_free_mib": 2923,
-    "stage_elapsed_seconds": 15.3,
-    "load_1m": 4.27,
-    "elapsed_seconds": 519.2,
+    "log_bytes": 31729,
+    "log_idle_seconds": 3.7,
+    "elapsed_seconds": 658.8,
+    "memory_available_mib": 14919,
+    "disk_free_mib": 51135,
+    "stage_elapsed_seconds": 154.8,
+    "swap_free_mib": 2906,
+    "load_1m": 8.82,
     "progress": {
       "kind": "ninja",
-      "completed": 153,
+      "completed": 246,
       "total": 246,
-      "percent": 62.2
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.075,
@@ -26,7 +27,21 @@
       "source_sync": 421.409,
       "checkout_verification": 71.451,
       "public_resources": 2.199,
-      "preflight": 6.587
+      "preflight": 6.587,
+      "compile": 151.322
     }
-  }
+  },
+  "categories": [
+    "INVALID_APEX_AVAILABLE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "frameworks/base/packages/SettingsLib/Utils/Android.bp",
+      "line": 23
+    }
+  ],
+  "public_dependencies": [
+    "com.android.cellbroadcast"
+  ]
 }
