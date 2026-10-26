@@ -22,8 +22,8 @@ flowchart TD
 | 编译环境 | 原生 Ubuntu Runner，使用锁定源码中的 JDK / Clang；旧主机 ABI 通过官方归档二进制包安装 |
 | 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和 303 项公开补充项目 SHA，共 585 项 |
 | 公开测试资源 | 同版本 AOSP Recovery 的 25 张测试图片和 NOTICE；单独锁定，恢复 `res-testdata` 文件组，十项私有输入不变 |
-| 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j4` |
-| 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；四任务。原生路线使用 Runner 可用内存，Docker 路线另限 14 GiB |
+| 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j2` |
+| 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度 2。原生路线使用 Runner 可用内存，Docker 路线另限 14 GiB |
 | 磁盘检查 | 清理后至少 50 GiB；编译前至少 18 GiB；不足立即失败 |
 | 自动触发 | 仅原生入口通过 push / PR 运行静态检查和公开同步测试；完整编译接受 main 的 workflow_dispatch。本次持续修复期间，原生路线另接受精确 `[selene-native-build-20261022] ` 标记；成功交付后恢复仅手动构建。Docker 入口仅保留 workflow_dispatch |
 | 唯一手动输入 | `publish=false`；设为 true 明确允许公开镜像、静态报告和校验和 |

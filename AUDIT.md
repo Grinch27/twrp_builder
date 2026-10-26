@@ -506,3 +506,8 @@ Q3（失败诊断）：本轮仅保留公开安全摘要；完整私有日志的
 公开 Make 模块声明及 required 列表使用未加引号的字面量，原诊断只核验带引号的 Blueprint/Go 字面量，因此空列表不能证明没有缺项。本轮只补充诊断：允许从锁定公开 Git 的 .mk 文件中，对 LOCAL_MODULE、LOCAL_REQUIRED_MODULES、库依赖、TWRP_REQUIRED_MODULES 和 PRODUCT_PACKAGES 赋值的完整独立 token 取证，支持续行，排除注释、未知变量、子串及工作树改动。摘要端和发布端使用相同规则，重新核验路径和固定 Git blob；宽匹配搜索仅定位候选文件，不授权输出。原始日志、父模块、未知名字仍不输出。
 
 本地完整标准库套件 99 项通过（含新 Make 字面量与隐私回归）；585 项图、原 pin、十个私有输入、镜像验收和 publish=false 均保持不变。此轮没有根据空摘要猜测或删除 required 模块，需新运行确认实际缺项。
+
+## 2026-10-26 — 原生编译资源压力缓解（待真实构建确认）
+
+- 585 项运行 40264306025（main a9e25ab2c74edcc8b0a2e5c0bae29642a24e68b0）完成 runner-image 检查、私有输入受限获取、源码同步和 checkout，最终工作流 failure；Native 编译步骤标为 cancelled，进度分支没有最终 exit_code 或新的可信缺项诊断，也没有密文 Artifact。公开遥测最后一次记录 compile 835.0 秒、当前 Ninja 批次 245/246、MemAvailable 1052 MiB、SwapFree 51 MiB；工作流约一小时后结束。此证据提示显著内存压力，但**不能单凭它断言发生了 OOM 或确定 GitHub Runner 终止原因**。
+- 本轮不依据旧 VNDK 预编译中的 libbinderthreadstate 字面量补造提供方，不修改 585 项公开源码锁定 pin 或缺项检查。仅将 Native `mka bootimage` 并行度由 4 降至 2，并同步公开命令模板、回归断言、README 与 source.lock.json 的非源码构建元数据；repo sync 仍为 -j4。保留原有日志白名单、失败退出、静态镜像验收及 publish=false 加密交付。此举是可回退的资源缓解措施，不是成功构建证明；下一轮须由真实 Runner 验证。
