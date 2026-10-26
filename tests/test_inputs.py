@@ -160,7 +160,9 @@ class InputTests(unittest.TestCase):
 
     def test_reviewed_public_device_and_kernel_alias_compose_without_private_changes(self):
         for name, path in [('device/google/cuttlefish', 'device/google/cuttlefish'),
-                           ('kernel/prebuilts/5.10/x86-64', 'kernel/prebuilts/5.10/x86_64')]:
+                           ('kernel/prebuilts/5.10/x86-64', 'kernel/prebuilts/5.10/x86_64'),
+                           ('kernel/prebuilts/common-modules/virtual-device/5.10/arm64',
+                            'kernel/prebuilts/common-modules/virtual-device/5.10/arm64')]:
             with self.subTest(name=name):
                 data, lock = public_fixture()
                 lock['public_projects'][0].update(name=name, path=path)
@@ -175,7 +177,9 @@ class InputTests(unittest.TestCase):
         for name, path in [('device/google/cuttlefish', 'device/google/other'),
                            ('device/unreviewed/project', 'device/google/cuttlefish'),
                            ('kernel/prebuilts/5.10/x86_64', 'kernel/prebuilts/5.10/x86_64'),
-                           ('kernel/prebuilts/5.10/x86-64', 'kernel/prebuilts/5.10/arm64')]:
+                           ('kernel/prebuilts/5.10/x86-64', 'kernel/prebuilts/5.10/arm64'),
+                           ('kernel/prebuilts/common-modules/virtual-device/5.10/arm64',
+                            'kernel/prebuilts/common-modules/virtual-device/5.10/x86-64')]:
             with self.subTest(name=name, path=path):
                 data, lock = public_fixture()
                 lock['public_projects'][0].update(name=name, path=path)

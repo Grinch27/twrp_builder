@@ -427,13 +427,23 @@ res-testdata 是源码资源缺失：同版本 AOSP 根 Blueprint blob 52de77038
 
 当前 568 项（282 原始、286 公开补充），真实 manifest 本地组合通过，原十个私有输入、12 条 copy/link、既有 pin、公开测试资源锁、Selene 目标和静态验收不变。没有缺依赖绕过、测试禁用或跨版本二进制替换；继续 Native、publish=false、15 分钟首查及其后每分钟一次。
 
+[568 项原生运行 40247223923](https://github.com/Grinch27/twrp_builder/actions/runs/40247223923) 使用 e827148a3378143d8e7f22c09db9cd0d6bffa43c，runner-image 成功，源码同步、checkout、测试资源和预检通过。source_sync 640.530s、checkout 129.740s、public_resources 2.826s、preflight 7.048s 后，compile 104.416s 返回 exit 1。新的实际缺项为 packages/modules/Virtualization/microdroid/Android.bp:215 引用的 virt_device_prebuilts_kernel_modules-5.10-arm64；尚无成功 boot.img。后续文档/权限修正提交 f452ca64a1370343801273e6288228e0d5568497 仅恢复 source_inputs.py 原有 100755 模式，未重启完整构建或更换图。
+
+补读锁定 Microdroid 原始 Blueprint：android_filesystem 的 deps 属性分别声明 arm64 和 x86_64 的两个 5.10 内核模块包。前一轮普通模块属性预检未覆盖这个 deps 属性，本轮对该文件全部 deps 名字重新比较，除这两个提供方外没有额外缺席字面量。官方同标签清单给出的完整项目为 kernel/prebuilts/common-modules/virtual-device/5.10/arm64 与同目录 x86-64；不采用空模块、摘取单个二进制或修改 Microdroid 源码。
+
+两个独立公开 AOSP 镜像的 android-12.1.0_r4 annotated tag 与 peeled commit 一致：arm64 为 3f1820d76e31e8d39c9bf20e4b4c3c2a2981f598（tag b9cf0bd91145c75256fcb5f68961bb1c53c53201），x86-64 为 0ce01fc195f5957db4bcfcd5d5aa904240866239（tag 95ddf8fe79013abef068a4378d69ce2251d73a52）。未截断 Git tree 共 129 个文件记录、177,781,324 bytes；两份根 Blueprint 实际定义相应 prebuilt_kernel_modules，srcs 为 *.ko，并保留原架构选择。只读取树元数据和构建描述，没有下载或扫描内核模块二进制。官方 Gitiles 的本轮直接读取不可用，未将其记为成功；Runner 仍从固定官方 AOSP host 完整同步，并检验锁定 HEAD 和 clean 状态。
+
+公开项目验证器只追加这两个准确 name/path 对照，现有有效/错配测试增加相应案例，继续拒绝任意 device/kernel 名称或错配路径。原十个私有输入、282 项原 pin、全部既有公开 pin、12 条 copy/link、公开测试资源及 Selene 原厂 kernel/DTB 输入不变。当前共 570 项（282 原始、288 公开补充）。
+
+本地执行环境暂不可用，未声称本轮实际私有 manifest 本地组合、更新后的测试或产物解密通过；保留现有 runner-image 测试与完整 Job 身份校验门槛。此前在本地建立的交付私钥未被上传或更换，当前可达性仍取决于执行环境恢复。继续 Native、publish=false、每轮 15 分钟首查及之后每分钟一次。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：568 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：570 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 

@@ -20,7 +20,7 @@ flowchart TD
 | 暂缓的 Docker 工作流 | `.github/workflows/twrp_allinone.yml`，保留代码和手动入口，暂停 push/PR 自动运行 |
 | Runner | 共享 `resolve-runner-image@main` 动态解析 Ubuntu x64 |
 | 编译环境 | 原生 Ubuntu Runner，使用锁定源码中的 JDK / Clang；旧主机 ABI 通过官方归档二进制包安装 |
-| 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和 286 项公开补充项目 SHA，共 568 项 |
+| 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和 288 项公开补充项目 SHA，共 570 项 |
 | 公开测试资源 | 同版本 AOSP Recovery 的 25 张测试图片和 NOTICE；单独锁定，恢复 `res-testdata` 文件组，十项私有输入不变 |
 | 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j4` |
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；四任务。原生路线使用 Runner 可用内存，Docker 路线另限 14 GiB |
@@ -49,7 +49,7 @@ flowchart TD
 
 维护时的工作流查询频率：每轮启动后先等 15 分钟，再每 60 秒检查一次，直至结束。每次重试重新计时；工作流自身的心跳输出与构建限时不变。
 
-528 项运行随后明确报告 Recovery 测试缺少 `res-testdata`。现在从单独锁定的同版本公开 AOSP commit 恢复 25 张测试图片与 NOTICE，在新目录中提供原有文件组，保留原测试和全部项目版本。资源恢复单独记录为 `public_resources` 阶段，限时六分钟；资源恢复阶段已在真实运行通过；该轮随后报告 Telephony 缺少 `statslog-cellbroadcast-java-gen`，现在补入其同版本完整 CellBroadcastService 项目，合计 529 项，随后又明确报告 IORap 测试缺少 `iorap-functional-test-apps`，当前补入同版本完整 `prebuilts/runtime`，合计 530 项。该轮实际报告 Bluetooth 未定义，现补齐同版本完整 Bluetooth、vcard 和 RIL 提供方，合计 533 项。该轮继续报告 CTS 的 com.replica.replicaisland 未定义，现补入同标签完整 external/replicaisland，合计 534 项。该轮经受限诊断修正确认缺少 APEX com.android.virt，现补入同标签完整 Virtualization 及 33 个直接/传递提供方，合计 568 项，继续验证完整编译。
+528 项运行随后明确报告 Recovery 测试缺少 `res-testdata`。现在从单独锁定的同版本公开 AOSP commit 恢复 25 张测试图片与 NOTICE，在新目录中提供原有文件组，保留原测试和全部项目版本。资源恢复单独记录为 `public_resources` 阶段，限时六分钟；资源恢复阶段已在真实运行通过；该轮随后报告 Telephony 缺少 `statslog-cellbroadcast-java-gen`，现在补入其同版本完整 CellBroadcastService 项目，合计 529 项，随后又明确报告 IORap 测试缺少 `iorap-functional-test-apps`，当前补入同版本完整 `prebuilts/runtime`，合计 530 项。该轮实际报告 Bluetooth 未定义，现补齐同版本完整 Bluetooth、vcard 和 RIL 提供方，合计 533 项。该轮继续报告 CTS 的 com.replica.replicaisland 未定义，现补入同标签完整 external/replicaisland，合计 534 项。该轮经受限诊断修正确认缺少 APEX com.android.virt，现补入同标签完整 Virtualization 及 33 个直接/传递提供方，合计 568 项。实际构建随后报告 Microdroid 的 5.10 内核模块包缺失，现补齐同标签 arm64/x86-64 两个完整提供方，合计 570 项，继续验证完整编译。
 
 原生工作流现在提供更直观的调试信息：
 

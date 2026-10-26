@@ -1859,6 +1859,18 @@
       "path": "packages/modules/Virtualization",
       "revision": "d96e60966ff8d29d5beb7891f9c9b3b41c1ff0ae",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "kernel/prebuilts/common-modules/virtual-device/5.10/arm64",
+      "path": "kernel/prebuilts/common-modules/virtual-device/5.10/arm64",
+      "revision": "3f1820d76e31e8d39c9bf20e4b4c3c2a2981f598",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "kernel/prebuilts/common-modules/virtual-device/5.10/x86-64",
+      "path": "kernel/prebuilts/common-modules/virtual-device/5.10/x86-64",
+      "revision": "0ce01fc195f5957db4bcfcd5d5aa904240866239",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

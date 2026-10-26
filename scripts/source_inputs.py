@@ -32,6 +32,10 @@ REVIEWED_AOSP_NAMES = {
     "device/google/cuttlefish_prebuilts": "device/google/cuttlefish_prebuilts",
     "kernel/prebuilts/5.10/arm64": "kernel/prebuilts/5.10/arm64",
     "kernel/prebuilts/5.10/x86-64": "kernel/prebuilts/5.10/x86_64",
+    "kernel/prebuilts/common-modules/virtual-device/5.10/arm64":
+        "kernel/prebuilts/common-modules/virtual-device/5.10/arm64",
+    "kernel/prebuilts/common-modules/virtual-device/5.10/x86-64":
+        "kernel/prebuilts/common-modules/virtual-device/5.10/x86-64",
 }
 
 
