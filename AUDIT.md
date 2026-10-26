@@ -518,3 +518,15 @@ Q3（失败诊断）：本轮仅保留公开安全摘要；完整私有日志的
 - 原 stop_group 在主 Shell 已退出、TERM-resistant 子进程仍存活时，只等待主 Shell，可能不再发送 KILL；本轮改为始终向本构建组补发 KILL，保留真实构建退出码。启动时记录独立 session 的进程组与 start ticks；额外 always 收尾步骤仅清理该记录会话，拒绝 PID 重用、自身进程组、身份变化和符号链接记录，忽略已死亡的僵尸进程，既不遍历环境也不输出原始进程数据。步骤 3 分钟上限，内部 175 秒 timeout 加 5 秒 KILL；仅清理失败允许继续，不改变编译失败状态。
 - 9abc25f 的 40293182407 继续在同一 Ninja 批次 245/246 发生编译 cancelled；受限记录为 MemAvailable 1001 MiB、SwapFree 94 MiB、compile 306 秒，缺少最终构建 exit_code。此为内存压力线索，不是已确认的 OOM 诊断。该次运行已 cancelled，未产出成品。本轮在原有临时 hosted Runner 准备中新增 12 GiB Swap，不关闭原 Swap；磁盘初始门槛从 50 调为 62 GiB，保证分配后仍留原 50 GiB 源码空间。编译前原 18 GiB 检查、-j2、全部源码 pin、输入白名单、失败判定及加密交付不变。
 - 本地 104 项标准库用例中 102 项通过、2 项因执行器 /proc 命名空间不暴露真实子 PID 而跳过；跳过项为真实会话记录/清理及 stubborn 子进程进程状态检查，需由 hosted Runner 执行。其余用例覆盖主进程退出后仍补发组 KILL、身份变更拒绝、有限等待和符号链接拒绝；Shell 语法、YAML 解析和差异检查通过。实际 hosted Runner 的 Swap 创建、新清理阶段和完整构建仍待真实运行；没有在本地执行 Runner 清理或 Swap 操作。
+
+## 2026-10-26 — 首次正常收尾与真实 required 清单修正
+
+运行 [40302227133](https://github.com/Grinch27/twrp_builder/actions/runs/40302227133)（ceea8003e1d39a9e2caef0155124bcfbf7280dfb）的 runner-image、actionlint、公开 smoke 和完整预检通过。增加 Swap 后，构建恢复真实 compile exit 1，417.358 秒；本轮结束时 SwapFree 15121 MiB。自定义清理和内建 Complete job 均在各自同一秒完成：10:05:22Z 与 10:05:23Z，没有此前数十分钟清理停顿。不能据此声称内建阶段已经被设置 3 分钟限时。
+
+新的受限诊断实际给出 event-log-tags、fs_mgr、fscryptpolicyget.recovery、keystore_auth、permissive.sh、plat_hardware_contexts、task_recovery_profiles.json、teamwin 八项。完整公开 Recovery android-12.1 checkout 为 5c3d206a5eeb3d446bcda8248a405a4b278bab5c，已与锁定版本一致；额外公开 TeamWin extras/security 分支与锁定 ffbe71168883383d7048d076000f4db9936bc00a / 14737db1429b8eebc15568bc748b2cd79ccad5c2 一致。AOSP r4 sepolicy/logging commit 与原 pin 一致。没有用未知私有 SHA 探测外部服务。
+
+- teamwin 在该公开 prebuilt 文件仅是随后 CLEAR_VARS 前未注册的旧 dummy 名，真正 relink 三模块及 twrp_ramdisk 已分别列入 required，保留其动作。permissive.sh 与 plat_hardware_contexts 没有当前提供方及 runtime 文件复制，保留真实 plat_hwservice_contexts、vndservice_contexts 和现有 SELinux 设置。删除这些过时必需项，不创建空模块。
+- 公开 Recovery 全树搜索表明 keystore_auth、fscryptpolicyget 只出现在构建/复制清单中，不存在 C/C++、Shell 或 init.rc 调用；对应锁定 security/extras 已不提供它们。移除两个无提供方工具的 required 和复制项，保留 keystore2、所有现有加密库与加密实现。fs_mgr 的真实实现为现有 libfs_mgr，保留该库、F2FS 工具及相关源码；仅移除不存在的同名可执行项。event-log-tags 没有当前模块提供方，仅移除无效 required 名，保留 logcat/logd 和所有实际日志实现。设备 FBE/日志运行行为仍 NOT_TESTED。
+- task_recovery_profiles.json 需要真实文件，不能仅删除。现有同一 system/core 的 task_profiles.json 有 40 个 Profiles，libprocessgroup 明确读取 /etc/task_profiles.json。本轮给现有非空文件增加与同文件 cgroups.recovery.json 同式的 Recovery prebuilt_etc 安装声明：module=task_recovery_profiles.json，filename=task_profiles.json，recovery=true。原 JSON 内容不改，原 required 名保留；不使用空配置或其他 Android 版本文件。新增公开补丁先检查再应用，585 项和全部 pin 不变。
+
+本地 104 项用例为 102 项通过、相同 2 项执行器 /proc 限制跳过。GNU Make 夹具实际验证有效加密、日志、F2FS 和 relink 项仍保留，过时 required/工具复制项移除；公开真实 Recovery 完整差异及 system/core 原始 Blueprint 的补丁上下文检查通过。Shell 语法和差异检查通过，完整构建仍待实际执行。另恢复 prepare_runner.sh 原有 100755 模式；先前 API 提交只误改了该执行位，显式 bash 调用已验证未受影响。

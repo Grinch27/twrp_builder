@@ -44,6 +44,8 @@ PUBLIC_COMMANDS = {
     "testdata_restore": "timeout 6m python3 scripts/restore_public_testdata.py --source <checkout>",
     "recovery_patch_check": "git -C bootable/recovery apply --check patches/recovery-required-modules.patch",
     "recovery_patch_apply": "git -C bootable/recovery apply patches/recovery-required-modules.patch",
+    "task_profiles_patch_check": "git -C system/core apply --check patches/native-task-profiles.patch",
+    "task_profiles_patch_apply": "git -C system/core apply patches/native-task-profiles.patch",
     "disk_preflight": "df --output=avail -B1 <work> (minimum 18 GiB)",
     "jdk_preflight": "test -s prebuilts/jdk/jdk11/linux-x86/lib/modules",
     "monitor_preflight": "test -s prebuilts/tools/common/m2/repository/.../monitor-1.0.2-alpha1.aar",

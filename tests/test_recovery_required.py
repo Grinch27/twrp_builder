@@ -17,17 +17,53 @@ ROOT_SOURCE = r"""TWRP_REQUIRED_MODULES += \
     twrp \
     fsck.fat \
     fatlabel \
-    mkfs.fat
+    mkfs.fat \
+    permissive.sh \
+    simg2img_twrp \
+    libbootloader_message
+ifneq ($(TW_INCLUDE_CRYPTO),)
+TWRP_REQUIRED_MODULES += \
+    vold_prepare_subdirs \
+    task_recovery_profiles.json \
+    fscryptpolicyget.recovery \
+    keystore_auth \
+    keystore2 \
+    android.system.keystore2-service.xml
+endif
+ifeq ($(TWRP_INCLUDE_LOGCAT), true)
+    TWRP_REQUIRED_MODULES += logcat event-log-tags
+    ifeq ($(TARGET_USES_LOGD), true)
+    endif
+endif
+ifeq ($(TARGET_USERIMAGES_USE_F2FS), true)
+    TWRP_REQUIRED_MODULES += sload_f2fs \
+        libfs_mgr \
+        fs_mgr \
+        liblz4 \
+        libinit
+endif
 """
 PREBUILT_SOURCE = r"""RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libminijail.so
 RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libunwindstack.so
 RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libbinderthreadstate.so
 RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libmdnssd.so
 RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/android.hardware.boot@1.0.so
+RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore
+RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore_auth
+RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore_cli_v2
+        RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/android.system.suspend@1.0.so
+        RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/fscryptpolicyget
+        ifneq ($(TW_EXCLUDE_LIBXML2), true)
+        endif
 RECOVERY_BINARY_SOURCE_FILES := /out/bin/bu /recovery/bin/twrp /recovery/bin/ueventd /recovery/bin/unzip /out/bin/bc
 TARGET_BINARY_RELINK_FILES := $(filter-out bu, $(notdir $(RECOVERY_BINARY_SOURCE_FILES)))
 LOCAL_REQUIRED_MODULES += $(TARGET_BINARY_RELINK_FILES)
 include $(BUILD_PHONY_PACKAGE)
+LOCAL_REQUIRED_MODULES += plat_service_contexts \
+    plat_hwservice_contexts \
+    plat_hardware_contexts \
+    vndservice_contexts \
+    plat_keystore2_key_contexts
 """
 
 
@@ -56,10 +92,17 @@ class RecoveryRequiredModulesTests(unittest.TestCase):
             'BUILD_PHONY_PACKAGE := empty.mk\n'
             'TARGET_RECOVERY_ROOT_OUT := /recovery\n'
             'TARGET_OUT_SHARED_LIBRARIES := /system/lib64\n'
+            'TW_INCLUDE_CRYPTO := true\n'
+            'TWRP_INCLUDE_LOGCAT := true\n'
+            'TARGET_USERIMAGES_USE_F2FS := true\n'
             'include Android.mk\n'
             'include prebuilt/Android.mk\n'
             'KNOWN_MODULES := pigz teamwin orscmd fsck.fat fatlabel mkfs.fat '
-            'init_second_stage.recovery ziptool.recovery bc\n'
+            'init_second_stage.recovery ziptool.recovery bc simg2img_twrp '
+            'vold_prepare_subdirs task_recovery_profiles.json keystore2 '
+            'android.system.keystore2-service.xml logcat sload_f2fs libfs_mgr '
+            'liblz4 libinit plat_hwservice_contexts vndservice_contexts '
+            'libbootloader_message plat_service_contexts plat_keystore2_key_contexts\n'
             'REQUIRED := $(sort $(TWRP_REQUIRED_MODULES) $(LOCAL_REQUIRED_MODULES))\n'
             'ifneq ($(filter-out $(KNOWN_MODULES),$(REQUIRED)),)\n'
             '$(error non-existent required module)\n'
@@ -77,10 +120,17 @@ class RecoveryRequiredModulesTests(unittest.TestCase):
             '/recovery/system/lib64/libunwindstack.so',
             '/recovery/system/lib64/libmdnssd.so',
             '/system/lib64/android.hardware.boot@1.0.so',
+            '/system/lib64/android.system.suspend@1.0.so',
         ])
         owners = set(fields['OWNERS'].split())
         self.assertTrue({'orscmd', 'init_second_stage.recovery', 'ziptool.recovery'} <= owners)
         self.assertFalse({'twrp', 'ueventd', 'unzip'} & owners)
+        self.assertTrue({'keystore2', 'libfs_mgr', 'logcat', 'task_recovery_profiles.json'} <= owners)
+        self.assertFalse({'teamwin', 'permissive.sh', 'fscryptpolicyget.recovery',
+                          'keystore_auth', 'event-log-tags', 'fs_mgr', 'plat_hardware_contexts'} & owners)
+        prebuilt = (self.tree / 'prebuilt/Android.mk').read_text()
+        self.assertNotIn('/keystore_auth', prebuilt)
+        self.assertNotIn('/fscryptpolicyget', prebuilt)
 
     def test_oem_mode_keeps_the_existing_cli_exclusion(self):
         self.assertEqual(self.git_apply(check=True).returncode, 0)
