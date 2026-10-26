@@ -578,3 +578,9 @@ b0e3825 的40335394699完整同步、三份补丁和预检通过；compile515.43
 ## 2026-10-26 — 用户调整并行度及首查间隔
 
 用户明确要求将 `lunch twrp_selene-eng; mka bootimage -j2` 改为 `-j4`，监控调整为每轮启动后静默等待18分钟，再每60秒检查一次。同步编译命令、固定公开命令模板、追踪测试、build.jobs元数据、README与AGENTS。保留现有12GiB新增Swap、GOMAXPROCS=2、各阶段限时与全部失败判定；尚未以-j4取得成功成品，实际资源行为由下一轮确认。既有237f14b运行使用提交时的-j2命令，不会在运行中被更改；新提交的运行使用-j4。所有旧15分钟记录仅为历史，当前维护规范以18分钟为准。
+
+## 2026-10-26 — 非Qualcomm MinUI依赖条件
+
+237f14b运行40339433832越过六个旧库项，compile346.011秒后仍为MISSING_REQUIRED_MODULE；摘要没有可解析的普通模块名（required_candidates=0），不是成功。已完整读取同一公开Recovery pin的minuitwrp/libminuitwrp_defaults.go：globalRequiredModules只要TARGET_PREBUILT_KERNEL非空，就把含`)`的KERNEL_OBJ/usr目录当模块名追加到Required；而globalIncludes仅在TW_TARGET_USES_QCOM_BSP=true时才读取这一套内核头文件路径。Selene使用预编译内核，且不是该Qualcomm BSP路径。
+
+本轮在同一公开源码补丁中给globalRequiredModules增加与消费者一致的Qualcomm条件，避免为MediaTek添加不存在的Qualcomm目录模块。未生成占位模块、关闭缺依赖检查、去掉头文件、改变图形源或改变Qualcomm原有分支行为。完整公开源码补丁预检通过。新增Go夹具从实际修补后的函数执行四种BSP/预编译内核组合，需由有Go的Runner执行；本地无Go明确跳过。112项本地用例109通过、3跳过（原/proc两项及新Go执行一项），不能据此声称完整编译或Go运行已通过。当前-j4、18分钟后每分钟检查、加密Artifact与publish=false保持不变。

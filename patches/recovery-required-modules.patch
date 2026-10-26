@@ -89,3 +89,11 @@ index 3197ec1..4b691a1 100755
      plat_hwservice_contexts \
 -    plat_hardware_contexts \
      vndservice_contexts \
+diff --git a/minuitwrp/libminuitwrp_defaults.go b/minuitwrp/libminuitwrp_defaults.go
+--- a/minuitwrp/libminuitwrp_defaults.go
++++ b/minuitwrp/libminuitwrp_defaults.go
+@@ -167,3 +167,3 @@ func globalRequiredModules(ctx android.BaseContext) []string {
+-	if getMakeVars(ctx, "TARGET_PREBUILT_KERNEL") != "" {
++	if getMakeVars(ctx, "TW_TARGET_USES_QCOM_BSP") == "true" && getMakeVars(ctx, "TARGET_PREBUILT_KERNEL") != "" {
+ 		var kernelDir = getMakeVars(ctx, "TARGET_OUT_INTERMEDIATES") + ")/KERNEL_OBJ/usr"
+ 		requiredModules = append(requiredModules, kernelDir)

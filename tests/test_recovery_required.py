@@ -5,12 +5,24 @@
 # Risks: applying a patch to different source or changing runtime file lists.
 # Validation: Git precheck failure is atomic; GNU Make resolves exact owners.
 from pathlib import Path
+import os
 import subprocess
+import shutil
 import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 PATCH = ROOT / 'patches/recovery-required-modules.patch'
+MINUI_SOURCE = '''func globalRequiredModules(ctx android.BaseContext) []string {
+\tvar requiredModules []string
+
+\tif getMakeVars(ctx, "TARGET_PREBUILT_KERNEL") != "" {
+\t\tvar kernelDir = getMakeVars(ctx, "TARGET_OUT_INTERMEDIATES") + ")/KERNEL_OBJ/usr"
+\t\trequiredModules = append(requiredModules, kernelDir)
+\t}
+\treturn requiredModules
+}
+'''
 ROOT_SOURCE = r"""TWRP_REQUIRED_MODULES += \
     pigz \
     teamwin \
@@ -131,6 +143,8 @@ class RecoveryRequiredModulesTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.tree = Path(self.temp.name)
         (self.tree / 'prebuilt').mkdir()
+        (self.tree / 'minuitwrp').mkdir()
+        (self.tree / 'minuitwrp/libminuitwrp_defaults.go').write_text(MINUI_SOURCE)
         (self.tree / 'Android.mk').write_text(ROOT_SOURCE)
         (self.tree / 'prebuilt/Android.mk').write_text(PREBUILT_SOURCE)
         subprocess.run(['git', '-C', str(self.tree), 'init', '--quiet'], check=True)
@@ -141,6 +155,33 @@ class RecoveryRequiredModulesTests(unittest.TestCase):
             command.append('--check')
         return subprocess.run(command + [str(PATCH)], stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, text=True)
+
+    @unittest.skipUnless(shutil.which('go'), 'Go toolchain is unavailable in this executor')
+    def test_minui_does_not_require_qcom_kernel_headers_for_mediatek(self):
+        self.assertEqual(self.git_apply(check=True).returncode, 0)
+        self.assertEqual(self.git_apply().returncode, 0)
+        source = (self.tree / 'minuitwrp/libminuitwrp_defaults.go').read_text()
+        source = source.replace('android.BaseContext', 'map[string]string')
+        harness = '''package main
+func getMakeVars(ctx map[string]string, key string) string { return ctx[key] }
+'''
+        harness += source + '''
+func main() {
+    for _, row := range []struct{qcom, kernel string; want int}{
+        {"", "prebuilt-kernel", 0}, {"false", "prebuilt-kernel", 0},
+        {"true", "", 0}, {"true", "prebuilt-kernel", 1},
+    } {
+        ctx := map[string]string{"TW_TARGET_USES_QCOM_BSP": row.qcom,
+            "TARGET_PREBUILT_KERNEL": row.kernel, "TARGET_OUT_INTERMEDIATES": "out/obj"}
+        if len(globalRequiredModules(ctx)) != row.want { panic("incorrect header dependency") }
+    }
+}
+'''
+        (self.tree / 'fixture.go').write_text(harness)
+        subprocess.run(['go', 'run', 'fixture.go'], cwd=self.tree, check=True,
+                       capture_output=True, timeout=60,
+                       env={**os.environ, 'GO111MODULE': 'off', 'GOPROXY': 'off',
+                            'GOSUMDB': 'off', 'GOCACHE': str(self.tree / 'go-cache')})
 
     def test_patch_preserves_binary_names_and_valid_library_inputs(self):
         self.assertEqual(self.git_apply(check=True).returncode, 0)
