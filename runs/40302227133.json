@@ -3,20 +3,21 @@
   "run_id": 40302227133,
   "builder_commit": "ceea8003e1d39a9e2caef0155124bcfbf7280dfb",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "stage_elapsed_seconds": 12.8,
-    "memory_available_mib": 14692,
-    "log_bytes": 16315,
-    "log_idle_seconds": 0.2,
-    "elapsed_seconds": 519.5,
-    "swap_free_mib": 15231,
-    "disk_free_mib": 39461,
-    "load_1m": 2.29,
+    "log_bytes": 42368,
+    "load_1m": 2.4,
+    "log_idle_seconds": 1.1,
+    "memory_available_mib": 14620,
+    "disk_free_mib": 33485,
+    "stage_elapsed_seconds": 417.5,
+    "swap_free_mib": 15121,
+    "elapsed_seconds": 924.1,
     "progress": {
       "kind": "ninja",
-      "completed": 119,
-      "total": 246,
-      "percent": 48.4
+      "completed": 382,
+      "total": 383,
+      "percent": 99.7
     },
     "stage_seconds": {
       "initialization": 0.085,
@@ -26,7 +27,57 @@
       "source_sync": 422.947,
       "checkout_verification": 73.597,
       "public_resources": 1.654,
-      "preflight": 6.315
+      "preflight": 6.315,
+      "compile": 417.358
     }
-  }
+  },
+  "categories": [
+    "MISSING_REQUIRED_MODULE"
+  ],
+  "public_locations": [
+    {
+      "path": "bootable/recovery/prebuilt/Android.mk",
+      "line": 456
+    },
+    {
+      "path": "system/sepolicy/Android.mk",
+      "line": 57
+    },
+    {
+      "path": "build/make/core/main.mk",
+      "line": 750
+    }
+  ],
+  "public_dependency_sources": [
+    {
+      "path": "bootable/recovery/Android.mk",
+      "line": 471,
+      "dependencies": [
+        "event-log-tags",
+        "fs_mgr",
+        "fscryptpolicyget.recovery",
+        "keystore_auth",
+        "permissive.sh",
+        "task_recovery_profiles.json",
+        "teamwin"
+      ]
+    },
+    {
+      "path": "bootable/recovery/prebuilt/Android.mk",
+      "line": 476,
+      "dependencies": [
+        "plat_hardware_contexts"
+      ]
+    }
+  ],
+  "public_dependencies": [
+    "event-log-tags",
+    "fs_mgr",
+    "fscryptpolicyget.recovery",
+    "keystore_auth",
+    "permissive.sh",
+    "plat_hardware_contexts",
+    "task_recovery_profiles.json",
+    "teamwin"
+  ]
 }
