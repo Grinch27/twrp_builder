@@ -96,7 +96,7 @@ def record(status, run_id, commit, summary=None, source=None, manifest=None, exc
             text = public_file(source, name, projects, excluded)
             if text is not None:
                 locations.append({'path': name, 'line': line})
-                texts.append(text)
+                texts.append((name, text))
         result['categories'] = [c for c in summary.get('categories', [])
                                 if isinstance(c, str) and c in
                                 (RULES.keys() | {'UNCLASSIFIED_COMPILE_FAILURE'})][:16]
@@ -112,15 +112,15 @@ def record(status, run_id, commit, summary=None, source=None, manifest=None, exc
                 continue
             names = sorted({dep for dep in evidence.get('dependencies', [])
                             if isinstance(dep, str) and re.fullmatch(r'[A-Za-z0-9_.+-]{1,128}', dep)
-                            and has_public_dependency(text, dep)})[:128]
+                            and has_public_dependency(text, dep, name)})[:128]
             if names:
                 sources.append({'path': name, 'line': line, 'dependencies': names})
-                texts.append(text)
+                texts.append((name, text))
         if sources:
             result['public_dependency_sources'] = sources
         result['public_dependencies'] = sorted({name for name in summary.get('public_dependencies', [])
             if isinstance(name, str) and re.fullmatch(r'[A-Za-z0-9_.+-]{1,128}', name)
-            and any(has_public_dependency(text, name) for text in texts)})[:128]
+            and any(has_public_dependency(text, name, path) for path, text in texts)})[:128]
     return result
 
 

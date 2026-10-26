@@ -12,7 +12,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from summarize_compile_failure import summarize
+from summarize_compile_failure import dependency_evidence_line, summarize
 from report_progress import public_module_catalog, public_module_names, record
 
 
@@ -93,6 +93,47 @@ class CompileSummaryTests(unittest.TestCase):
         result = summarize(text, manifest, self.source)
         self.assertEqual(result['public_dependencies'], [])
         self.assertNotIn('private_parent', json.dumps(result))
+
+    def test_make_bare_module_lists_are_rechecked_without_exporting_private_names(self):
+        (self.project / 'Android.mk').write_text(
+            'LOCAL_MODULE := public_make_module\n'
+            'LOCAL_REQUIRED_MODULES += \\\n    public_make_dependency \\\n    public_other\n'
+            '# LOCAL_MODULE := comment_only\n'
+            'UNRELATED := unrelated_value\n')
+        self.git('add', '.')
+        self.git('commit', '--quiet', '-m', 'public Make module fixture')
+        self.manifest = self.manifest.replace(
+            self.revision.encode(), self.git('rev-parse', 'HEAD').strip().encode())
+        manifest = self.commit_make_checker()
+        names = ['public_make_module', 'public_make_dependency', 'private_required',
+                 'comment_only', 'unrelated_value', 'public_make', 'private_worktree']
+        (self.project / 'Android.mk').write_text('LOCAL_MODULE := private_worktree\n')
+        text = ('build/make/core/main.mk:750: warning: Missing required dependencies:\n'
+                + ''.join('TARGET module private_parent requires non-existent TARGET module: '
+                          + name + '\n' for name in names))
+        result = summarize(text, manifest, self.source)
+        expected = ['public_make_dependency', 'public_make_module']
+        self.assertEqual(result['public_dependencies'], expected)
+        value = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                       result, self.source, manifest)
+        self.assertEqual(value['public_dependencies'], expected)
+        for name in names[2:]:
+            self.assertNotIn('"' + name + '"', json.dumps(value))
+        self.assertEqual(summarize(text, manifest, self.source,
+                                  {'external/public/Android.mk'})['public_dependencies'], [])
+
+    def test_make_literal_proof_is_specific_to_module_assignments_and_file_type(self):
+        make = ('LOCAL_REQUIRED_MODULES += \\\n    public_make_dependency\n')
+        self.assertEqual(dependency_evidence_line(make, 'public_make_dependency', 'Android.mk'), 1)
+        for text, path, name in [
+            (make, 'Android.bp', 'public_make_dependency'),
+            ('# LOCAL_MODULE := comment_only\n', 'Android.mk', 'comment_only'),
+            ('LOCAL_MODULE := public_make_dependency_extra\n', 'Android.mk', 'public_make_dependency'),
+            ('LOCAL_REQUIRED_MODULES := $(private_value)\n', 'Android.mk', 'private_value'),
+            ('SOME_VALUE := unrelated_value\n', 'Android.mk', 'unrelated_value'),
+        ]:
+            with self.subTest(text=text, path=path, name=name):
+                self.assertIsNone(dependency_evidence_line(text, name, path))
 
     def test_multiple_failures_in_one_public_file_are_all_reported(self):
         (self.project / 'Android.bp').write_text('cc_library { name: "demo", shared_libs: ["libpublic", "libother"] }\n')

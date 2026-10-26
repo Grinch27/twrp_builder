@@ -498,3 +498,11 @@ packages/modules/vndk 实际定义 com.android.vndk.current、vndkcorevariant.li
 Q1（私有输入授权）：已获批准，且实际读取与身份校验已通过。
 Q2（公开产物）：本轮保持 publish=false；未批准公开镜像或 Release。
 Q3（失败诊断）：本轮仅保留公开安全摘要；完整私有日志的持久出口尚未配置。
+
+## 2026-10-26 — Make 未加引号的模块诊断
+
+运行 [40259619312](https://github.com/Grinch27/twrp_builder/actions/runs/40259619312)（96f8cdb4ab5e4a7ba5ce412fb354b1c2006197fd）完成 585 项源码同步、checkout 和补丁应用，compile 414.939 秒后 exit 1，类别仍为 MISSING_REQUIRED_MODULE，但公开依赖列表为空。当前批次 Ninja 382/383 不代表整个编译完成；尚无成功 boot.img。
+
+公开 Make 模块声明及 required 列表使用未加引号的字面量，原诊断只核验带引号的 Blueprint/Go 字面量，因此空列表不能证明没有缺项。本轮只补充诊断：允许从锁定公开 Git 的 .mk 文件中，对 LOCAL_MODULE、LOCAL_REQUIRED_MODULES、库依赖、TWRP_REQUIRED_MODULES 和 PRODUCT_PACKAGES 赋值的完整独立 token 取证，支持续行，排除注释、未知变量、子串及工作树改动。摘要端和发布端使用相同规则，重新核验路径和固定 Git blob；宽匹配搜索仅定位候选文件，不授权输出。原始日志、父模块、未知名字仍不输出。
+
+本地完整标准库套件 99 项通过（含新 Make 字面量与隐私回归）；585 项图、原 pin、十个私有输入、镜像验收和 publish=false 均保持不变。此轮没有根据空摘要猜测或删除 required 模块，需新运行确认实际缺项。

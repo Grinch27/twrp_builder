@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Requirements: classify a failed compile without exporting private log text.
 # Ambiguity: unknown diagnostics remain unclassified; no guessed source fixes.
-# Research: anchored Make required-module rows and exact public Git literals.
+# Research: anchored Make rows, quoted BP names and literal Make module lists.
 # Optimization: bounded log fragments, 64 locations and a 45-second literal search.
 # Risks: private overlay contents, paths, identifiers or credentials in errors.
 # Validation: fixed categories and Git-confirmed public metadata; synthetic tests.
@@ -85,8 +85,38 @@ def dependency_literals(name):
     return (json.dumps(name), json.dumps(':' + name))
 
 
-def has_public_dependency(text, name):
-    return any(literal in text for literal in dependency_literals(name))
+def dependency_evidence_line(text, name, path=''):
+    """Locate quoted names or bare tokens in public Make module assignments."""
+    literals = dependency_literals(name)
+    if not literals:
+        return None
+    for number, line in enumerate(text.splitlines(), 1):
+        if any(literal in line for literal in literals):
+            return number
+    if not path.endswith('.mk'):
+        return None
+    assignment = re.compile(
+        r'^\s*(?:LOCAL_MODULE|LOCAL_REQUIRED_MODULES|LOCAL_SHARED_LIBRARIES|'
+        r'LOCAL_STATIC_LIBRARIES|LOCAL_WHOLE_STATIC_LIBRARIES|'
+        r'LOCAL_HEADER_LIBRARIES|TWRP_REQUIRED_MODULES|PRODUCT_PACKAGES)\s*'
+        r'(?::=|\+=|\?=|=)\s*(.*)$')
+    pending, first = '', 0
+    for number, raw in enumerate(text.splitlines(), 1):
+        line = raw.split('#', 1)[0].rstrip()
+        if not pending:
+            first = number
+        pending += line[:-1] + ' ' if line.endswith('\\') else line
+        if line.endswith('\\'):
+            continue
+        match = assignment.fullmatch(pending)
+        if match and name in match[1].split():
+            return first
+        pending = ''
+    return None
+
+
+def has_public_dependency(text, name, path=''):
+    return dependency_evidence_line(text, name, path) is not None
 
 
 def dependency_names(line):
@@ -125,8 +155,8 @@ def public_dependency_sources(source, projects, candidates, excluded):
                                            timeout=min(2, remaining)).decode().strip()
             if head != revision:
                 continue
-            patterns = [arg for name in sorted(pending)[:128]
-                        for literal in dependency_literals(name) for arg in ('-e', literal)]
+            # The broad Git search only finds files; exact proof is checked below.
+            patterns = [arg for name in sorted(pending)[:128] for arg in ('-e', name)]
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
@@ -150,10 +180,9 @@ def public_dependency_sources(source, projects, candidates, excluded):
                                    timeout=min(2, remaining / 3))
                 if text is None:
                     continue
-                hits = sorted(dep for dep in pending if has_public_dependency(text, dep))
+                hits = sorted(dep for dep in pending if has_public_dependency(text, dep, name))
                 if hits:
-                    line = next(i + 1 for i, value in enumerate(text.splitlines())
-                                if any(has_public_dependency(value, dep) for dep in hits))
+                    line = min(dependency_evidence_line(text, dep, name) for dep in hits)
                     evidence.append({'path': name, 'line': line, 'dependencies': hits})
                     verified.update(hits)
                     pending.difference_update(hits)
@@ -186,7 +215,7 @@ def summarize(text, manifest, source, excluded=()):
             candidates.update(names)
             for dependency in names:
                 # Only a literal present in this exact public Git blob is eligible.
-                if has_public_dependency(public, dependency):
+                if has_public_dependency(public, dependency, name):
                     dependencies.add(dependency)
     checker = cache.get('build/make/core/main.mk')
     if checker is not None and all(marker in checker for marker in
