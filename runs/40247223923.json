@@ -3,20 +3,21 @@
   "run_id": 40247223923,
   "builder_commit": "e827148a3378143d8e7f22c09db9cd0d6bffa43c",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "disk_free_mib": 51813,
-    "swap_free_mib": 2882,
-    "load_1m": 3.32,
-    "memory_available_mib": 14212,
-    "log_idle_seconds": 0.2,
-    "log_bytes": 16877,
-    "elapsed_seconds": 794.0,
-    "stage_elapsed_seconds": 10.3,
+    "log_idle_seconds": 12.3,
+    "log_bytes": 31717,
+    "disk_free_mib": 51358,
+    "stage_elapsed_seconds": 116.3,
+    "elapsed_seconds": 900.0,
+    "load_1m": 8.11,
+    "swap_free_mib": 2864,
+    "memory_available_mib": 14980,
     "progress": {
       "kind": "ninja",
-      "completed": 125,
+      "completed": 246,
       "total": 246,
-      "percent": 50.8
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.064,
@@ -26,7 +27,21 @@
       "source_sync": 640.53,
       "checkout_verification": 129.74,
       "public_resources": 2.826,
-      "preflight": 7.048
+      "preflight": 7.048,
+      "compile": 104.416
     }
-  }
+  },
+  "categories": [
+    "UNDEFINED_MODULE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "packages/modules/Virtualization/microdroid/Android.bp",
+      "line": 215
+    }
+  ],
+  "public_dependencies": [
+    "virt_device_prebuilts_kernel_modules-5.10-arm64"
+  ]
 }
