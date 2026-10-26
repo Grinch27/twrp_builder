@@ -31,6 +31,14 @@ class NativeTests(unittest.TestCase):
                                  'BUILDER_SELF': '/builder', 'BUILD_ROOT': '/work',
                                  'GIT_TERMINAL_PROMPT': '0'})
 
+    def test_child_gets_only_valid_public_builder_commit_metadata(self):
+        result = build_environment({'GITHUB_SHA': 'a' * 40, 'GH_TOKEN': 'secret'},
+                                   Path('/builder'), Path('/work'))
+        self.assertEqual(result['GITHUB_SHA'], 'a' * 40)
+        self.assertNotIn('GH_TOKEN', result)
+        self.assertNotIn('GITHUB_SHA', build_environment({'GITHUB_SHA': 'private text'},
+                                                       Path('/builder'), Path('/work')))
+
     def test_real_failure_is_returned_without_printing_private_output(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

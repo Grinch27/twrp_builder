@@ -10,9 +10,10 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from summarize_compile_failure import dependency_evidence_line, summarize
+from summarize_compile_failure import BUILDER_PATCH, dependency_evidence_line, summarize
 from report_progress import public_module_catalog, public_module_names, record
 
 
@@ -117,6 +118,48 @@ class CompileSummaryTests(unittest.TestCase):
                        result, self.source, manifest)
         self.assertEqual(value['public_dependencies'], expected)
         self.assertNotIn('android.hardware.private@1.0', json.dumps(value))
+
+    def test_builder_patch_proof_is_commit_pinned_and_independently_rechecked(self):
+        builder = self.source / 'public-builder'
+        (builder / 'patches').mkdir(parents=True)
+        target = builder / 'patches/recovery-required-modules.patch'
+        target.write_text('--- a/Android.mk\n+++ b/Android.mk\n'
+                          '+LOCAL_REQUIRED_MODULES += public_variant.recovery\n')
+        def git(*args):
+            return subprocess.check_output(['git', '-C', str(builder), *args],
+                                           text=True, stderr=subprocess.DEVNULL).strip()
+        git('init', '--quiet')
+        git('config', 'user.name', 'test')
+        git('config', 'user.email', 'test@example.invalid')
+        git('remote', 'add', 'origin', 'https://github.com/Grinch27/twrp_builder')
+        git('add', '.')
+        git('commit', '--quiet', '-m', 'synthetic public builder patch')
+        revision = git('rev-parse', 'HEAD')
+        target.write_text('+LOCAL_REQUIRED_MODULES += private_worktree_variant\n')
+        manifest = self.commit_make_checker()
+        text = ('build/make/core/main.mk:750: warning: Missing required dependencies:\n'
+                'TARGET module private_parent requires non-existent TARGET module: '
+                'public_variant.recovery\n'
+                'TARGET module private_parent requires non-existent TARGET module: '
+                'private_worktree_variant\n')
+        with patch('summarize_compile_failure.BUILDER_ROOT', builder), \
+                patch.dict('os.environ', {'GITHUB_SHA': revision}):
+            result = summarize(text, manifest, self.source)
+            self.assertEqual(result['public_dependencies'], ['public_variant.recovery'])
+            self.assertEqual(result['required_candidates'], 2)
+            self.assertEqual(result['unverified_required_candidates'], 1)
+            self.assertEqual(result['public_dependency_sources'][0]['path'], BUILDER_PATCH)
+            value = record({'stage': 'compile', 'exit_code': 1}, 42, revision,
+                           result, self.source, manifest)
+            self.assertEqual(value['public_dependencies'], ['public_variant.recovery'])
+            self.assertNotIn('private_worktree_variant', json.dumps(value))
+            stale = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                           result, self.source, manifest)
+            self.assertEqual(stale['public_dependencies'], [])
+            git('remote', 'set-url', 'origin', 'https://github.com/example/private')
+            self.assertEqual(summarize(text, manifest, self.source)['public_dependencies'], [])
+        self.assertIsNone(dependency_evidence_line('-private_removed.recovery\n',
+                                                  'private_removed.recovery', BUILDER_PATCH))
 
     def test_make_bare_module_lists_are_rechecked_without_exporting_private_names(self):
         (self.project / 'Android.mk').write_text(

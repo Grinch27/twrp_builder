@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Requirements: classify a failed compile without exporting private log text.
 # Ambiguity: unknown diagnostics remain unclassified; no guessed source fixes.
-# Research: anchored Make rows, quoted BP names and literal Make module lists.
+# Research: public upstream blobs and this exact public builder's committed patch.
 # Optimization: bounded log fragments, 64 locations and a 45-second literal search.
 # Risks: private overlay contents, paths, identifiers or credentials in errors.
 # Validation: fixed categories and Git-confirmed public metadata; synthetic tests.
@@ -9,6 +9,7 @@
 
 import argparse
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -40,12 +41,40 @@ MAKE_REQUIRED = re.compile(
     r'requires non-existent (?:TARGET|HOST|HOST_CROSS) module: '
     r'([A-Za-z0-9_.@+-]{1,128})(?::(?:32|64))?\s*$')
 NAME = re.compile(r'[A-Za-z0-9_.@+-]{1,128}\Z')
+BUILDER_ROOT = Path(__file__).resolve().parents[1]
+BUILDER_PATCH = 'builder-public/patches/recovery-required-modules.patch'
 
 
-def public_file(source, name, projects, excluded, timeout=10):
+def public_builder_patch(revision):
+    """Read one public patch at the checkout's GitHub commit, never its worktree."""
+    if not isinstance(revision, str) or not re.fullmatch(r'[0-9a-f]{40}', revision):
+        return None
+    try:
+        def git(*args):
+            return subprocess.check_output(['git', '-C', str(BUILDER_ROOT), *args],
+                                           stderr=subprocess.DEVNULL, timeout=2)
+        origin = git('remote', 'get-url', 'origin').decode().strip().removesuffix('.git')
+        if origin != 'https://github.com/Grinch27/twrp_builder':
+            return None
+        if git('rev-parse', 'HEAD').decode().strip() != revision:
+            return None
+        target = revision + ':patches/recovery-required-modules.patch'
+        if int(git('cat-file', '-s', target)) > 65536:
+            return None
+        data = git('show', target)
+        if len(data) > 65536 or b'\0' in data:
+            return None
+        return data.decode('utf-8')
+    except (OSError, ValueError, UnicodeError, subprocess.SubprocessError):
+        return None
+
+
+def public_file(source, name, projects, excluded, timeout=10, builder_commit=None):
     """Use pinned Git blobs rather than private overlays or arbitrary log paths."""
     try:
         relative_path(name)
+        if name == BUILDER_PATCH and name not in excluded:
+            return public_builder_patch(builder_commit or os.environ.get('GITHUB_SHA'))
         if name in excluded or Path(name).suffix not in {'.bp', '.mk', '.go', '.c', '.cc', '.cpp', '.h', '.py', '.sh', '.S', '.s'}:
             return None
         candidates = sorted(projects, key=lambda p: len(p.get('path', p.get('name', ''))), reverse=True)
@@ -89,6 +118,13 @@ def dependency_evidence_line(text, name, path=''):
     """Locate quoted names or bare tokens in public Make module assignments."""
     literals = dependency_literals(name)
     if not literals:
+        return None
+    if path == BUILDER_PATCH:
+        token = re.compile(r'(?<![A-Za-z0-9_.@+-])' + re.escape(name)
+                           + r'(?![A-Za-z0-9_.@+-])')
+        for number, line in enumerate(text.splitlines(), 1):
+            if line.startswith('+') and not line.startswith('+++') and token.search(line[1:]):
+                return number
         return None
     for number, line in enumerate(text.splitlines(), 1):
         if any(literal in line for literal in literals):
@@ -137,6 +173,17 @@ def public_dependency_sources(source, projects, candidates, excluded):
         return [], set()
     deadline = time.monotonic() + 45
     evidence, verified, seen = [], set(), set()
+    public_patch = public_file(source, BUILDER_PATCH, projects, excluded)
+    if public_patch is not None:
+        hits = sorted(name for name in pending
+                      if has_public_dependency(public_patch, name, BUILDER_PATCH))
+        if hits:
+            evidence.append({'path': BUILDER_PATCH,
+                             'line': min(dependency_evidence_line(public_patch, name, BUILDER_PATCH)
+                                         for name in hits), 'dependencies': hits})
+            pending.difference_update(hits)
+            verified.update(hits)
+            seen.add(BUILDER_PATCH)
     priority = {'build/soong': 0, 'frameworks/base': 1}
     ordered = sorted(projects, key=lambda p: priority.get(p.get('path', p.get('name')), 2))
     for project in ordered:
@@ -225,6 +272,9 @@ def summarize(text, manifest, source, excluded=()):
     result = {'categories': categories or ['UNCLASSIFIED_COMPILE_FAILURE'],
               'public_locations': locations,
               'public_dependencies': sorted(dependencies | inherited)[:128]}
+    if checker is not None and 'MISSING_REQUIRED_MODULE' in categories:
+        result['required_candidates'] = len(make_candidates)
+        result['unverified_required_candidates'] = len(make_candidates - (dependencies | inherited))
     if evidence:
         result['public_dependency_sources'] = evidence
     return result

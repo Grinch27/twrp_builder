@@ -11,6 +11,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import signal
 import subprocess
 import sys
@@ -26,6 +27,10 @@ def build_environment(parent, builder, work):
     # Values such as HOME are inherited unchanged; no host configuration is changed.
     result = {key: value for key, value in parent.items() if key in ENVIRONMENT}
     result.update(BUILDER_SELF=str(builder), BUILD_ROOT=str(work), GIT_TERMINAL_PROMPT='0')
+    # Public builder identity enables pinned patch proof; credentials remain excluded.
+    commit = parent.get('GITHUB_SHA', '')
+    if re.fullmatch(r'[0-9a-f]{40}', commit):
+        result['GITHUB_SHA'] = commit
     return result
 
 
