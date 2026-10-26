@@ -17,6 +17,7 @@ import sys
 import time
 
 from build_telemetry import sample
+from native_cleanup import remember_group
 
 ENVIRONMENT = {'PATH', 'HOME', 'USER', 'LOGNAME', 'SHELL', 'LANG', 'LC_ALL', 'TZ', 'TERM'}
 
@@ -105,11 +106,16 @@ def stop_group(process):
     try:
         process.wait(timeout=30)
     except subprocess.TimeoutExpired:
-        try:
-            os.killpg(process.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
+        pass
+    # The shell can exit before a TERM-resistant grandchild; kill the group anyway.
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    try:
         process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        print('Native process reap time budget exhausted.', flush=True)
 
 
 def run_build(builder, work, checkpoint=None, interval=15, heartbeat=60):
@@ -160,6 +166,10 @@ def run_build(builder, work, checkpoint=None, interval=15, heartbeat=60):
         )
         handlers = {s: signal.signal(s, interrupt) for s in (signal.SIGINT, signal.SIGTERM)}
         try:
+            try:
+                remember_group(work, process.pid)
+            except (OSError, ValueError):
+                print('Native session record unavailable; direct group cleanup remains active.', flush=True)
             while process.poll() is None:
                 emit()
                 time.sleep(interval)

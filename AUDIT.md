@@ -511,3 +511,10 @@ Q3（失败诊断）：本轮仅保留公开安全摘要；完整私有日志的
 
 - 585 项运行 40264306025（main a9e25ab2c74edcc8b0a2e5c0bae29642a24e68b0）完成 runner-image 检查、私有输入受限获取、源码同步和 checkout，最终工作流 failure；Native 编译步骤标为 cancelled，进度分支没有最终 exit_code 或新的可信缺项诊断，也没有密文 Artifact。公开遥测最后一次记录 compile 835.0 秒、当前 Ninja 批次 245/246、MemAvailable 1052 MiB、SwapFree 51 MiB；工作流约一小时后结束。此证据提示显著内存压力，但**不能单凭它断言发生了 OOM 或确定 GitHub Runner 终止原因**。
 - 本轮不依据旧 VNDK 预编译中的 libbinderthreadstate 字面量补造提供方，不修改 585 项公开源码锁定 pin 或缺项检查。仅将 Native `mka bootimage` 并行度由 4 降至 2，并同步公开命令模板、回归断言、README 与 source.lock.json 的非源码构建元数据；repo sync 仍为 -j4。保留原有日志白名单、失败退出、静态镜像验收及 publish=false 加密交付。此举是可回退的资源缓解措施，不是成功构建证明；下一轮须由真实 Runner 验证。
+
+## 2026-10-26 — 有限原生进程清理及资源缓解
+
+- 用户要求 Complete job 最多 3 分钟，超时放弃。已核对 GitHub 官方工作流语法与 actions/runner 的 JobExtension.cs、LinuxProcessExtensions：Complete job 是 Runner 的内建 FinalizeJob 阶段，孤儿进程扫描同步读取 `/proc/<pid>/environ`，没有 YAML 可配置的独立 3 分钟限时。不能伪称普通步骤 timeout-minutes 会控制此内建阶段。严格终止该阶段需要取消整次运行，无法仅跳过它并保留成功结果；本轮没有启用这种整次取消。
+- 原 stop_group 在主 Shell 已退出、TERM-resistant 子进程仍存活时，只等待主 Shell，可能不再发送 KILL；本轮改为始终向本构建组补发 KILL，保留真实构建退出码。启动时记录独立 session 的进程组与 start ticks；额外 always 收尾步骤仅清理该记录会话，拒绝 PID 重用、自身进程组、身份变化和符号链接记录，忽略已死亡的僵尸进程，既不遍历环境也不输出原始进程数据。步骤 3 分钟上限，内部 175 秒 timeout 加 5 秒 KILL；仅清理失败允许继续，不改变编译失败状态。
+- 9abc25f 的 40293182407 继续在同一 Ninja 批次 245/246 发生编译 cancelled；受限记录为 MemAvailable 1001 MiB、SwapFree 94 MiB、compile 306 秒，缺少最终构建 exit_code。此为内存压力线索，不是已确认的 OOM 诊断。该次运行已 cancelled，未产出成品。本轮在原有临时 hosted Runner 准备中新增 12 GiB Swap，不关闭原 Swap；磁盘初始门槛从 50 调为 62 GiB，保证分配后仍留原 50 GiB 源码空间。编译前原 18 GiB 检查、-j2、全部源码 pin、输入白名单、失败判定及加密交付不变。
+- 本地 104 项标准库用例中 102 项通过、2 项因执行器 /proc 命名空间不暴露真实子 PID 而跳过；跳过项为真实会话记录/清理及 stubborn 子进程进程状态检查，需由 hosted Runner 执行。其余用例覆盖主进程退出后仍补发组 KILL、身份变更拒绝、有限等待和符号链接拒绝；Shell 语法、YAML 解析和差异检查通过。实际 hosted Runner 的 Swap 创建、新清理阶段和完整构建仍待真实运行；没有在本地执行 Runner 清理或 Swap 操作。

@@ -213,3 +213,13 @@ jobs:
         run: |
           printf 'Build step: %s\n\nPublic outputs enabled: %s\n\nDevice boot/FBE/backup/restore: NOT_TESTED.\n' \
             "${COMPILE_OUTCOME}" "${PUBLISH_OUTPUTS}" >> "${GITHUB_STEP_SUMMARY}"
+      # Complete job itself is Runner-owned and cannot receive this timeout.
+      - name: Clean native build session (maximum 3 minutes)
+        if: always()
+        timeout-minutes: 3
+        continue-on-error: true
+        run: |
+          if [[ -n "${BUILD_ROOT:-}" ]]; then
+            timeout --signal=TERM --kill-after=5s 175s \
+              /usr/bin/python3 scripts/native_cleanup.py --work "${BUILD_ROOT}"
+          fi

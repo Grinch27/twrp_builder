@@ -23,8 +23,8 @@ flowchart TD
 | 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和 303 项公开补充项目 SHA，共 585 项 |
 | 公开测试资源 | 同版本 AOSP Recovery 的 25 张测试图片和 NOTICE；单独锁定，恢复 `res-testdata` 文件组，十项私有输入不变 |
 | 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j2` |
-| 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度 2。原生路线使用 Runner 可用内存，Docker 路线另限 14 GiB |
-| 磁盘检查 | 清理后至少 50 GiB；编译前至少 18 GiB；不足立即失败 |
+| 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度 2。原生路线使用 Runner 可用内存并新增 12 GiB Swap，Docker 路线另限 14 GiB |
+| 磁盘检查 | 清理后至少 62 GiB，其中新增 Swap 占 12 GiB；同步前保留至少 50 GiB，编译前至少 18 GiB；不足立即失败 |
 | 自动触发 | 仅原生入口通过 push / PR 运行静态检查和公开同步测试；完整编译接受 main 的 workflow_dispatch。本次持续修复期间，原生路线另接受精确 `[selene-native-build-20261022] ` 标记；成功交付后恢复仅手动构建。Docker 入口仅保留 workflow_dispatch |
 | 唯一手动输入 | `publish=false`；设为 true 明确允许公开镜像、静态报告和校验和 |
 
@@ -46,6 +46,8 @@ flowchart TD
 3. 打开 **Actions → TWRP Selene (Native) → Run workflow**，选 `main` 并保持 `publish=false`。当前只推进原生路线；Docker 研究暂缓，需用户明确要求后才恢复其手动入口。两条路线仍保留共享并发组。
 4. 完整任务会清理该次临时 GitHub runner 的预装 Android SDK、hostedtoolcache、dotnet、PowerShell 四个目录，以获得空间；不会在本地或 self-hosted runner 上运行该清理脚本。若空间门槛仍不满足，任务停止，不自动购买或选择付费 runner。
 5. 成功并通过静态验收后，总是用 `delivery-recipient.pem` 的公钥将三个成品文件打包为 AES-256-GCM / RSA-OAEP 的 CMS 密文，保留加密 Actions Artifact 七天。私钥只在交付方本地，不进入仓库或 Runner；`publish=false` 不公开镜像明文。只有明确勾选 `publish` 才另行上传明文 Artifact 和实验性 prerelease。完整日志仍不上传。
+
+原生路线增加 `Clean native build session (maximum 3 minutes)`：始终尝试清理本轮记录的独立构建进程组，TERM 后清理残留子进程，175 秒内部限时加 5 秒强制退出，步骤 `timeout-minutes: 3`、`continue-on-error: true`；超时跳过清理，保留原编译结果。只读取 `/proc/*/stat`，不输出进程环境、命令行或原始日志。**这不等于给 Runner 内建的 `Complete job` 设置 3 分钟超时：GitHub 没有暴露该阶段的单独限时或跳过接口。** 整次 Job 的 350 分钟上限保持原值；若要求内建阶段超时后强制终止，只能另用独立监控取消整次运行，届时运行结果为 cancelled，不能保留为成功。
 
 维护时的工作流查询频率：每轮启动后先等 15 分钟，再每 60 秒检查一次，直至结束。每次重试重新计时；工作流自身的心跳输出与构建限时不变。
 
