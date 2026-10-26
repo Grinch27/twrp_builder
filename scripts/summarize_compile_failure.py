@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Requirements: classify a failed compile without exporting private log text.
 # Ambiguity: unknown diagnostics remain unclassified; no guessed source fixes.
-# Research: exact module names and :module labels need proof in pinned public blobs.
+# Research: anchored Make required-module rows and exact public Git literals.
 # Optimization: bounded log fragments, 64 locations and a 45-second literal search.
 # Risks: private overlay contents, paths, identifiers or credentials in errors.
 # Validation: fixed categories and Git-confirmed public metadata; synthetic tests.
@@ -19,6 +19,7 @@ from source_inputs import load_lock, relative_path
 
 RULES = {
     'UNDEFINED_MODULE': r'depends on undefined module|missing dependencies:',
+    'MISSING_REQUIRED_MODULE': r'Missing required dependencies:|requires non-existent (?:TARGET|HOST|HOST_CROSS) module:',
     'INVALID_APEX_AVAILABLE': r'apex_available:\s*"[^"\r\n]+"\s+is not a valid module name',
     'MISSING_SOURCE_INPUT': r'source path .*does not exist|missing and no known rule to make it',
     'DUPLICATE_MODULE': r'module .*already defined|duplicate module',
@@ -34,6 +35,10 @@ RULES = {
 LOCATION = re.compile(r'(?<![\w/.-])([A-Za-z0-9_./+-]+):([0-9]{1,7})(?::[0-9]+)?:')
 DEPENDENCY = re.compile(r'(?:undefined module|missing dependencies:)\s*":?([A-Za-z0-9_.+-]{1,128})"')
 APEX_DEPENDENCY = re.compile(r'apex_available:\s*"([A-Za-z0-9_.+-]{1,128})"\s+is not a valid module name\b')
+MAKE_REQUIRED = re.compile(
+    r'^(?:TARGET|HOST|HOST_CROSS) module [A-Za-z0-9_.+-]{1,128}(?::(?:32|64))? '
+    r'requires non-existent (?:TARGET|HOST|HOST_CROSS) module: '
+    r'([A-Za-z0-9_.+-]{1,128})(?::(?:32|64))?\s*$')
 NAME = re.compile(r'[A-Za-z0-9_.+-]{1,128}\Z')
 
 
@@ -161,7 +166,11 @@ def summarize(text, manifest, source, excluded=()):
     categories = [name for name, rule in RULES.items() if re.search(rule, text, re.I)]
     projects = ET.fromstring(manifest).findall('project')
     locations, dependencies, candidates, cache = [], set(), set(), {}
+    make_candidates = set()
     for line in text.splitlines():
+        required = MAKE_REQUIRED.fullmatch(line.strip())
+        if required and len(make_candidates) < 128:
+            make_candidates.add(required[1])
         for match in LOCATION.finditer(line):
             name, number = match.groups()
             if name not in cache:
@@ -179,6 +188,10 @@ def summarize(text, manifest, source, excluded=()):
                 # Only a literal present in this exact public Git blob is eligible.
                 if has_public_dependency(public, dependency):
                     dependencies.add(dependency)
+    checker = cache.get('build/make/core/main.mk')
+    if checker is not None and all(marker in checker for marker in
+                                   ('Missing required dependencies:', 'requires non-existent')):
+        candidates.update(make_candidates)
     evidence, inherited = public_dependency_sources(source, projects, candidates - dependencies, excluded)
     result = {'categories': categories or ['UNCLASSIFIED_COMPILE_FAILURE'],
               'public_locations': locations,

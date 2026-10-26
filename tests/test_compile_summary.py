@@ -45,6 +45,55 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertEqual(result['public_dependencies'], ['libpublic'])
         self.assertIn('UNDEFINED_MODULE', result['categories'])
 
+
+    def commit_make_checker(self, content=None):
+        checker = self.source / 'build/make'
+        (checker / 'core').mkdir(parents=True)
+        if content is None:
+            content = ('$(warning Missing required dependencies:)\n'
+                       '$(info TARGET module $(parent) requires non-existent TARGET module: $(required))\n')
+        (checker / 'core/main.mk').write_text(content)
+        def git(*args):
+            return subprocess.check_output(['git', '-C', str(checker), *args],
+                                           text=True, stderr=subprocess.DEVNULL)
+        git('init', '--quiet')
+        git('config', 'user.name', 'test')
+        git('config', 'user.email', 'test@example.invalid')
+        git('add', '.')
+        git('commit', '--quiet', '-m', 'public Make checker fixture')
+        revision = git('rev-parse', 'HEAD').strip()
+        return self.manifest.replace(b'</manifest>', (
+            '<project name="platform/build" path="build/make" revision="'
+            + revision + '"/></manifest>').encode())
+
+    def test_make_required_names_need_public_checker_and_pinned_evidence(self):
+        manifest = self.commit_make_checker()
+        text = ('build/make/core/main.mk:750: warning: Missing required dependencies:\n'
+                'TARGET module private_parent requires non-existent TARGET module: libpublic\n'
+                'HOST module private_parent requires non-existent HOST module: private_required\n'
+                'HOST_CROSS module parent requires non-existent HOST_CROSS module: libpublic:64\n')
+        result = summarize(text, manifest, self.source)
+        self.assertEqual(result['public_dependencies'], ['libpublic'])
+        self.assertIn('MISSING_REQUIRED_MODULE', result['categories'])
+        value = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                       result, self.source, manifest)
+        self.assertEqual(value['public_dependencies'], ['libpublic'])
+        self.assertNotIn('private_parent', json.dumps(value))
+        self.assertNotIn('private_required', json.dumps(value))
+        self.assertEqual(summarize(text, manifest, self.source,
+                                  {'build/make/core/main.mk'})['public_dependencies'], [])
+
+    def test_make_required_rows_without_public_checker_cannot_authorize_names(self):
+        row = 'TARGET module private_parent requires non-existent TARGET module: libpublic\n'
+        self.assertEqual(summarize(row, self.manifest, self.source)['public_dependencies'], [])
+        manifest = self.commit_make_checker('PUBLIC_SETTING := 1\n')
+        (self.source / 'build/make/core/main.mk').write_text(
+            'Missing required dependencies: requires non-existent\n')
+        text = 'build/make/core/main.mk:750: warning: Missing required dependencies:\n' + row
+        result = summarize(text, manifest, self.source)
+        self.assertEqual(result['public_dependencies'], [])
+        self.assertNotIn('private_parent', json.dumps(result))
+
     def test_multiple_failures_in_one_public_file_are_all_reported(self):
         (self.project / 'Android.bp').write_text('cc_library { name: "demo", shared_libs: ["libpublic", "libother"] }\n')
         self.git('add', '.')

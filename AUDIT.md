@@ -453,6 +453,14 @@ res-testdata 是源码资源缺失：同版本 AOSP 根 Blueprint blob 52de77038
 
 当前 573 项（282 原始、291 公开补充），仅追加这个完整公开项目。原有 pin、十个私有输入、12 条 copy/link、公开资源锁和 Selene 原厂 kernel/DTB 输入不变。构建/测试实现未改；本地执行环境仍不可用，未声称本轮本地 manifest 组合或测试通过，沿用远端检查与完整官方同步/身份校验。继续 Native、publish=false、15 分钟首查及其后每分钟一次。
 
+[573 项原生运行 40252485700](https://github.com/Grinch27/twrp_builder/actions/runs/40252485700) 使用 dfced801d8d9ebacb911c6206fc44aaa8e1db93e，runner-image 成功，完整编译 exit 1。source_sync 433.362s、checkout 69.017s、public_resources 4.079s、preflight 6.196s 后，compile 持续 385.375s；Ninja 已进入后续 383 步批次，受限摘要给出 Recovery prebuilt、SELinux 和 build/make/core/main.mk 的公开位置，类别仅为 UNCLASSIFIED_COMPILE_FAILURE，尚无成功 boot.img。
+
+公开 TeamWin/android_build 的 android-12.1 分支提交 1b692e2248609f50a27c48cce53b7445cecdcfc5，已与允许的原 manifest 严格离线比较并匹配；没有用私有原 SHA 发起外部查询。其 core/main.mk:750 明确为 Missing required dependencies 检查，753 行按 TARGET/HOST/HOST_CROSS 输出 requires non-existent module 列表，756 行终止构建。当前摘要器只在带源码位置的行里收集名字，因此未解析这些独立列表行。公开 Recovery 同分支也与原 pin 匹配，其 prebuilt/Android.mk:454 是 vendor_hw 警告；没有据此修改设备配置或加入 BUILD_BROKEN_MISSING_REQUIRED_MODULES。
+
+本轮仅修正诊断，保留同一 573 项图。新增固定 MISSING_REQUIRED_MODULE 分类、严格完整 Make 行格式及可选 32/64 位后缀归一化；最多收集 128 个候选。只有错误位置对应锁定公开 build/make/core/main.mk，且该公共 Git blob 确有检查器固定格式时，列表名字才能进入原有的公开 Git 精确字面量取证。父模块名、未知名字和原始列表不输出；发布端仍独立复核，45 秒/32 个证据位置等界限不变。
+
+新增两项合成测试，覆盖已核验检查器、公开名字、私有父/子名字、host/target 和位数后缀、排除检查器、缺少检查器、工作树伪造检查器。执行环境仍不可用，尚未声称新增测试本地通过；现有 runner-image 将先运行全部测试，通过后才允许完整 Job。原输入、pin、资源、目标和镜像验收不变，继续 Native、publish=false、15 分钟首查及其后每分钟一次。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
