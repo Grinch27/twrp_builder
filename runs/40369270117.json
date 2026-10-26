@@ -3,20 +3,21 @@
   "run_id": 40369270117,
   "builder_commit": "fc7b9cecb09a937db6fbba5bb21dfafe34553abf",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "log_bytes": 20257,
-    "disk_free_mib": 39419,
-    "load_1m": 3.56,
-    "memory_available_mib": 14205,
-    "log_idle_seconds": 0.2,
-    "stage_elapsed_seconds": 15.2,
-    "swap_free_mib": 15233,
-    "elapsed_seconds": 565.6,
+    "stage_elapsed_seconds": 500.9,
+    "log_idle_seconds": 12.4,
+    "log_bytes": 44010,
+    "memory_available_mib": 14780,
+    "swap_free_mib": 15134,
+    "load_1m": 1.58,
+    "elapsed_seconds": 1051.3,
+    "disk_free_mib": 33485,
     "progress": {
       "kind": "ninja",
-      "completed": 153,
-      "total": 246,
-      "percent": 62.2
+      "completed": 382,
+      "total": 383,
+      "percent": 99.7
     },
     "stage_seconds": {
       "initialization": 0.076,
@@ -26,7 +27,26 @@
       "source_sync": 469.051,
       "checkout_verification": 70.11,
       "public_resources": 1.852,
-      "preflight": 6.948
+      "preflight": 6.948,
+      "compile": 494.753
     }
-  }
+  },
+  "categories": [
+    "LINK_VARIANT_MISSING"
+  ],
+  "public_locations": [
+    {
+      "path": "bootable/recovery/prebuilt/Android.mk",
+      "line": 445
+    },
+    {
+      "path": "system/sepolicy/Android.mk",
+      "line": 57
+    },
+    {
+      "path": "build/make/core/main.mk",
+      "line": 1118
+    }
+  ],
+  "public_dependencies": []
 }
