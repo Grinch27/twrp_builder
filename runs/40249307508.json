@@ -3,20 +3,21 @@
   "run_id": 40249307508,
   "builder_commit": "8ffcf053c1c1ba45b598eb65aecbd371534fe63d",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "swap_free_mib": 2886,
-    "log_bytes": 24925,
-    "stage_elapsed_seconds": 16.1,
-    "load_1m": 4.44,
-    "disk_free_mib": 51408,
-    "elapsed_seconds": 641.7,
-    "log_idle_seconds": 0.2,
-    "memory_available_mib": 14570,
+    "load_1m": 8.03,
+    "log_bytes": 31725,
+    "disk_free_mib": 51154,
+    "swap_free_mib": 2856,
+    "stage_elapsed_seconds": 93.4,
+    "log_idle_seconds": 3.8,
+    "elapsed_seconds": 719.0,
+    "memory_available_mib": 14887,
     "progress": {
       "kind": "ninja",
-      "completed": 193,
+      "completed": 246,
       "total": 246,
-      "percent": 78.5
+      "percent": 100.0
     },
     "stage_seconds": {
       "initialization": 0.05,
@@ -26,7 +27,21 @@
       "source_sync": 568.953,
       "checkout_verification": 46.688,
       "public_resources": 3.09,
-      "preflight": 4.348
+      "preflight": 4.348,
+      "compile": 89.738
     }
-  }
+  },
+  "categories": [
+    "INVALID_APEX_AVAILABLE",
+    "SOONG_BOOTSTRAP_FAILURE"
+  ],
+  "public_locations": [
+    {
+      "path": "libnativehelper/Android.bp",
+      "line": 187
+    }
+  ],
+  "public_dependencies": [
+    "com.android.extservices"
+  ]
 }
