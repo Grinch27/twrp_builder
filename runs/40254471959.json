@@ -3,20 +3,21 @@
   "run_id": 40254471959,
   "builder_commit": "da77f4588e43e6ef259a8013027cc64ddb47e938",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "log_idle_seconds": 0.3,
-    "swap_free_mib": 2900,
-    "disk_free_mib": 51697,
-    "load_1m": 2.49,
-    "stage_elapsed_seconds": 3.5,
-    "log_bytes": 3696,
-    "memory_available_mib": 14516,
-    "elapsed_seconds": 611.2,
+    "memory_available_mib": 14868,
+    "log_idle_seconds": 6.5,
+    "swap_free_mib": 2846,
+    "stage_elapsed_seconds": 363.2,
+    "load_1m": 2.34,
+    "disk_free_mib": 45601,
+    "elapsed_seconds": 971.0,
+    "log_bytes": 45104,
     "progress": {
       "kind": "ninja",
-      "completed": 9,
-      "total": 246,
-      "percent": 3.7
+      "completed": 382,
+      "total": 383,
+      "percent": 99.7
     },
     "stage_seconds": {
       "initialization": 0.053,
@@ -26,7 +27,149 @@
       "source_sync": 538.841,
       "checkout_verification": 59.041,
       "public_resources": 3.179,
-      "preflight": 4.699
+      "preflight": 4.699,
+      "compile": 362.947
     }
-  }
+  },
+  "categories": [
+    "MISSING_REQUIRED_MODULE"
+  ],
+  "public_locations": [
+    {
+      "path": "bootable/recovery/prebuilt/Android.mk",
+      "line": 454
+    },
+    {
+      "path": "system/sepolicy/Android.mk",
+      "line": 57
+    },
+    {
+      "path": "build/make/core/main.mk",
+      "line": 750
+    }
+  ],
+  "public_dependency_sources": [
+    {
+      "path": "build/soong/apex/apex_test.go",
+      "line": 3120,
+      "dependencies": [
+        "com.android.vndk.current"
+      ]
+    },
+    {
+      "path": "build/soong/cc/cc_test.go",
+      "line": 588,
+      "dependencies": [
+        "vndkcorevariant.libraries.txt"
+      ]
+    },
+    {
+      "path": "build/soong/ui/build/paths/config.go",
+      "line": 95,
+      "dependencies": [
+        "unzip"
+      ]
+    },
+    {
+      "path": "frameworks/base/Android.bp",
+      "line": 322,
+      "dependencies": [
+        "calendar-provider-compat-config",
+        "documents-ui-compat-config"
+      ]
+    },
+    {
+      "path": "hardware/interfaces/security/keymint/aidl/default/Android.bp",
+      "line": 42,
+      "dependencies": [
+        "RemoteProvisioner"
+      ]
+    },
+    {
+      "path": "system/core/init/Android.bp",
+      "line": 266,
+      "dependencies": [
+        "ueventd"
+      ]
+    },
+    {
+      "path": "system/core/shell_and_utilities/Android.bp",
+      "line": 25,
+      "dependencies": [
+        "newfs_msdos",
+        "tcpdump"
+      ]
+    },
+    {
+      "path": "system/update_engine/Android.bp",
+      "line": 847,
+      "dependencies": [
+        "shflags"
+      ]
+    },
+    {
+      "path": "vendor/twrp/build/soong/Android.bp",
+      "line": 156,
+      "dependencies": [
+        "twrp"
+      ]
+    },
+    {
+      "path": "external/libcap/cap/text.go",
+      "line": 48,
+      "dependencies": [
+        "ip"
+      ]
+    },
+    {
+      "path": "frameworks/native/cmds/dumpstate/Android.bp",
+      "line": 127,
+      "dependencies": [
+        "iptables",
+        "ss"
+      ]
+    },
+    {
+      "path": "packages/modules/Connectivity/Tethering/Android.bp",
+      "line": 152,
+      "dependencies": [
+        "NetworkPermissionConfig"
+      ]
+    },
+    {
+      "path": "prebuilts/vndk/v29/arm/Android.bp",
+      "line": 3799,
+      "dependencies": [
+        "libbinderthreadstate"
+      ]
+    },
+    {
+      "path": "packages/modules/NetworkStack/Android.bp",
+      "line": 315,
+      "dependencies": [
+        "PlatformCaptivePortalLogin",
+        "PlatformNetworkPermissionConfig"
+      ]
+    }
+  ],
+  "public_dependencies": [
+    "NetworkPermissionConfig",
+    "PlatformCaptivePortalLogin",
+    "PlatformNetworkPermissionConfig",
+    "RemoteProvisioner",
+    "calendar-provider-compat-config",
+    "com.android.vndk.current",
+    "documents-ui-compat-config",
+    "ip",
+    "iptables",
+    "libbinderthreadstate",
+    "newfs_msdos",
+    "shflags",
+    "ss",
+    "tcpdump",
+    "twrp",
+    "ueventd",
+    "unzip",
+    "vndkcorevariant.libraries.txt"
+  ]
 }
