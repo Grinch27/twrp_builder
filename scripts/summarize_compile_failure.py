@@ -31,11 +31,21 @@ RULES = {
     'HOST_TOOL_EXECUTION_FAILURE': r'cannot execute binary file|exec format error|command not found|error while loading shared libraries',
     'JAVA_RUNTIME_FAILURE': r'UnsupportedClassVersionError|NoClassDefFoundError|java.lang.OutOfMemoryError',
     'GO_RUNTIME_FAILURE': r'panic:|fatal error: runtime:',
+    'LINK_TYPE_INCOMPATIBLE': r'\bcan not link against [A-Za-z0-9_.@+-]{1,128} \(',
+    'LINK_VARIANT_MISSING': r'\bmissing [A-Za-z0-9_.@+-]{1,128} \([A-Z_]{2,32} (?:android|linux|darwin|windows)-',
     'NATIVE_COMPILER_FAILURE': r'clang: error:|ld.lld: error:|undefined reference to',
 }
 LOCATION = re.compile(r'(?<![\w/.-])([A-Za-z0-9_./+-]+):([0-9]{1,7})(?::[0-9]+)?:')
 DEPENDENCY = re.compile(r'(?:undefined module|missing dependencies:)\s*":?([A-Za-z0-9_.@+-]{1,128})"')
 APEX_DEPENDENCY = re.compile(r'apex_available:\s*"([A-Za-z0-9_.@+-]{1,128})"\s+is not a valid module name\b')
+# The pinned Android 12.1 Make checker emits these messages before main.mk
+# stops with "exiting from previous errors". Never export a captured name
+# unless its literal also exists in an independently pinned public Git blob.
+LINK_VARIANT = re.compile(
+    r'\bmissing ([A-Za-z0-9_.@+-]{1,128}) \([A-Z_]{2,32} '
+    r'(?:android|linux|darwin|windows)-[A-Za-z0-9_.+-]+\)')
+LINK_INCOMPATIBLE = re.compile(
+    r'\bcan not link against ([A-Za-z0-9_.@+-]{1,128}) \([^) \r\n]{1,64}\)')
 MAKE_REQUIRED = re.compile(
     r'^(?:TARGET|HOST|HOST_CROSS) module [A-Za-z0-9_.@+-]{1,128}(?::(?:32|64))? '
     r'requires non-existent (?:TARGET|HOST|HOST_CROSS) module: '
@@ -315,6 +325,16 @@ def summarize(text, manifest, source, excluded=()):
                 if has_public_dependency(public, dependency, name):
                     dependencies.add(dependency)
     checker = cache.get('build/make/core/main.mk')
+    # Require the actual pinned Make link checker, not a log path or a
+    # generic "missing" message alone. Public names still need exact Git proof.
+    link_categories = {'LINK_TYPE_INCOMPATIBLE', 'LINK_VARIANT_MISSING'}
+    if checker is not None and all(marker in checker for marker in
+                                   ('define link-type-missing', 'define link-type-error',
+                                    '$(error exiting from previous errors)')):
+        candidates.update(LINK_VARIANT.findall(text))
+        candidates.update(LINK_INCOMPATIBLE.findall(text))
+    else:
+        categories = [name for name in categories if name not in link_categories]
     cross_prefix_verified = False
     if checker is not None and all(marker in checker for marker in
                                    ('Missing required dependencies:', 'requires non-existent')):

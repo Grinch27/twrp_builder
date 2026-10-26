@@ -84,6 +84,42 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertEqual(summarize(text, manifest, self.source,
                                   {'build/make/core/main.mk'})['public_dependencies'], [])
 
+    def test_link_type_variants_require_pinned_checker_and_public_literal(self):
+        checker = ('define link-type-missing\n'
+                   '$(shell $(call echo-error,$($(1).MAKEFILE),"module missing dependency"))\n'
+                   'endef\n'
+                   'define link-type-error\n'
+                   '$(shell $(call echo-error,$($(1).MAKEFILE),"can not link against"))\n'
+                   'endef\n'
+                   '$(error exiting from previous errors)\n')
+        manifest = self.commit_make_checker(checker)
+        log = (
+            'build/make/core/main.mk:1118: error: exiting from previous errors\n'
+            'external/public/Android.bp:1: error: demo (ETC android-arm64) '
+            'missing libpublic (SHARED_LIBRARIES android-arm64)\n'
+            'external/public/Android.bp:1: error: demo (ETC android-arm64) '
+            'missing private_value (SHARED_LIBRARIES android-arm64)\n'
+            'external/public/Android.bp:1: error: demo (SHARED_LIBRARIES android-arm64) '
+            'can not link against libpublic (native:vendor)\n'
+        )
+        result = summarize(log, manifest, self.source)
+        self.assertIn('LINK_VARIANT_MISSING', result['categories'])
+        self.assertIn('LINK_TYPE_INCOMPATIBLE', result['categories'])
+        self.assertEqual(result['public_dependencies'], ['libpublic'])
+        mirrored = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                          result, self.source, manifest)
+        self.assertEqual(mirrored['public_dependencies'], ['libpublic'])
+        self.assertNotIn('private_value', json.dumps(mirrored))
+
+    def test_link_type_error_without_pinned_checker_never_exports_names(self):
+        manifest = self.commit_make_checker('PUBLIC_SETTING := 1\n')
+        log = ('build/make/core/main.mk:1118: error: exiting from previous errors\n'
+               'external/public/Android.bp:1: demo missing libpublic '
+               '(SHARED_LIBRARIES android-arm64)\n')
+        result = summarize(log, manifest, self.source)
+        self.assertEqual(result['categories'], ['UNCLASSIFIED_COMPILE_FAILURE'])
+        self.assertEqual(result['public_dependencies'], [])
+
     def test_make_required_rows_without_public_checker_cannot_authorize_names(self):
         row = 'TARGET module private_parent requires non-existent TARGET module: libpublic\n'
         self.assertEqual(summarize(row, self.manifest, self.source)['public_dependencies'], [])

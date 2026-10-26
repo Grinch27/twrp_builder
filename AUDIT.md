@@ -584,3 +584,12 @@ b0e3825 的40335394699完整同步、三份补丁和预检通过；compile515.43
 237f14b运行40339433832越过六个旧库项，compile346.011秒后仍为MISSING_REQUIRED_MODULE；摘要没有可解析的普通模块名（required_candidates=0），不是成功。已完整读取同一公开Recovery pin的minuitwrp/libminuitwrp_defaults.go：globalRequiredModules只要TARGET_PREBUILT_KERNEL非空，就把含`)`的KERNEL_OBJ/usr目录当模块名追加到Required；而globalIncludes仅在TW_TARGET_USES_QCOM_BSP=true时才读取这一套内核头文件路径。Selene使用预编译内核，且不是该Qualcomm BSP路径。
 
 本轮在同一公开源码补丁中给globalRequiredModules增加与消费者一致的Qualcomm条件，避免为MediaTek添加不存在的Qualcomm目录模块。未生成占位模块、关闭缺依赖检查、去掉头文件、改变图形源或改变Qualcomm原有分支行为。完整公开源码补丁预检通过。新增Go夹具从实际修补后的函数执行四种BSP/预编译内核组合，需由有Go的Runner执行；本地无Go明确跳过。112项本地用例109通过、3跳过（原/proc两项及新Go执行一项），不能据此声称完整编译或Go运行已通过。当前-j4、18分钟后每分钟检查、加密Artifact与publish=false保持不变。
+
+
+## 2026-10-26 — Make link-type / variant 诊断（待下一轮真实构建验证）
+
+最新 Native 运行 40343564258（main 8f8a01dbca4bcc1dfe6d3a7b396c7823fa572b87）已结束 failure；runner-image、公开静态/单项目同步、受限输入获取、完整同步/checkout、预检均通过。compile 504.375 秒、exit 1，受限进度为 Ninja 当前批次 382/383；诊断仅有 UNCLASSIFIED_COMPILE_FAILURE 和三个经公开 Git blob 核验的位置：bootable/recovery/prebuilt/Android.mk:445、system/sepolicy/Android.mk:57、build/make/core/main.mk:1118。没有静态镜像验收，也没有密文 Artifact。Ninja 当前批次百分比不代表完整构建进度。
+
+同版 AOSP 公开 build/make/core/main.mk:1118 是 link_type_error 检查的退出点；其上游固定格式分别包含 “missing <module> (<variant>)” 与 “can not link against <module> (<type>)”。这提示 Make 链接类型/变体问题，但当前公开摘要不足以确认实际缺失模块、变体或修复方式，不能把旧 VNDK 中的 libbinderthreadstate 字面量当作可用提供方。
+
+本轮仅补充严格受限的 LINK_VARIANT_MISSING / LINK_TYPE_INCOMPATIBLE 分类与候选名取证：必须先从本轮有效 manifest 中的锁定 Git blob 验证 Make 检查器；候选名字必须再由独立锁定公开源码的完整字面量证实，发布端仍二次核验。未知/私有名字、原始错误行、父模块与日志均不公开。新增合成回归覆盖公开字面量通过及无检查器时拒绝；585 项图、全部 pin、构建参数、镜像验收、密文交付与 publish=false 均不变。下一次真实 Native 编译才能确认具体错误和是否需要源码修复。
