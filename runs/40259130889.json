@@ -4,19 +4,19 @@
   "builder_commit": "dee7f8a43d24537d0a3a4a68e2813e67c7a48c15",
   "stage": "compile",
   "metrics": {
-    "log_bytes": 9443,
-    "elapsed_seconds": 608.8,
-    "load_1m": 2.51,
+    "elapsed_seconds": 849.2,
+    "memory_available_mib": 978,
     "log_idle_seconds": 0.0,
-    "memory_available_mib": 14743,
-    "stage_elapsed_seconds": 4.6,
-    "disk_free_mib": 51559,
-    "swap_free_mib": 2892,
+    "stage_elapsed_seconds": 245.0,
+    "disk_free_mib": 50620,
+    "load_1m": 4.15,
+    "swap_free_mib": 75,
+    "log_bytes": 30323,
     "progress": {
       "kind": "ninja",
-      "completed": 59,
+      "completed": 245,
       "total": 246,
-      "percent": 24.0
+      "percent": 99.6
     },
     "stage_seconds": {
       "initialization": 0.055,
