@@ -27,22 +27,34 @@ index 383adca..e44d716 100644
 -        fs_mgr \
          liblz4 \
 diff --git a/prebuilt/Android.mk b/prebuilt/Android.mk
-index 3197ec1..3d0a05b 100755
+index 3197ec1..6f9fbb7 100755
 --- a/prebuilt/Android.mk
 +++ b/prebuilt/Android.mk
 @@ -72,3 +72,2 @@ RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libmin
  RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libunwindstack.so
 -RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libbinderthreadstate.so
  RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libmdnssd.so
-@@ -86,3 +85,2 @@ RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libevent.so
- RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore
+@@ -85,4 +84,2 @@ RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libchrome.so
+ RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libevent.so
+-RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore
 -RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore_auth
  RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore_cli_v2
-@@ -238,3 +236,2 @@ ifeq ($(TW_INCLUDE_CRYPTO), true)
+@@ -219,5 +216,3 @@ ifeq ($(TW_INCLUDE_CRYPTO), true)
+         RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/avbctl
+-        RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore
+         RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore2
+-        RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore_cli
+         RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/android.system.wifi.keystore@1.0.so
+@@ -238,3 +233,2 @@ ifeq ($(TW_INCLUDE_CRYPTO), true)
          RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/android.system.suspend@1.0.so
 -        RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/fscryptpolicyget
          ifneq ($(TW_EXCLUDE_LIBXML2), true)
-@@ -442,3 +439,6 @@ LOCAL_POST_INSTALL_CMD += $(RELINK) $(TARGET_RECOVERY_ROOT_OUT)/system/bin $(REC
+@@ -339,3 +333,3 @@ ifneq ($(wildcard external/pcre/Android.mk),)
+ endif
+-ifeq ($(TW_INCLUDE_NTFS_3G),true)
++ifneq ($(filter true,$(TW_INCLUDE_NTFS_3G))$(wildcard external/ntfs-3g/Android.bp),)
+     RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/mount.ntfs
+@@ -442,3 +436,6 @@ LOCAL_POST_INSTALL_CMD += $(RELINK) $(TARGET_RECOVERY_ROOT_OUT)/system/bin $(REC
  TARGET_BINARY_RELINK_FILES := $(filter-out bu, $(notdir $(RECOVERY_BINARY_SOURCE_FILES)))
 -LOCAL_REQUIRED_MODULES += $(TARGET_BINARY_RELINK_FILES)
 +TARGET_BINARY_RELINK_MODULES := $(patsubst unzip,ziptool.recovery,$(TARGET_BINARY_RELINK_FILES))
@@ -50,7 +62,7 @@ index 3197ec1..3d0a05b 100755
 +TARGET_BINARY_RELINK_MODULES := $(patsubst twrp,orscmd,$(TARGET_BINARY_RELINK_MODULES))
 +LOCAL_REQUIRED_MODULES += $(TARGET_BINARY_RELINK_MODULES)
  include $(BUILD_PHONY_PACKAGE)
-@@ -479,3 +479,2 @@ LOCAL_REQUIRED_MODULES += init_second_stage.recovery \
+@@ -479,3 +476,2 @@ LOCAL_REQUIRED_MODULES += init_second_stage.recovery \
      plat_hwservice_contexts \
 -    plat_hardware_contexts \
      vndservice_contexts \

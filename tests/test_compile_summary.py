@@ -226,6 +226,7 @@ class CompileSummaryTests(unittest.TestCase):
     def test_relink_literal_filenames_are_public_but_not_inferred_module_names(self):
         content = ('RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/hw/public_tool\n'
                    'RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libpublic.so\n'
+                   'RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libfileonly.so\n'
                    'RECOVERY_VENDOR_HW_BINARY_FILES += $(TARGET_OUT_VENDOR_EXECUTABLES)/hw/public.hal@1.0-service\n'
                    '# RECOVERY_BINARY_SOURCE_FILES += $(OUT)/comment_only\n'
                    'RECOVERY_BINARY_SOURCE_FILES += $(PRIVATE_PATH)/$(private_name)\n')
@@ -235,7 +236,7 @@ class CompileSummaryTests(unittest.TestCase):
         self.manifest = self.manifest.replace(
             self.revision.encode(), self.git('rev-parse', 'HEAD').strip().encode())
         manifest = self.commit_make_checker()
-        names = ['public_tool', 'public.hal@1.0-service', 'libpublic.so',
+        names = ['public_tool', 'public.hal@1.0-service', 'libpublic.so', 'libfileonly',
                  'libpublic.recovery', 'public_tool.recovery', 'comment_only',
                  'private_name', 'public', 'private_worktree']
         (self.project / 'Android.mk').write_text('LOCAL_MODULE := private_worktree\n')
@@ -244,12 +245,12 @@ class CompileSummaryTests(unittest.TestCase):
                 + ''.join('TARGET module private_parent requires non-existent TARGET module: '
                           + name + '\n' for name in names))
         result = summarize(text, manifest, self.source)
-        expected = ['libpublic.so', 'public.hal@1.0-service', 'public_tool']
+        expected = ['libfileonly', 'libpublic.so', 'public.hal@1.0-service', 'public_tool']
         self.assertEqual(result['public_dependencies'], expected)
         value = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
                        result, self.source, manifest)
         self.assertEqual(value['public_dependencies'], expected)
-        for name in names[3:]:
+        for name in names[4:]:
             self.assertNotIn('"' + name + '"', json.dumps(value))
         self.assertEqual(summarize(text, manifest, self.source,
                                   {'external/public/Android.mk'})['public_dependencies'], [])

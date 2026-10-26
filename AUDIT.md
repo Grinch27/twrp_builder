@@ -554,3 +554,15 @@ Q3（失败诊断）：本轮仅保留公开安全摘要；完整私有日志的
 公开 TeamWin android_build/android-12.1 当前提交与原 pin 1b692e2248609f50a27c48cce53b7445cecdcfc5 一致，其 core/main.mk 在 HOST_CROSS 必需项解析前固定添加 host_cross_。仅在该锁定 Git blob 包含这条精确变换、且实际错误是 HOST_CROSS→HOST_CROSS 时，允许以去前缀后的**公开源码字面量名**独立取证、报告；不输出生成 ID、父模块或未知名称。新增有界数量 host_cross_required_candidates。该能力仅定位内部映射，不证明模块提供方或构建成功。
 
 本轮继续 Native/main，源码585项及全部 pin不变；publish=false；不改变私有输入、加密交付、镜像验收或设备边界。新运行仍须等待15分钟后首查、其后间隔至少60秒。已有本地私钥文件仍可用，未复制、上传或输出其内容。
+
+## 2026-10-26 — 修正已确认的 Vibrator / NTFS / Keystore 打包名
+
+40330321140（a4da576）完整预检通过，compile 452.795秒返回1。新增诊断实际确认 android.hardware.vibrator-V2-ndk.so、keystore、keystore_cli、mkntfs、ntfs-3g、ntfsfix；HOST_CROSS计数0，排除该方向；另6项仍缺公开名字证明，不能声称全部解决。
+
+公开 hasan6034 设备树在原pin c77512445ab5be5908ddb3ca9c659e6b149c78de 的 device.mk 确实把 Vibrator 文件名写入 TARGET_RECOVERY_DEVICE_MODULES。新增独立公开补丁，只将该模块项改为 android.hardware.vibrator-V2-ndk，保留共享库实际路径的 .so；不修改设备私有覆盖。先检查三份源码补丁，再应用，追踪模板同步新增两个固定事件。
+
+公开 LineageOS ntfs-3g/lineage-18.1 与原pin 7471d6403640f1cd0878cc2c87279571a497bcb7 一致，其 Android.bp 从 ntfsfix.c、mkntfs.c 和 ntfs-3g.c 编译的模块/文件名分别为 fsck.ntfs、mkfs.ntfs、mount.ntfs。Recovery partition.cpp 已支持这些替代文件名。仅在公开 Blueprint 存在时自动选择现有正确打包分支，保留既有显式开关与旧源码分支；不删除NTFS功能。
+
+公开 TeamWin security/android-12.1 与原pin 14737db1429b8eebc15568bc748b2cd79ccad5c2 一致，其 keystore/Android.bp 只定义 keystore_cli_v2，守护进程为 keystore2。公开 Recovery 源码已确认 init 启动 keystore2；旧 keystore/keystore_cli 仅出现在复制列表，无执行调用。本轮移除三处旧工具复制输入，保留 keystore2、keystore_cli_v2、全部现有加密库与配置，不新增跨版本替代。
+
+诊断再补充 TARGET_RECOVERY_DEVICE_MODULES 的公开字面量、固定公开设备 device.mk 优先取证，以及公开库文件名去 .so 后的完整字面量 stem；不推断 .recovery 等变体、不执行Make表达式、不读取覆盖文本。新增回归实际执行GNU Make，核验设备模块/文件名区别、NTFS自动/显式选择和原有加密工具保留；公开完整设备文件的补丁precheck通过。继续585项目全部原pin、Native/main、publish=false与15分钟/每分钟节奏，实际完整编译待下一轮确认。

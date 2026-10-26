@@ -138,10 +138,10 @@ def dependency_evidence_line(text, name, path=''):
     assignment = re.compile(
         r'^\s*(?:LOCAL_MODULE|LOCAL_REQUIRED_MODULES|LOCAL_SHARED_LIBRARIES|'
         r'LOCAL_STATIC_LIBRARIES|LOCAL_WHOLE_STATIC_LIBRARIES|'
-        r'LOCAL_HEADER_LIBRARIES|TWRP_REQUIRED_MODULES|PRODUCT_PACKAGES)\s*'
+        r'LOCAL_HEADER_LIBRARIES|TWRP_REQUIRED_MODULES|TARGET_RECOVERY_DEVICE_MODULES|PRODUCT_PACKAGES)\s*'
         r'(?::=|\+=|\?=|=)\s*(.*)$')
     relink_assignment = re.compile(
-        r'^\s*RECOVERY_(?:BINARY_SOURCE|LIBRARY_SOURCE|VENDOR_HW_BINARY)_FILES\s*'
+        r'^\s*RECOVERY_(BINARY_SOURCE|LIBRARY_SOURCE|VENDOR_HW_BINARY)_FILES\s*'
         r'(?::=|\+=|\?=|=)\s*(.*)$')
     pending, first = '', 0
     for number, raw in enumerate(text.splitlines(), 1):
@@ -156,11 +156,12 @@ def dependency_evidence_line(text, name, path=''):
             return first
         relink = relink_assignment.fullmatch(pending)
         if relink:
-            for value in relink[1].split():
+            for value in relink[2].split():
                 # A literal basename is public even if no module owns that file.
                 # Do not evaluate Make, expand variables or infer variant suffixes.
+                suffix = r'(?:\.so)?' if relink[1] == 'LIBRARY_SOURCE' else ''
                 if re.fullmatch(r'\$\([A-Z][A-Z0-9_]*\)/(?:[A-Za-z0-9_.+-]+/)*'
-                                + re.escape(name), value):
+                                + re.escape(name) + suffix, value):
                     return first
         pending = ''
     return None
@@ -203,6 +204,8 @@ def public_dependency_sources(source, projects, candidates, excluded, locations=
     # The existing 45-second, 32-file, and exact-Git-blob evidence limits remain.
     focus = [item['path'] for item in locations if isinstance(item, dict)
              and isinstance(item.get('path'), str)]
+    focus += [project.get('path') + '/device.mk' for project in projects
+              if project.get('path') == 'device/xiaomi/selene']
     # Check these exact locations before scanning potentially large projects.
     for name in dict.fromkeys(focus):
         if not pending or time.monotonic() >= deadline or len(seen) >= 32:

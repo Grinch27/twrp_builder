@@ -117,10 +117,14 @@ trace_public_command recovery_patch_check
 git -C bootable/recovery apply --check "${SELF}/patches/recovery-required-modules.patch"
 trace_public_command task_profiles_patch_check
 git -C system/core apply --check "${SELF}/patches/native-task-profiles.patch"
+trace_public_command selene_module_patch_check
+git -C device/xiaomi/selene apply --check "${SELF}/patches/selene-module-names.patch"
 trace_public_command recovery_patch_apply
 git -C bootable/recovery apply "${SELF}/patches/recovery-required-modules.patch"
 trace_public_command task_profiles_patch_apply
 git -C system/core apply "${SELF}/patches/native-task-profiles.patch"
+trace_public_command selene_module_patch_apply
+git -C device/xiaomi/selene apply "${SELF}/patches/selene-module-names.patch"
 trace_public_command disk_preflight
 [[ "$(df --output=avail -B1 "${WORK}" | tail -n 1)" -ge 19327352832 ]]
 trace_public_command jdk_preflight

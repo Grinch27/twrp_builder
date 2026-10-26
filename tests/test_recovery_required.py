@@ -48,13 +48,28 @@ RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libunw
 RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libbinderthreadstate.so
 RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/system/lib64/libmdnssd.so
 RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/android.hardware.boot@1.0.so
+RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libevent.so
 RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore
 RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore_auth
 RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore_cli_v2
+        RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/avbctl
+        RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore
+        RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore2
+        RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/keystore_cli
+        RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/android.system.wifi.keystore@1.0.so
         RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/android.system.suspend@1.0.so
         RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/fscryptpolicyget
         ifneq ($(TW_EXCLUDE_LIBXML2), true)
-        endif
+endif
+ifeq ($(TW_INCLUDE_NTFS_3G),true)
+    RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/mount.ntfs
+    RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/fsck.ntfs
+    RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/mkfs.ntfs
+else
+    RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/ntfs-3g
+    RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/ntfsfix
+    RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/mkntfs
+endif
 RECOVERY_BINARY_SOURCE_FILES := /out/bin/bu /recovery/bin/twrp /recovery/bin/ueventd /recovery/bin/unzip /out/bin/bc
 TARGET_BINARY_RELINK_FILES := $(filter-out bu, $(notdir $(RECOVERY_BINARY_SOURCE_FILES)))
 LOCAL_REQUIRED_MODULES += $(TARGET_BINARY_RELINK_FILES)
@@ -68,6 +83,27 @@ LOCAL_REQUIRED_MODULES += plat_service_contexts \
 
 
 class RecoveryRequiredModulesTests(unittest.TestCase):
+    def test_device_required_name_uses_module_without_altering_library_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = ('# Vibrator modules\nTARGET_RECOVERY_DEVICE_MODULES += \\\n'
+                      '    android.hardware.vibrator-V2-ndk.so\n\n'
+                      'RECOVERY_LIBRARY_SOURCE_FILES += \\\n'
+                      '    $(TARGET_OUT_SHARED_LIBRARIES)/android.hardware.vibrator-V2-ndk.so\n')
+            (root / 'device.mk').write_text(source)
+            patch = ROOT / 'patches/selene-module-names.patch'
+            subprocess.run(['git', 'init', '-q', str(root)], check=True)
+            for flags in [['--check'], []]:
+                subprocess.run(['git', '-C', str(root), 'apply', *flags, str(patch)],
+                               check=True, capture_output=True)
+            (root / 'fixture.mk').write_text('TARGET_OUT_SHARED_LIBRARIES := /system/lib64\n'
+                'include device.mk\n$(info MODULES=$(TARGET_RECOVERY_DEVICE_MODULES))\n'
+                '$(info FILES=$(RECOVERY_LIBRARY_SOURCE_FILES))\nall:\n\t@:\n')
+            output = subprocess.check_output(['make', '-s', '-f', 'fixture.mk'],
+                                             cwd=root, text=True)
+            self.assertIn('MODULES=android.hardware.vibrator-V2-ndk\n', output)
+            self.assertIn('FILES=/system/lib64/android.hardware.vibrator-V2-ndk.so\n', output)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -120,6 +156,8 @@ class RecoveryRequiredModulesTests(unittest.TestCase):
             '/recovery/system/lib64/libunwindstack.so',
             '/recovery/system/lib64/libmdnssd.so',
             '/system/lib64/android.hardware.boot@1.0.so',
+            '/system/lib64/libevent.so',
+            '/system/lib64/android.system.wifi.keystore@1.0.so',
             '/system/lib64/android.system.suspend@1.0.so',
         ])
         owners = set(fields['OWNERS'].split())
@@ -131,6 +169,26 @@ class RecoveryRequiredModulesTests(unittest.TestCase):
         prebuilt = (self.tree / 'prebuilt/Android.mk').read_text()
         self.assertNotIn('/keystore_auth', prebuilt)
         self.assertNotIn('/fscryptpolicyget', prebuilt)
+        self.assertNotIn('/keystore\n', prebuilt)
+        self.assertNotIn('/keystore_cli\n', prebuilt)
+        self.assertIn('/keystore2\n', prebuilt)
+        self.assertIn('/keystore_cli_v2\n', prebuilt)
+
+    def test_ntfs_provider_detection_preserves_mount_repair_and_format(self):
+        self.assertEqual(self.git_apply(check=True).returncode, 0)
+        self.assertEqual(self.git_apply().returncode, 0)
+        text = (self.tree / 'prebuilt/Android.mk').read_text()
+        start = text.index('ifneq ($(filter true,$(TW_INCLUDE_NTFS_3G))')
+        block = text[start:text.index('endif', start)] + 'endif\n'
+        (self.tree / 'ntfs.mk').write_text('TARGET_OUT_EXECUTABLES := /bin\n' + block
+            + '$(info FILES=$(notdir $(RECOVERY_BINARY_SOURCE_FILES)))\nall:\n\t@:\n')
+        blueprint = self.tree / 'external/ntfs-3g/Android.bp'
+        blueprint.parent.mkdir(parents=True)
+        blueprint.write_text('cc_binary { name: "mount.ntfs" }\n')
+        for flag in ['', 'true']:
+            output = subprocess.check_output(['make', '-s', '-f', 'ntfs.mk',
+                'TW_INCLUDE_NTFS_3G=' + flag], cwd=self.tree, text=True)
+            self.assertEqual(output.strip(), 'FILES=mount.ntfs fsck.ntfs mkfs.ntfs')
 
     def test_oem_mode_keeps_the_existing_cli_exclusion(self):
         self.assertEqual(self.git_apply(check=True).returncode, 0)
