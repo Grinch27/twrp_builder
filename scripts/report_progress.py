@@ -21,7 +21,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 
 from source_inputs import NoRedirect, SHA, compose_manifest, load_lock, relative_path
-from summarize_compile_failure import RULES, has_public_dependency, public_file
+from summarize_compile_failure import RULES, has_public_dependency, public_file, public_recovery_suffix
 from summarize_repo_failure import RULES as REPO_RULES
 from build_telemetry import STAGES, read_json, sanitize_metrics
 
@@ -121,8 +121,14 @@ def record(status, run_id, commit, summary=None, source=None, manifest=None, exc
         result['public_dependencies'] = sorted({name for name in summary.get('public_dependencies', [])
             if isinstance(name, str) and re.fullmatch(r'[A-Za-z0-9_.@+-]{1,128}', name)
             and any(has_public_dependency(text, name, path) for path, text in texts)})[:128]
+        if summary.get('public_recovery_link_bases') and public_recovery_suffix(source, projects, excluded):
+            bases = sorted({name for name in summary['public_recovery_link_bases']
+                            if isinstance(name, str) and name in result['public_dependencies']})[:128]
+            if bases:
+                result['public_recovery_link_bases'] = bases
         for key in ('required_candidates', 'unverified_required_candidates',
-                    'host_cross_required_candidates'):
+                    'host_cross_required_candidates', 'link_candidates',
+                    'unverified_link_candidates', 'recovery_link_candidates'):
             count = summary.get(key)
             if type(count) is int and 0 <= count <= 128:
                 result[key] = count
@@ -141,11 +147,13 @@ def render_summary(value):
         lines.append('')
     for key in sorted(NUMERIC_SUMMARY & metrics.keys()):
         lines.append(f'- {key}: {metrics[key]}')
-    for key in ('categories', 'source_categories', 'http_statuses', 'public_dependencies'):
+    for key in ('categories', 'source_categories', 'http_statuses', 'public_dependencies',
+                'public_recovery_link_bases'):
         if value.get(key):
             lines.append(f"- {key}: " + ', '.join('`' + item + '`' for item in value[key]))
     for key in ('required_candidates', 'unverified_required_candidates',
-                'host_cross_required_candidates'):
+                'host_cross_required_candidates', 'link_candidates',
+                'unverified_link_candidates', 'recovery_link_candidates'):
         if key in value:
             lines.append(f'- {key}: {value[key]}')
     for location in value.get('public_locations', []):

@@ -58,7 +58,7 @@ PUBLIC_COMMANDS = {
     "monitor_preflight": "test -s prebuilts/tools/common/m2/repository/.../monitor-1.0.2-alpha1.aar",
     "java_version": "prebuilts/jdk/jdk11/linux-x86/bin/java -version",
     "envsetup_lunch": "source build/envsetup.sh && lunch twrp_selene-eng",
-    "bootimage_compile": "timeout 160m bash -c 'source build/envsetup.sh; lunch twrp_selene-eng; mka bootimage -j4'",
+    "bootimage_compile": "timeout 160m bash -c 'source build/envsetup.sh; lunch twrp_selene-eng; export NINJA_ARGS=-v; mka bootimage -j\"$(($(nproc) + 1))\"'",
     "avb_info": "python3 external/avb/avbtool.py info_image --image <boot.img>",
     "avb_verify": "python3 external/avb/avbtool.py verify_image --image <boot.img> --key <public AVB test key>",
     "boot_static_verify": "python3 scripts/verify_boot.py --image <boot.img> --stock <reviewed stock inputs> --report <private work>",

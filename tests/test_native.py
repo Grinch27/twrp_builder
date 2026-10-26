@@ -7,6 +7,7 @@
 import contextlib
 import io
 import os
+import re
 from pathlib import Path
 import signal
 import subprocess
@@ -21,6 +22,22 @@ from run_native import build_environment, run_build
 
 
 class NativeTests(unittest.TestCase):
+    def test_compile_child_uses_available_cpus_plus_one_verbose_ninja_and_real_exit(self):
+        source = (Path(__file__).resolve().parents[1] / 'scripts/build.sh').read_text()
+        child = re.search(r"160m bash -c '(.*?)' >", source, re.S).group(1)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'build').mkdir()
+            for cpus in [1, 4, 8]:
+                (root / 'build/envsetup.sh').write_text(
+                    'nproc() { printf "%s\\n" ' + str(cpus) + '; }\n'
+                    'lunch() { [[ "$1" == twrp_selene-eng ]]; }\n'
+                    'mka() { [[ "$1" == bootimage && "$2" == -j'
+                    + str(cpus + 1) + ' && "$NINJA_ARGS" == -v ]] || return 99; return 7; }\n')
+                result = subprocess.run(['bash', '-c', child], cwd=root,
+                                        capture_output=True, timeout=10)
+                self.assertEqual(result.returncode, 7)
+
     def test_child_environment_omits_all_ci_and_unrelated_values(self):
         parent = {'PATH': '/usr/bin:/bin', 'HOME': '/unchanged', 'LANG': 'C.UTF-8',
                   'GH_TOKEN': 'secret', 'GITHUB_TOKEN': 'secret', 'TWRP_SOURCE_TOKEN': 'secret',

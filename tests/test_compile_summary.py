@@ -120,6 +120,41 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertEqual(result['categories'], ['UNCLASSIFIED_COMPILE_FAILURE'])
         self.assertEqual(result['public_dependencies'], [])
 
+    def test_recovery_link_base_needs_pinned_suffix_and_literal_base_proof(self):
+        checker = ('define link-type-missing\ndefine link-type-error\n'
+                   '$(error exiting from previous errors)\n')
+        manifest = self.commit_make_checker(checker)
+        log = ('build/make/core/main.mk:1118: error: exiting from previous errors\n'
+               'external/public/Android.bp:1: error: demo missing libpublic.recovery '
+               '(SHARED_LIBRARIES android-arm64)\n'
+               'external/public/Android.bp:1: error: demo missing private_value.recovery '
+               '(SHARED_LIBRARIES android-arm64)\n')
+        self.assertEqual(summarize(log, manifest, self.source)['public_dependencies'], [])
+        soong = self.source / 'build/soong'
+        (soong / 'cc').mkdir(parents=True)
+        (soong / 'cc/androidmk.go').write_text('const recoverySuffix = ".recovery"\n')
+        def git(*args):
+            return subprocess.check_output(['git', '-C', str(soong), *args],
+                                           text=True, stderr=subprocess.DEVNULL).strip()
+        git('init', '--quiet'); git('config', 'user.name', 'test')
+        git('config', 'user.email', 'test@example.invalid')
+        git('add', '.'); git('commit', '--quiet', '-m', 'public Soong suffix')
+        manifest = manifest.replace(b'</manifest>', ('<project name="platform/build/soong" '
+            'path="build/soong" revision="' + git('rev-parse', 'HEAD') + '"/></manifest>').encode())
+        result = summarize(log, manifest, self.source)
+        self.assertEqual(result['public_dependencies'], ['libpublic'])
+        self.assertEqual(result['public_recovery_link_bases'], ['libpublic'])
+        self.assertEqual(result['link_candidates'], 2)
+        self.assertEqual(result['unverified_link_candidates'], 1)
+        value = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                       result, self.source, manifest)
+        self.assertEqual(value['public_recovery_link_bases'], ['libpublic'])
+        self.assertNotIn('private_value', json.dumps(value))
+        excluded = {'build/soong/cc/androidmk.go'}
+        self.assertNotIn('public_recovery_link_bases', summarize(log, manifest, self.source, excluded))
+        self.assertNotIn('public_recovery_link_bases', record({'stage': 'compile'}, 42, 'a' * 40,
+                        result, self.source, manifest, excluded))
+
     def test_make_required_rows_without_public_checker_cannot_authorize_names(self):
         row = 'TARGET module private_parent requires non-existent TARGET module: libpublic\n'
         self.assertEqual(summarize(row, self.manifest, self.source)['public_dependencies'], [])

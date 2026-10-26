@@ -30,7 +30,8 @@ class CommandTraceTests(unittest.TestCase):
                              ['repo_sync', 'bootimage_compile'])
             self.assertEqual(offset, 4)
             self.assertNotIn('SECRET_PRIVATE_SOURCE', str(values))
-            self.assertIn('mka bootimage -j4', str(values))
+            self.assertIn('mka bootimage -j"$(($(nproc) + 1))"', str(values))
+            self.assertIn('NINJA_ARGS=-v', str(values))
             self.assertEqual(safe_command_events(path, offset), ([], offset))
 
     def test_trace_rejects_symlinks_and_oversized_records(self):

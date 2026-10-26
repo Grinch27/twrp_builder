@@ -181,6 +181,12 @@ def has_public_dependency(text, name, path=''):
     return dependency_evidence_line(text, name, path) is not None
 
 
+def public_recovery_suffix(source, projects, excluded):
+    """Verify the fixed Soong suffix before reducing a generated name to its base."""
+    text = public_file(source, 'build/soong/cc/androidmk.go', projects, excluded)
+    return text is not None and re.search(r'\brecoverySuffix\s*=\s*"\.recovery"', text) is not None
+
+
 def dependency_names(line):
     """Recognize quoted Blueprint names and Soong's bare comma-separated list."""
     result = set(DEPENDENCY.findall(line))
@@ -328,11 +334,17 @@ def summarize(text, manifest, source, excluded=()):
     # Require the actual pinned Make link checker, not a log path or a
     # generic "missing" message alone. Public names still need exact Git proof.
     link_categories = {'LINK_TYPE_INCOMPATIBLE', 'LINK_VARIANT_MISSING'}
+    link_candidates, recovery_bases = set(), set()
     if checker is not None and all(marker in checker for marker in
                                    ('define link-type-missing', 'define link-type-error',
                                     '$(error exiting from previous errors)')):
-        candidates.update(LINK_VARIANT.findall(text))
-        candidates.update(LINK_INCOMPATIBLE.findall(text))
+        link_candidates.update(LINK_VARIANT.findall(text)[:128])
+        link_candidates.update(LINK_INCOMPATIBLE.findall(text)[:128])
+        candidates.update(link_candidates)
+        if any(name.endswith('.recovery') for name in link_candidates) and public_recovery_suffix(source, projects, excluded):
+            recovery_bases = {name.removesuffix('.recovery') for name in link_candidates
+                              if name.endswith('.recovery') and NAME.fullmatch(name.removesuffix('.recovery'))}
+            candidates.update(recovery_bases)
     else:
         categories = [name for name in categories if name not in link_categories]
     cross_prefix_verified = False
@@ -348,6 +360,15 @@ def summarize(text, manifest, source, excluded=()):
     result = {'categories': categories or ['UNCLASSIFIED_COMPILE_FAILURE'],
               'public_locations': locations,
               'public_dependencies': sorted(dependencies | inherited)[:128]}
+    if link_categories & set(categories):
+        verified = dependencies | inherited
+        bases = recovery_bases & verified
+        result['link_candidates'] = min(len(link_candidates), 128)
+        result['unverified_link_candidates'] = min(len(link_candidates - verified
+            - {name + '.recovery' for name in bases}), 128)
+        result['recovery_link_candidates'] = min(len(recovery_bases), 128)
+        if bases:
+            result['public_recovery_link_bases'] = sorted(bases)[:128]
     if checker is not None and 'MISSING_REQUIRED_MODULE' in categories:
         result['required_candidates'] = len(make_candidates)
         verified_names = dependencies | inherited

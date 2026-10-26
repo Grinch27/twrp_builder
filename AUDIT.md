@@ -593,3 +593,15 @@ b0e3825 的40335394699完整同步、三份补丁和预检通过；compile515.43
 同版 AOSP 公开 build/make/core/main.mk:1118 是 link_type_error 检查的退出点；其上游固定格式分别包含 “missing <module> (<variant>)” 与 “can not link against <module> (<type>)”。这提示 Make 链接类型/变体问题，但当前公开摘要不足以确认实际缺失模块、变体或修复方式，不能把旧 VNDK 中的 libbinderthreadstate 字面量当作可用提供方。
 
 本轮仅补充严格受限的 LINK_VARIANT_MISSING / LINK_TYPE_INCOMPATIBLE 分类与候选名取证：必须先从本轮有效 manifest 中的锁定 Git blob 验证 Make 检查器；候选名字必须再由独立锁定公开源码的完整字面量证实，发布端仍二次核验。未知/私有名字、原始错误行、父模块与日志均不公开。新增合成回归覆盖公开字面量通过及无检查器时拒绝；585 项图、全部 pin、构建参数、镜像验收、密文交付与 publish=false 均不变。下一次真实 Native 编译才能确认具体错误和是否需要源码修复。
+
+## 2026-10-27 — CPU动态并行、Ninja详细命令及Recovery变体诊断
+
+读取当前main fc7b9ce及最新40369270117：compile494.753秒后返回1，类别LINK_VARIANT_MISSING，未得到可公开的具体名字，未进入镜像验收，也无成功成品。保留该轮已有link-type诊断代码与全部并发修改。
+
+按用户要求参考make -j$(($(nproc)+1)) V=s：Android入口继续使用mka bootimage，改为-j"$(($(nproc) + 1))"；当前锁定TeamWin Soong c6c059ab28c8c67921c0838a994bb70d53594aa7的ui/build/ninja.go明确读取NINJA_ARGS并按参数传给Ninja，故使用export NINJA_ARGS=-v，不直接套用V=s。完整命令仍写临时私有compile.log；公开模板仅展示固定表达式，不扩大原始日志出口。build.jobs改为描述实际策略的nproc+1；保留GOMAXPROCS=2、已有12GiB Swap、160分钟编译限时与真实失败退出。并行增多的内存和吞吐表现仍需实际运行确认，不宣称加速倍数。
+
+最新用户指示恢复为启动后静默等待15分钟，再每60秒检查，已同步README与AGENTS；旧18分钟记录仅为历史。同步命令模板和测试；新Shell夹具实际执行原始编译子Shell，在1/4/8 CPU下验证-j2/-j5/-j9、NINJA_ARGS=-v及失败码7原样传回。
+
+针对LINK_VARIANT_MISSING摘要无名字，增加有界候选计数。仅当锁定公开Soong cc/androidmk.go确有固定.recovery后缀定义时，允许将缺失变体还原为基础名字另行从锁定公开Git字面量取证；只输出已证明的公开基础名与固定recovery类别，不输出未知原名、父模块、路径或原始日志。发布端独立核验同一后缀和字面量证据。此规则不证明对应变体存在，更不是缺项绕过。合成回归覆盖无公开后缀时拒绝、未知基础名拒绝、合法基础名及发布端再次拒绝未证明证据。
+
+本地116项用例113通过、3项因已有/proc限制及缺Go跳过；Shell语法、YAML/构建元数据与差异检查通过。585项目和源码pin不变，Native/main、publish=false、加密Artifact、十个私有输入及设备禁止操作边界不变。下一轮仍需实际构建确认具体变体缺项及最终成品。

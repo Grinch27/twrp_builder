@@ -2,7 +2,7 @@
 # Requirements: fresh work, archive manifest plus reviewed public dependency projects.
 # Ambiguity: the expanded source graph still needs a successful real bootimage build.
 # Research: inspect each failure and apply verified fixes under retry authorization.
-# Optimization: bounded sync/build time, exact phase clocks and source JDK/Clang.
+# Optimization: CPU count plus one, verbose Ninja and bounded phase clocks.
 # Risks: source availability, old prebuilts, capacity; preserve the failure logs.
 # Validation: exact checkout identities, real phase/exit records, AVB and payloads.
 set -eo pipefail
@@ -151,7 +151,8 @@ timeout --signal=TERM --kill-after=60s 160m bash -c '
   set -eo pipefail
   source build/envsetup.sh
   lunch twrp_selene-eng
-  mka bootimage -j4
+  export NINJA_ARGS=-v
+  mka bootimage -j"$(($(nproc) + 1))"
 ' > "${WORK}/logs/compile.log" 2>&1
 
 set_stage static_validation
