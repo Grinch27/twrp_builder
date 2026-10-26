@@ -3,15 +3,22 @@
   "run_id": 40319845762,
   "builder_commit": "9a5d61ae1f397f275f5eb04244ab099fa10092ca",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "stage_elapsed_seconds": 0.7,
-    "log_idle_seconds": 0.1,
-    "load_1m": 1.99,
-    "disk_free_mib": 39344,
-    "swap_free_mib": 15166,
-    "memory_available_mib": 14766,
-    "elapsed_seconds": 865.1,
-    "log_bytes": 102,
+    "swap_free_mib": 15094,
+    "elapsed_seconds": 1348.2,
+    "stage_elapsed_seconds": 483.8,
+    "load_1m": 1.56,
+    "log_bytes": 41668,
+    "disk_free_mib": 33215,
+    "log_idle_seconds": 9.3,
+    "memory_available_mib": 14931,
+    "progress": {
+      "kind": "ninja",
+      "completed": 382,
+      "total": 383,
+      "percent": 99.7
+    },
     "stage_seconds": {
       "initialization": 0.063,
       "repo_tool": 0.518,
@@ -20,7 +27,28 @@
       "source_sync": 735.957,
       "checkout_verification": 115.03,
       "public_resources": 3.916,
-      "preflight": 6.545
+      "preflight": 6.545,
+      "compile": 475.581
     }
-  }
+  },
+  "categories": [
+    "MISSING_REQUIRED_MODULE"
+  ],
+  "public_locations": [
+    {
+      "path": "bootable/recovery/prebuilt/Android.mk",
+      "line": 454
+    },
+    {
+      "path": "system/sepolicy/Android.mk",
+      "line": 57
+    },
+    {
+      "path": "build/make/core/main.mk",
+      "line": 750
+    }
+  ],
+  "public_dependencies": [],
+  "required_candidates": 12,
+  "unverified_required_candidates": 12
 }
