@@ -1889,6 +1889,78 @@
       "path": "packages/apps/CellBroadcastReceiver",
       "revision": "ec8fa38ac7343c56ba52239174212a1e2b81a631",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/iproute2",
+      "path": "external/iproute2",
+      "revision": "67cd13ebdfe91ab495e5f226fa593353d0367e9a",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/iptables",
+      "path": "external/iptables",
+      "revision": "ee9cc007511071a839517572bac6b62430a79255",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/newfs_msdos",
+      "path": "external/newfs_msdos",
+      "revision": "61b3bb421dfb421b2e6bc0af7d35af7afa16bef4",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/shflags",
+      "path": "external/shflags",
+      "revision": "ceb61bbd314291465128b7ab77fe3cdc6e7f6435",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/tcpdump",
+      "path": "external/tcpdump",
+      "revision": "a2c3de476722b38ee5c7bc61d01ce419d11523c4",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/DocumentsUI",
+      "path": "packages/apps/DocumentsUI",
+      "revision": "2c8b4dc9c05638fcca7ad141a91727d1f41930fe",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/RemoteProvisioner",
+      "path": "packages/apps/RemoteProvisioner",
+      "revision": "4f3c94b5fead68f0ef4494e61647a892fc0a5723",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/modules/CaptivePortalLogin",
+      "path": "packages/modules/CaptivePortalLogin",
+      "revision": "dd1ca57548bd96135d23fe5328edf6b772c37fe0",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/modules/NetworkPermissionConfig",
+      "path": "packages/modules/NetworkPermissionConfig",
+      "revision": "175cfd363f164db1f4dd5ef20a673f12f6c55303",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/providers/CalendarProvider",
+      "path": "packages/providers/CalendarProvider",
+      "revision": "73354f00a751ea295109747d4a56361a9267e161",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/opt/calendar",
+      "path": "frameworks/opt/calendar",
+      "revision": "d543396d4ced9ce7047a524bc318fca4ad4de15f",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/modules/vndk",
+      "path": "packages/modules/vndk",
+      "revision": "2f357bae4dd7fcf6f1d79b0ff283579d29ac65a3",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

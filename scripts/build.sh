@@ -98,6 +98,8 @@ timeout --signal=TERM --kill-after=30s 6m \
   python3 "${SELF}/scripts/restore_public_testdata.py" --source "${WORK}/android"
 
 set_stage preflight
+git -C bootable/recovery apply --check "${SELF}/patches/recovery-required-modules.patch"
+git -C bootable/recovery apply "${SELF}/patches/recovery-required-modules.patch"
 [[ "$(df --output=avail -B1 "${WORK}" | tail -n 1)" -ge 19327352832 ]]
 test -s prebuilts/jdk/jdk11/linux-x86/lib/modules
 test -s prebuilts/tools/common/m2/repository/com/android/support/test/monitor/1.0.2-alpha1/monitor-1.0.2-alpha1.aar

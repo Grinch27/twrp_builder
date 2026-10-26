@@ -1,0 +1,21 @@
+diff --git a/Android.mk b/Android.mk
+--- a/Android.mk
++++ b/Android.mk
+@@ -481,5 +481,5 @@
+     pigz \
+     teamwin \
+-    twrp \
++    $(if $(filter true,$(TW_OEM_BUILD)),,orscmd) \
+     fsck.fat \
+     fatlabel \
+diff --git a/prebuilt/Android.mk b/prebuilt/Android.mk
+--- a/prebuilt/Android.mk
++++ b/prebuilt/Android.mk
+@@ -442,3 +442,6 @@
+ TARGET_BINARY_RELINK_FILES := $(filter-out bu, $(notdir $(RECOVERY_BINARY_SOURCE_FILES)))
+-LOCAL_REQUIRED_MODULES += $(TARGET_BINARY_RELINK_FILES)
++TARGET_BINARY_RELINK_MODULES := $(patsubst unzip,ziptool.recovery,$(TARGET_BINARY_RELINK_FILES))
++TARGET_BINARY_RELINK_MODULES := $(patsubst ueventd,init_second_stage.recovery,$(TARGET_BINARY_RELINK_MODULES))
++TARGET_BINARY_RELINK_MODULES := $(patsubst twrp,orscmd,$(TARGET_BINARY_RELINK_MODULES))
++LOCAL_REQUIRED_MODULES += $(TARGET_BINARY_RELINK_MODULES)
+ include $(BUILD_PHONY_PACKAGE)

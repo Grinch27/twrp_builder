@@ -461,13 +461,27 @@ res-testdata 是源码资源缺失：同版本 AOSP 根 Blueprint blob 52de77038
 
 新增两项合成测试，覆盖已核验检查器、公开名字、私有父/子名字、host/target 和位数后缀、排除检查器、缺少检查器、工作树伪造检查器。执行环境仍不可用，尚未声称新增测试本地通过；现有 runner-image 将先运行全部测试，通过后才允许完整 Job。原输入、pin、资源、目标和镜像验收不变，继续 Native、publish=false、15 分钟首查及其后每分钟一次。
 
+[573 项 Make 诊断运行 40254471959](https://github.com/Grinch27/twrp_builder/actions/runs/40254471959) 使用 da77f4588e43e6ef259a8013027cc64ddb47e938，91 项远端测试、actionlint 和公开 smoke 通过。source_sync 538.841s、checkout 59.041s、public_resources 3.179s、preflight 4.699s 后，compile 362.947s 返回 exit 1。新 MISSING_REQUIRED_MODULE 分类已实际提取 18 个名字，均由公开 Git 精确字面量再次证明：NetworkPermissionConfig、PlatformCaptivePortalLogin、PlatformNetworkPermissionConfig、RemoteProvisioner、calendar-provider-compat-config、com.android.vndk.current、documents-ui-compat-config、ip、iptables、libbinderthreadstate、newfs_msdos、shflags、ss、tcpdump、twrp、ueventd、unzip、vndkcorevariant.libraries.txt。尚无成功 boot.img。
+
+按实际引用补齐同一 android-12.1.0_r4 的 12 个完整公开项目：external/{iproute2,iptables,newfs_msdos,shflags,tcpdump}、packages/apps/{DocumentsUI,RemoteProvisioner}、packages/modules/{CaptivePortalLogin,NetworkPermissionConfig,vndk}、packages/providers/CalendarProvider，以及后者测试直接引用的 frameworks/opt/calendar。精确 pin 见 source.lock.json 新增尾部 12 项。system/apex 已在原清单中，未重复加入。两个独立公开镜像的 tag commit 一致，完整未截断 Git tree 共 3,787 个文件、60,549,292 bytes，全部 34 份 Blueprint/Make 已读取；普通 Blueprint、APEX、deps 及 Make 直接静态/共享库引用未发现其他缺席字面量，余项为已有 AIDL/SDK 生成名。此预查仍不证明变体或命名空间解析。
+
+packages/modules/vndk 实际定义 com.android.vndk.current、vndkcorevariant.libraries.txt 和 v28/v29/v30/v31 APEX。libbinderthreadstate 已有同版本清单锁定的 v29 预编译定义，是否随完整 VNDK APEX 依赖图正确导出仍交由实际构建确认，没有添加 Android 旧版本源码或强制替换二进制。
+
+另三项属于输出文件名与模块名混用。独立公开分支及严格离线比较确认当前 Recovery 为 TeamWin 5c3d206a5eeb3d446bcda8248a405a4b278bab5c，system/core 为 ac4f36c7eb076ea2c582061a21dfc49eaa71e623，libziparchive 为 AOSP a5d4eccd8b2c54d708bdd404b550730f86d470d2：orscmd 的 stem 是 twrp；init_second_stage 的 recovery 变体提供 ueventd 符号链接；ziptool 的 recovery 变体提供 unzip。当前公开 Soong c6c059ab28c8c67921c0838a994bb70d53594aa7 同样离线匹配，cc.go/cc/androidmk.go 确认 recovery 变体导出 .recovery 后缀。没有使用私有原 SHA 发起网络查询。
+
+新增 patches/recovery-required-modules.patch，在完整 checkout 校验之后、preflight 内先 git apply --check，再应用两处公开源码修正：根必需项的 twrp 改为真实 orscmd，并保持原有 OEM 模式排除；relink 的 required 模块将 twrp、ueventd、unzip 分别映射到 orscmd、init_second_stage.recovery、ziptool.recovery。实际 relink 文件清单、复制动作、运行时文件名和原模块实现完全不变，没有禁用缺依赖检查或创建占位模块。原始项目 pin 保持不变，公开补丁由 builder 明确记录和应用，不写入私有归档。
+
+新增三项合成测试覆盖 GNU Make 实际求值、真实模块拥有者、文件名清单保留、OEM 条件和源上下文不符时预检不写文件。本地环境不可用，未声称测试、补丁本地应用或新 manifest 本地组合已通过；现有 runner-image 将先执行完整检查，通过后才运行完整任务。
+
+当前 585 项（282 原始、303 公开补充）。原十个私有输入、12 条 copy/link、全部既有 pin、公开测试资源锁、Selene 原厂 kernel/DTB、编译目标及镜像静态验收保持原值。继续 Native、publish=false、15 分钟首查及其后每分钟一次。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：573 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：585 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
