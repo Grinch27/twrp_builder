@@ -1883,6 +1883,12 @@
       "path": "external/fft2d",
       "revision": "bc2ce47fbe073485fd10360187d0a803880ec998",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/CellBroadcastReceiver",
+      "path": "packages/apps/CellBroadcastReceiver",
+      "revision": "ec8fa38ac7343c56ba52239174212a1e2b81a631",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

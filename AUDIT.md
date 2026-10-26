@@ -445,13 +445,21 @@ res-testdata 是源码资源缺失：同版本 AOSP 根 Blueprint blob 52de77038
 
 当前 572 项（282 原始、290 公开补充）。锁定清单仅追加这两项，既有 pin、十项私有输入、12 条 copy/link、公开资源锁及 Selene 目标保持原值。构建/测试实现未变化；本地环境仍不可用，不声称本轮实际 manifest 本地组合或测试通过，继续依赖现有远端门槛与官方源完整同步/HEAD 校验。Native、publish=false、15 分钟首查及其后每分钟一次不变。
 
+[572 项原生运行 40251178634](https://github.com/Grinch27/twrp_builder/actions/runs/40251178634) 使用 6ed5a0e76cce0c8510d31418ee99db16520e97c6，runner-image 成功，完整 Job failure。source_sync 421.409s、checkout 71.451s、public_resources 2.199s、preflight 6.587s 后，compile 151.322s 以 exit 1 结束。实际受限错误为 frameworks/base/packages/SettingsLib/Utils/Android.bp:23 的 INVALID_APEX_AVAILABLE，缺少 com.android.cellbroadcast；尚无成功 boot.img。
+
+补入此前已定位、当时尚无实际需要的同标签 packages/apps/CellBroadcastReceiver@ec8fa38ac7343c56ba52239174212a1e2b81a631。其 apex/Android.bp 实际定义 apex/com.android.cellbroadcast，apps 引用本项目的 CellBroadcastApp 与 529 项时已加入的 CellBroadcastServiceModule。本轮同时复读已锁定 CellBroadcastService 的原始根 Blueprint，确认其提供方身份，不重复加入已有项目。
+
+两个独立公开镜像的 android-12.1.0_r4 commit 一致；完整未截断 Git tree 为 2,219 个文件、7,554,461 bytes，全部八份 Blueprint/Make 已读取。合并现有公开名字、已有 CellBroadcastService 与本项目实际定义后，已识别普通、APEX、deps 引用均有字面量提供方；仍须真实构建确认命名空间和变体。没有修改 APEX 声明、关闭测试或新增缺项绕过。
+
+当前 573 项（282 原始、291 公开补充），仅追加这个完整公开项目。原有 pin、十个私有输入、12 条 copy/link、公开资源锁和 Selene 原厂 kernel/DTB 输入不变。构建/测试实现未改；本地执行环境仍不可用，未声称本轮本地 manifest 组合或测试通过，沿用远端检查与完整官方同步/身份校验。继续 Native、publish=false、15 分钟首查及其后每分钟一次。
+
 1. 先验证公开 builder 的 push 静态检查。失败时仅修改 builder。
 2. 用户明确授权私有输入在 GitHub runner 中处理，并配置只读 `TWRP_SOURCE_TOKEN`。不要在聊天中提供令牌。
 3. 本次持续修复授权下，运行 publish=false 的完整任务，每次上限 350 分钟。任一失败立即结束当前尝试；根据真实证据审查、修正和验证后继续尝试，直至取得通过静态验收的成品。付费资源、扩大私有输入或设备操作仍需单独授权。
 4. 需要保留私有失败日志时先约定私有出口；临时 runner 结束后本地日志不可恢复。不将它们写入公开日志或 Artifact。
 5. 构建成功后，是否公开镜像与是否进行设备验收分别决定。设备操作不在当前授权中。
 
-当前最大不确定性：572 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
+当前最大不确定性：573 项图的生成模块、变体和条件依赖能否正确解析，以及镜像编译与静态验收能否通过；尚无成功 boot.img。
 
 用户可能遗漏：公开镜像也会包含配置/固件；publish=false 仅保留本地私钥可解密的成品密文，不保留完整私有诊断日志；独立会话必须持有对应私钥。
 
