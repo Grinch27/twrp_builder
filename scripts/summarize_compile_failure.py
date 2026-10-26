@@ -33,13 +33,13 @@ RULES = {
     'NATIVE_COMPILER_FAILURE': r'clang: error:|ld.lld: error:|undefined reference to',
 }
 LOCATION = re.compile(r'(?<![\w/.-])([A-Za-z0-9_./+-]+):([0-9]{1,7})(?::[0-9]+)?:')
-DEPENDENCY = re.compile(r'(?:undefined module|missing dependencies:)\s*":?([A-Za-z0-9_.+-]{1,128})"')
-APEX_DEPENDENCY = re.compile(r'apex_available:\s*"([A-Za-z0-9_.+-]{1,128})"\s+is not a valid module name\b')
+DEPENDENCY = re.compile(r'(?:undefined module|missing dependencies:)\s*":?([A-Za-z0-9_.@+-]{1,128})"')
+APEX_DEPENDENCY = re.compile(r'apex_available:\s*"([A-Za-z0-9_.@+-]{1,128})"\s+is not a valid module name\b')
 MAKE_REQUIRED = re.compile(
-    r'^(?:TARGET|HOST|HOST_CROSS) module [A-Za-z0-9_.+-]{1,128}(?::(?:32|64))? '
+    r'^(?:TARGET|HOST|HOST_CROSS) module [A-Za-z0-9_.@+-]{1,128}(?::(?:32|64))? '
     r'requires non-existent (?:TARGET|HOST|HOST_CROSS) module: '
-    r'([A-Za-z0-9_.+-]{1,128})(?::(?:32|64))?\s*$')
-NAME = re.compile(r'[A-Za-z0-9_.+-]{1,128}\Z')
+    r'([A-Za-z0-9_.@+-]{1,128})(?::(?:32|64))?\s*$')
+NAME = re.compile(r'[A-Za-z0-9_.@+-]{1,128}\Z')
 
 
 def public_file(source, name, projects, excluded, timeout=10):

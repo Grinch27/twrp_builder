@@ -94,6 +94,30 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertEqual(result['public_dependencies'], [])
         self.assertNotIn('private_parent', json.dumps(result))
 
+    def test_hal_at_names_need_exact_pinned_proof_in_summary_and_publisher(self):
+        (self.project / 'Android.bp').write_text(
+            'cc_library { name: "android.hardware.public@1.0", '
+            'shared_libs: ["android.hardware.public@1.1"] }\n')
+        self.git('add', '.')
+        self.git('commit', '--quiet', '-m', 'public HAL name fixture')
+        self.manifest = self.manifest.replace(
+            self.revision.encode(), self.git('rev-parse', 'HEAD').strip().encode())
+        manifest = self.commit_make_checker()
+        text = ('build/make/core/main.mk:750: warning: Missing required dependencies:\n'
+                'TARGET module android.hardware.private@1.0 requires non-existent TARGET module: '
+                'android.hardware.public@1.0:64\n'
+                'TARGET module private_parent requires non-existent TARGET module: '
+                'android.hardware.private@1.0\n'
+                'external/public/Android.bp:1: depends on undefined module '
+                '"android.hardware.public@1.1"\n')
+        result = summarize(text, manifest, self.source)
+        expected = ['android.hardware.public@1.0', 'android.hardware.public@1.1']
+        self.assertEqual(result['public_dependencies'], expected)
+        value = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                       result, self.source, manifest)
+        self.assertEqual(value['public_dependencies'], expected)
+        self.assertNotIn('android.hardware.private@1.0', json.dumps(value))
+
     def test_make_bare_module_lists_are_rechecked_without_exporting_private_names(self):
         (self.project / 'Android.mk').write_text(
             'LOCAL_MODULE := public_make_module\n'

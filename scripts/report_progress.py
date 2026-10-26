@@ -111,7 +111,7 @@ def record(status, run_id, commit, summary=None, source=None, manifest=None, exc
             if text is None:
                 continue
             names = sorted({dep for dep in evidence.get('dependencies', [])
-                            if isinstance(dep, str) and re.fullmatch(r'[A-Za-z0-9_.+-]{1,128}', dep)
+                            if isinstance(dep, str) and re.fullmatch(r'[A-Za-z0-9_.@+-]{1,128}', dep)
                             and has_public_dependency(text, dep, name)})[:128]
             if names:
                 sources.append({'path': name, 'line': line, 'dependencies': names})
@@ -119,7 +119,7 @@ def record(status, run_id, commit, summary=None, source=None, manifest=None, exc
         if sources:
             result['public_dependency_sources'] = sources
         result['public_dependencies'] = sorted({name for name in summary.get('public_dependencies', [])
-            if isinstance(name, str) and re.fullmatch(r'[A-Za-z0-9_.+-]{1,128}', name)
+            if isinstance(name, str) and re.fullmatch(r'[A-Za-z0-9_.@+-]{1,128}', name)
             and any(has_public_dependency(text, name, path) for path, text in texts)})[:128]
     return result
 

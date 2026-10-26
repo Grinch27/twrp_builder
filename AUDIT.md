@@ -530,3 +530,11 @@ Q3（失败诊断）：本轮仅保留公开安全摘要；完整私有日志的
 - task_recovery_profiles.json 需要真实文件，不能仅删除。现有同一 system/core 的 task_profiles.json 有 40 个 Profiles，libprocessgroup 明确读取 /etc/task_profiles.json。本轮给现有非空文件增加与同文件 cgroups.recovery.json 同式的 Recovery prebuilt_etc 安装声明：module=task_recovery_profiles.json，filename=task_profiles.json，recovery=true。原 JSON 内容不改，原 required 名保留；不使用空配置或其他 Android 版本文件。新增公开补丁先检查再应用，585 项和全部 pin 不变。
 
 本地 104 项用例为 102 项通过、相同 2 项执行器 /proc 限制跳过。GNU Make 夹具实际验证有效加密、日志、F2FS 和 relink 项仍保留，过时 required/工具复制项移除；公开真实 Recovery 完整差异及 system/core 原始 Blueprint 的补丁上下文检查通过。Shell 语法和差异检查通过，完整构建仍待实际执行。另恢复 prepare_runner.sh 原有 100755 模式；先前 API 提交只误改了该执行位，显式 bash 调用已验证未受影响。
+
+## 2026-10-26 — HAL 名字诊断补齐
+
+3642339 的运行 40305990297 完成真实源码补丁、task profile 安装规则预检和 compile 435.536 秒后返回 exit 1，类别仍为 MISSING_REQUIRED_MODULE，受限公开依赖为空。此时内存与 Swap 已回到充足状态，不是新取消或清理挂起。
+
+进一步检查诊断正则发现它未接受 Android HAL 合法模块名中的 @，同时影响 required 行的父/子模块名、Soong 引号名及发布端复核。本轮仅将这些模块名字符集补上 @，仍限 128 字符、固定 Make 行格式和锁定公开 Git 精确字面量证明；不输出父模块、私有值或原始行，不修改源码图和 HAL 实现。新增合成测试覆盖带 @ 的父模块、公开子模块、64 位后缀及无公开证明的私有名字拒绝。
+
+本地 105 项用例中 103 项通过，原 2 项 /proc 执行器限制跳过；差异及 Shell 语法检查通过。当前空列表的具体缺项仍待真实新运行，不能猜测或禁用 required 检查。
