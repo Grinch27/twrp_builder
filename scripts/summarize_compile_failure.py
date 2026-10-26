@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Requirements: classify a failed compile without exporting private log text.
 # Ambiguity: unknown diagnostics remain unclassified; no guessed source fixes.
-# Research: public upstream blobs and this exact public builder's committed patch.
+# Research: public module assignments and literal Recovery relink file names.
 # Optimization: bounded log fragments, 64 locations and a 45-second literal search.
 # Risks: private overlay contents, paths, identifiers or credentials in errors.
 # Validation: fixed categories and Git-confirmed public metadata; synthetic tests.
@@ -40,6 +40,10 @@ MAKE_REQUIRED = re.compile(
     r'^(?:TARGET|HOST|HOST_CROSS) module [A-Za-z0-9_.@+-]{1,128}(?::(?:32|64))? '
     r'requires non-existent (?:TARGET|HOST|HOST_CROSS) module: '
     r'([A-Za-z0-9_.@+-]{1,128})(?::(?:32|64))?\s*$')
+HOST_CROSS_REQUIRED = re.compile(
+    r'^HOST_CROSS module [A-Za-z0-9_.@+-]{1,128}(?::(?:32|64))? '
+    r'requires non-existent HOST_CROSS module: '
+    r'host_cross_([A-Za-z0-9_.@+-]{1,117})(?::(?:32|64))?\s*$')
 NAME = re.compile(r'[A-Za-z0-9_.@+-]{1,128}\Z')
 BUILDER_ROOT = Path(__file__).resolve().parents[1]
 BUILDER_PATCH = 'builder-public/patches/recovery-required-modules.patch'
@@ -136,6 +140,9 @@ def dependency_evidence_line(text, name, path=''):
         r'LOCAL_STATIC_LIBRARIES|LOCAL_WHOLE_STATIC_LIBRARIES|'
         r'LOCAL_HEADER_LIBRARIES|TWRP_REQUIRED_MODULES|PRODUCT_PACKAGES)\s*'
         r'(?::=|\+=|\?=|=)\s*(.*)$')
+    relink_assignment = re.compile(
+        r'^\s*RECOVERY_(?:BINARY_SOURCE|LIBRARY_SOURCE|VENDOR_HW_BINARY)_FILES\s*'
+        r'(?::=|\+=|\?=|=)\s*(.*)$')
     pending, first = '', 0
     for number, raw in enumerate(text.splitlines(), 1):
         line = raw.split('#', 1)[0].rstrip()
@@ -147,6 +154,14 @@ def dependency_evidence_line(text, name, path=''):
         match = assignment.fullmatch(pending)
         if match and name in match[1].split():
             return first
+        relink = relink_assignment.fullmatch(pending)
+        if relink:
+            for value in relink[1].split():
+                # A literal basename is public even if no module owns that file.
+                # Do not evaluate Make, expand variables or infer variant suffixes.
+                if re.fullmatch(r'\$\([A-Z][A-Z0-9_]*\)/(?:[A-Za-z0-9_.+-]+/)*'
+                                + re.escape(name), value):
+                    return first
         pending = ''
     return None
 
@@ -188,6 +203,23 @@ def public_dependency_sources(source, projects, candidates, excluded, locations=
     # The existing 45-second, 32-file, and exact-Git-blob evidence limits remain.
     focus = [item['path'] for item in locations if isinstance(item, dict)
              and isinstance(item.get('path'), str)]
+    # Check these exact locations before scanning potentially large projects.
+    for name in dict.fromkeys(focus):
+        if not pending or time.monotonic() >= deadline or len(seen) >= 32:
+            break
+        if name in seen:
+            continue
+        seen.add(name)
+        text = public_file(source, name, projects, excluded, timeout=2)
+        if text is None:
+            continue
+        hits = sorted(dep for dep in pending if has_public_dependency(text, dep, name))
+        if hits:
+            evidence.append({'path': name,
+                             'line': min(dependency_evidence_line(text, dep, name) for dep in hits),
+                             'dependencies': hits})
+            verified.update(hits)
+            pending.difference_update(hits)
     priority = {'build/soong': 0, 'frameworks/base': 1}
 
     def rank(project):
@@ -254,11 +286,14 @@ def summarize(text, manifest, source, excluded=()):
     categories = [name for name, rule in RULES.items() if re.search(rule, text, re.I)]
     projects = ET.fromstring(manifest).findall('project')
     locations, dependencies, candidates, cache = [], set(), set(), {}
-    make_candidates = set()
+    make_candidates, host_cross_candidates = set(), set()
     for line in text.splitlines():
         required = MAKE_REQUIRED.fullmatch(line.strip())
         if required and len(make_candidates) < 128:
             make_candidates.add(required[1])
+            cross = HOST_CROSS_REQUIRED.fullmatch(line.strip())
+            if cross:
+                host_cross_candidates.add(cross[1])
         for match in LOCATION.finditer(line):
             name, number = match.groups()
             if name not in cache:
@@ -277,16 +312,26 @@ def summarize(text, manifest, source, excluded=()):
                 if has_public_dependency(public, dependency, name):
                     dependencies.add(dependency)
     checker = cache.get('build/make/core/main.mk')
+    cross_prefix_verified = False
     if checker is not None and all(marker in checker for marker in
                                    ('Missing required dependencies:', 'requires non-existent')):
         candidates.update(make_candidates)
+        # main.mk adds this internal prefix before resolving host-cross requirements.
+        # Report only independently proven literal source names, never generated IDs.
+        if '$(eval r := $(addprefix host_cross_,$(r)))' in checker:
+            candidates.update(host_cross_candidates)
+            cross_prefix_verified = True
     evidence, inherited = public_dependency_sources(source, projects, candidates - dependencies, excluded, locations)
     result = {'categories': categories or ['UNCLASSIFIED_COMPILE_FAILURE'],
               'public_locations': locations,
               'public_dependencies': sorted(dependencies | inherited)[:128]}
     if checker is not None and 'MISSING_REQUIRED_MODULE' in categories:
         result['required_candidates'] = len(make_candidates)
-        result['unverified_required_candidates'] = len(make_candidates - (dependencies | inherited))
+        verified_names = dependencies | inherited
+        verified_internal = {'host_cross_' + name for name in host_cross_candidates & verified_names
+                             if cross_prefix_verified}
+        result['unverified_required_candidates'] = len(make_candidates - verified_names - verified_internal)
+        result['host_cross_required_candidates'] = len(host_cross_candidates)
     if evidence:
         result['public_dependency_sources'] = evidence
     return result

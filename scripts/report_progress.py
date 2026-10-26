@@ -121,7 +121,8 @@ def record(status, run_id, commit, summary=None, source=None, manifest=None, exc
         result['public_dependencies'] = sorted({name for name in summary.get('public_dependencies', [])
             if isinstance(name, str) and re.fullmatch(r'[A-Za-z0-9_.@+-]{1,128}', name)
             and any(has_public_dependency(text, name, path) for path, text in texts)})[:128]
-        for key in ('required_candidates', 'unverified_required_candidates'):
+        for key in ('required_candidates', 'unverified_required_candidates',
+                    'host_cross_required_candidates'):
             count = summary.get(key)
             if type(count) is int and 0 <= count <= 128:
                 result[key] = count
@@ -143,7 +144,8 @@ def render_summary(value):
     for key in ('categories', 'source_categories', 'http_statuses', 'public_dependencies'):
         if value.get(key):
             lines.append(f"- {key}: " + ', '.join('`' + item + '`' for item in value[key]))
-    for key in ('required_candidates', 'unverified_required_candidates'):
+    for key in ('required_candidates', 'unverified_required_candidates',
+                'host_cross_required_candidates'):
         if key in value:
             lines.append(f'- {key}: {value[key]}')
     for location in value.get('public_locations', []):

@@ -95,6 +95,27 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertEqual(result['public_dependencies'], [])
         self.assertNotIn('private_parent', json.dumps(result))
 
+    def test_host_cross_prefix_requires_the_public_make_transformation(self):
+        checker = ('$(warning Missing required dependencies:)\n'
+                   'requires non-existent\n'
+                   '$(eval r := $(addprefix host_cross_,$(r)))\n')
+        manifest = self.commit_make_checker(checker)
+        text = ('build/make/core/main.mk:750: warning: Missing required dependencies:\n'
+                'HOST_CROSS module private_parent requires non-existent HOST_CROSS module: host_cross_libpublic\n'
+                'HOST_CROSS module private_parent requires non-existent HOST_CROSS module: host_cross_private_name\n'
+                'TARGET module private_parent requires non-existent TARGET module: host_cross_demo\n')
+        result = summarize(text, manifest, self.source)
+        self.assertEqual(result['public_dependencies'], ['libpublic'])
+        self.assertEqual(result['host_cross_required_candidates'], 2)
+        value = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                       result, self.source, manifest)
+        self.assertEqual(value['public_dependencies'], ['libpublic'])
+        self.assertEqual(value['host_cross_required_candidates'], 2)
+        self.assertNotIn('private_name', json.dumps(value))
+        self.assertNotIn('host_cross_libpublic', json.dumps(value))
+        self.assertEqual(summarize(text, manifest, self.source,
+                                  {'build/make/core/main.mk'})['public_dependencies'], [])
+
     def test_hal_at_names_need_exact_pinned_proof_in_summary_and_publisher(self):
         (self.project / 'Android.bp').write_text(
             'cc_library { name: "android.hardware.public@1.0", '
@@ -201,6 +222,37 @@ class CompileSummaryTests(unittest.TestCase):
         ]:
             with self.subTest(text=text, path=path, name=name):
                 self.assertIsNone(dependency_evidence_line(text, name, path))
+
+    def test_relink_literal_filenames_are_public_but_not_inferred_module_names(self):
+        content = ('RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/hw/public_tool\n'
+                   'RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libpublic.so\n'
+                   'RECOVERY_VENDOR_HW_BINARY_FILES += $(TARGET_OUT_VENDOR_EXECUTABLES)/hw/public.hal@1.0-service\n'
+                   '# RECOVERY_BINARY_SOURCE_FILES += $(OUT)/comment_only\n'
+                   'RECOVERY_BINARY_SOURCE_FILES += $(PRIVATE_PATH)/$(private_name)\n')
+        (self.project / 'Android.mk').write_text(content)
+        self.git('add', '.')
+        self.git('commit', '--quiet', '-m', 'public relink filename fixture')
+        self.manifest = self.manifest.replace(
+            self.revision.encode(), self.git('rev-parse', 'HEAD').strip().encode())
+        manifest = self.commit_make_checker()
+        names = ['public_tool', 'public.hal@1.0-service', 'libpublic.so',
+                 'libpublic.recovery', 'public_tool.recovery', 'comment_only',
+                 'private_name', 'public', 'private_worktree']
+        (self.project / 'Android.mk').write_text('LOCAL_MODULE := private_worktree\n')
+        text = ('build/make/core/main.mk:750: warning: Missing required dependencies:\n'
+                'external/public/Android.mk:3: warning: relink\n'
+                + ''.join('TARGET module private_parent requires non-existent TARGET module: '
+                          + name + '\n' for name in names))
+        result = summarize(text, manifest, self.source)
+        expected = ['libpublic.so', 'public.hal@1.0-service', 'public_tool']
+        self.assertEqual(result['public_dependencies'], expected)
+        value = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                       result, self.source, manifest)
+        self.assertEqual(value['public_dependencies'], expected)
+        for name in names[3:]:
+            self.assertNotIn('"' + name + '"', json.dumps(value))
+        self.assertEqual(summarize(text, manifest, self.source,
+                                  {'external/public/Android.mk'})['public_dependencies'], [])
 
     def test_multiple_failures_in_one_public_file_are_all_reported(self):
         (self.project / 'Android.bp').write_text('cc_library { name: "demo", shared_libs: ["libpublic", "libother"] }\n')

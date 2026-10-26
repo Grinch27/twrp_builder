@@ -546,3 +546,11 @@ Q3（失败诊断）：本轮仅保留公开安全摘要；完整私有日志的
 当前诊断只查锁定 Android 上游，而公开 builder 自己的补丁也引入了如模块名映射的字面量。本轮增加一个严格限定的公开证据路径 builder-public/patches/recovery-required-modules.patch：仅从 HTTPS origin 为 Grinch27/twrp_builder、HEAD 等于本轮 GITHUB_SHA 的 Git blob 读取这一份固定补丁，最大 64 KiB，只接受新增行里的完整名字 token。工作树变更、其他仓库、旧 commit、被删行和其他文件不能授权输出。摘要端和发布端分别核验，发布端再次绑定本轮 builder_commit；只把通过格式校验的公开 GITHUB_SHA 元数据加入构建子环境，仍不传凭据。此举不证明模块变体可用，也不改变源码图、设备功能或私有输入范围。
 
 新增 required_candidates、unverified_required_candidates 两项 0–128 的计数，帮助区分未解析与已解析但无公开名字证据的情形，不输出未知名字、父模块或原始错误行。合成 Git 回归覆盖公开补丁、工作树伪造、提交不符、错误 origin、发布端独立复核、公开元数据与凭据分离。本地 107 项用例中 105 项通过，原 2 项 /proc 执行器限制跳过；Shell 语法与差异检查通过。新诊断仍待真实运行，尚无成品。
+
+## 2026-10-26 — 区分公开文件名与 HOST_CROSS 内部前缀
+
+40324788270（main f116865）完整同步和预检通过，compile 359.044 秒后 exit 1；受限诊断为 MISSING_REQUIRED_MODULE，12 个候选均无字面量证明。仍未取得 boot.img。本轮先补齐诊断证据，而不猜测删除必需项：优先直接核验本次已确认的公开错误文件，再进入有界全图搜索；接受公开 Recovery relink 赋值中以固定 Make 路径变量开头的完整字面量文件名，不执行变量、不推断 .so 或 .recovery 后缀，也不读取工作树覆盖。
+
+公开 TeamWin android_build/android-12.1 当前提交与原 pin 1b692e2248609f50a27c48cce53b7445cecdcfc5 一致，其 core/main.mk 在 HOST_CROSS 必需项解析前固定添加 host_cross_。仅在该锁定 Git blob 包含这条精确变换、且实际错误是 HOST_CROSS→HOST_CROSS 时，允许以去前缀后的**公开源码字面量名**独立取证、报告；不输出生成 ID、父模块或未知名称。新增有界数量 host_cross_required_candidates。该能力仅定位内部映射，不证明模块提供方或构建成功。
+
+本轮继续 Native/main，源码585项及全部 pin不变；publish=false；不改变私有输入、加密交付、镜像验收或设备边界。新运行仍须等待15分钟后首查、其后间隔至少60秒。已有本地私钥文件仍可用，未复制、上传或输出其内容。
