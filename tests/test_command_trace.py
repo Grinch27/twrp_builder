@@ -21,10 +21,10 @@ class CommandTraceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / 'events'
             path.write_bytes(
-                b'2026-10-26T02:00:01Z repo_sync\\n'
-                b'2026-10-26T02:00:02Z GH_TOKEN=SECRET_PRIVATE_SOURCE\\n'
-                b'2026-10-26T02:00:03Z bootimage_compile\\n'
-                b'not-a-date cms_seal\\n')
+                b'2026-10-26T02:00:01Z repo_sync\n'
+                b'2026-10-26T02:00:02Z GH_TOKEN=SECRET_PRIVATE_SOURCE\n'
+                b'2026-10-26T02:00:03Z bootimage_compile\n'
+                b'not-a-date cms_seal\n')
             values, offset = safe_command_events(path)
             self.assertEqual([event[1] for event in values],
                              ['repo_sync', 'bootimage_compile'])
@@ -37,7 +37,7 @@ class CommandTraceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             outside = root / 'private'
-            outside.write_text('2026-10-26T02:00:00Z cms_seal\\n')
+            outside.write_text('2026-10-26T02:00:00Z cms_seal\n')
             linked = root / 'events'
             linked.symlink_to(outside)
             self.assertEqual(safe_command_events(linked), ([], 0))
@@ -52,10 +52,10 @@ class CommandTraceTests(unittest.TestCase):
             (builder / 'scripts').mkdir(parents=True)
             work.mkdir()
             (builder / 'scripts/build.sh').write_text(
-                '#!/usr/bin/env bash\\n'
-                'printf "2026-10-26T02:00:01Z repo_sync\\\\n" > "${BUILD_ROOT}/output/command-trace.log"\\n'
-                'printf "2026-10-26T02:00:02Z SECRET_PRIVATE_SOURCE\\\\n" >> "${BUILD_ROOT}/output/command-trace.log"\\n'
-                'echo SECRET_PRIVATE_SOURCE\\nexit 7\\n')
+                '#!/usr/bin/env bash\n'
+                'printf "2026-10-26T02:00:01Z repo_sync\\n" > "${BUILD_ROOT}/output/command-trace.log"\n'
+                'printf "2026-10-26T02:00:02Z SECRET_PRIVATE_SOURCE\\n" >> "${BUILD_ROOT}/output/command-trace.log"\n'
+                'echo SECRET_PRIVATE_SOURCE\nexit 7\n')
             output = io.StringIO()
             with contextlib.redirect_stdout(output):
                 code = run_build(builder, work, interval=0.01)

@@ -70,8 +70,8 @@ def safe_command_events(path, offset=0):
             if size > PUBLIC_TRACE_LIMIT:
                 return [], offset
             content = stream.read(PUBLIC_TRACE_LIMIT)
-        if not content.endswith(b'\\n'):
-            content = content[:content.rfind(b'\\n') + 1]
+        if not content.endswith(b'\n'):
+            content = content[:content.rfind(b'\n') + 1]
         lines = content.decode('ascii').splitlines()
         if len(lines) > 128 or offset > len(lines):
             return [], offset
