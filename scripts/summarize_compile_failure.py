@@ -181,10 +181,21 @@ def has_public_dependency(text, name, path=''):
     return dependency_evidence_line(text, name, path) is not None
 
 
-def public_recovery_suffix(source, projects, excluded):
-    """Verify the fixed Soong suffix before reducing a generated name to its base."""
+def public_variant_suffixes(source, projects, excluded):
+    """Return only fixed suffixes independently read from the pinned Soong blob."""
     text = public_file(source, 'build/soong/cc/androidmk.go', projects, excluded)
-    return text is not None and re.search(r'\brecoverySuffix\s*=\s*"\.recovery"', text) is not None
+    if text is None:
+        return set()
+    constants = {'nativeBridgeSuffix': '.native_bridge', 'productSuffix': '.product',
+                 'VendorSuffix': '.vendor', 'ramdiskSuffix': '.ramdisk',
+                 'VendorRamdiskSuffix': '.vendor_ramdisk', 'recoverySuffix': '.recovery',
+                 'sdkSuffix': '.sdk'}
+    return {suffix for name, suffix in constants.items()
+            if re.search(r'\b' + name + r'\s*=\s*"' + re.escape(suffix) + '"', text)}
+
+
+def public_recovery_suffix(source, projects, excluded):
+    return '.recovery' in public_variant_suffixes(source, projects, excluded)
 
 
 def dependency_names(line):
@@ -334,17 +345,23 @@ def summarize(text, manifest, source, excluded=()):
     # Require the actual pinned Make link checker, not a log path or a
     # generic "missing" message alone. Public names still need exact Git proof.
     link_categories = {'LINK_TYPE_INCOMPATIBLE', 'LINK_VARIANT_MISSING'}
-    link_candidates, recovery_bases = set(), set()
+    link_candidates, recovery_bases, variant_names = set(), set(), {}
     if checker is not None and all(marker in checker for marker in
                                    ('define link-type-missing', 'define link-type-error',
                                     '$(error exiting from previous errors)')):
         link_candidates.update(LINK_VARIANT.findall(text)[:128])
         link_candidates.update(LINK_INCOMPATIBLE.findall(text)[:128])
         candidates.update(link_candidates)
-        if any(name.endswith('.recovery') for name in link_candidates) and public_recovery_suffix(source, projects, excluded):
-            recovery_bases = {name.removesuffix('.recovery') for name in link_candidates
-                              if name.endswith('.recovery') and NAME.fullmatch(name.removesuffix('.recovery'))}
-            candidates.update(recovery_bases)
+        suffixes = public_variant_suffixes(source, projects, excluded) if link_candidates else set()
+        for name in sorted(link_candidates):
+            for suffix in sorted(suffixes, key=len, reverse=True):
+                base = name.removesuffix(suffix)
+                if name.endswith(suffix) and NAME.fullmatch(base):
+                    variant_names[name] = (base, suffix)
+                    candidates.add(base)
+                    if suffix == '.recovery':
+                        recovery_bases.add(base)
+                    break
     else:
         categories = [name for name in categories if name not in link_categories]
     cross_prefix_verified = False
@@ -364,9 +381,14 @@ def summarize(text, manifest, source, excluded=()):
         verified = dependencies | inherited
         bases = recovery_bases & verified
         result['link_candidates'] = min(len(link_candidates), 128)
+        confirmed_variants = {name: item for name, item in variant_names.items() if item[0] in verified}
         result['unverified_link_candidates'] = min(len(link_candidates - verified
-            - {name + '.recovery' for name in bases}), 128)
+            - confirmed_variants.keys()), 128)
+        result['variant_link_candidates'] = min(len(variant_names), 128)
         result['recovery_link_candidates'] = min(len(recovery_bases), 128)
+        if confirmed_variants:
+            result['public_link_variants'] = [{'base': base, 'suffix': suffix}
+                for base, suffix in sorted(set(confirmed_variants.values()))[:128]]
         if bases:
             result['public_recovery_link_bases'] = sorted(bases)[:128]
     if checker is not None and 'MISSING_REQUIRED_MODULE' in categories:
