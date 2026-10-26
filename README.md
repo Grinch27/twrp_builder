@@ -22,8 +22,8 @@ flowchart TD
 | 编译环境 | 原生 Ubuntu Runner，使用锁定源码中的 JDK / Clang；旧主机 ABI 通过官方归档二进制包安装 |
 | 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和 303 项公开补充项目 SHA，共 585 项 |
 | 公开测试资源 | 同版本 AOSP Recovery 的 25 张测试图片和 NOTICE；单独锁定，恢复 `res-testdata` 文件组，十项私有输入不变 |
-| 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j2` |
-| 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度 2。原生路线使用 Runner 可用内存并新增 12 GiB Swap，Docker 路线另限 14 GiB |
+| 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j4` |
+| 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度 4。原生路线使用 Runner 可用内存并新增 12 GiB Swap，Docker 路线另限 14 GiB |
 | 磁盘检查 | 清理后至少 62 GiB，其中新增 Swap 占 12 GiB；同步前保留至少 50 GiB，编译前至少 18 GiB；不足立即失败 |
 | 自动触发 | 仅原生入口通过 push / PR 运行静态检查和公开同步测试；完整编译接受 main 的 workflow_dispatch。本次持续修复期间，原生路线另接受精确 `[selene-native-build-20261022] ` 标记；成功交付后恢复仅手动构建。Docker 入口仅保留 workflow_dispatch |
 | 唯一手动输入 | `publish=false`；设为 true 明确允许公开镜像、静态报告和校验和 |
@@ -49,7 +49,7 @@ flowchart TD
 
 原生路线增加 `Clean native build session (maximum 3 minutes)`：始终尝试清理本轮记录的独立构建进程组，TERM 后清理残留子进程，175 秒内部限时加 5 秒强制退出，步骤 `timeout-minutes: 3`、`continue-on-error: true`；超时跳过清理，保留原编译结果。只读取 `/proc/*/stat`，不输出进程环境、命令行或原始日志。**这不等于给 Runner 内建的 `Complete job` 设置 3 分钟超时：GitHub 没有暴露该阶段的单独限时或跳过接口。** 整次 Job 的 350 分钟上限保持原值；若要求内建阶段超时后强制终止，只能另用独立监控取消整次运行，届时运行结果为 cancelled，不能保留为成功。
 
-维护时的工作流查询频率：每轮启动后先等 15 分钟，再每 60 秒检查一次，直至结束。每次重试重新计时；工作流自身的心跳输出与构建限时不变。
+维护时的工作流查询频率：每轮启动后先静默等 18 分钟，再每 60 秒检查一次，直至结束。每次重试重新计时；工作流自身的心跳输出与构建限时不变。
 
 528 项运行随后明确报告 Recovery 测试缺少 `res-testdata`。现在从单独锁定的同版本公开 AOSP commit 恢复 25 张测试图片与 NOTICE，在新目录中提供原有文件组，保留原测试和全部项目版本。资源恢复单独记录为 `public_resources` 阶段，限时六分钟；资源恢复阶段已在真实运行通过；该轮随后报告 Telephony 缺少 `statslog-cellbroadcast-java-gen`，现在补入其同版本完整 CellBroadcastService 项目，合计 529 项，随后又明确报告 IORap 测试缺少 `iorap-functional-test-apps`，当前补入同版本完整 `prebuilts/runtime`，合计 530 项。该轮实际报告 Bluetooth 未定义，现补齐同版本完整 Bluetooth、vcard 和 RIL 提供方，合计 533 项。该轮继续报告 CTS 的 com.replica.replicaisland 未定义，现补入同标签完整 external/replicaisland，合计 534 项。该轮经受限诊断修正确认缺少 APEX com.android.virt，现补入同标签完整 Virtualization 及 33 个直接/传递提供方，合计 568 项。实际构建随后报告 Microdroid 的 5.10 内核模块包缺失，现补齐同标签 arm64/x86-64 两个完整提供方，合计 570 项。该轮随后报告 com.android.extservices 缺失，现补齐完整 ExtServices 与其测试引用的 fft2d，合计 572 项。该轮继续明确报告 com.android.cellbroadcast 缺失，现补齐同标签完整 CellBroadcastReceiver，与已有 Service 一起提供该 APEX，合计 573 项。该轮已进入 Make，受限诊断确认 required modules 缺项；现按完整提供方及 Calendar 测试依赖补入 12 项，合计 585 项，并用公开源码补丁将三个 Recovery 输出文件名改指实际模块。补丁保留有效文件名和 OEM 条件，并清理当前锁定版本无提供方且无运行调用的旧打包输入；真实加密、日志与 F2FS 实现保留。任务配置通过另一公开补丁将现有非空 task_profiles.json 安装进 Recovery；先检查上下文再应用，完整编译仍待实际验证。
 

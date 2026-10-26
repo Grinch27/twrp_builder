@@ -574,3 +574,7 @@ b0e3825 的40335394699完整同步、三份补丁和预检通过；compile515.43
 已核对公开TeamWin vold/android-12.1分支与原pin a164ba05c5fef288059774a776b2e6e1119957cf一致：真实libvold静态编译Decrypt.cpp、cryptfs.cpp、CryptoType.cpp、fscrypt_policy.cpp；Recovery仍链接libvold与libkeystoreinfo，保留原FBE/元数据解密设置及全部有效加密库。当前Recovery minadbd由libminadbd_services静态库和libadbd提供服务，保留实际minadbd/ADB模块。官方AOSP android-12.1.0_r4 logging只提供logcat/logcatd等二进制，无liblogcat；pcre提供libpcre2，无libpcrecpp；keymaster提供libsoftkeymasterdevice和libpuresoftkeymasterdevice，无旧libsoftkeymaster。当前源码不提供上述六个共享库，也没有其运行加载请求。
 
 本轮仅在公开Recovery补丁中移除六条无提供方的.so复制输入；保留对应真实加密、ADB、日志实现、现有功能设置和其他有效文件。未创建空库、回填旧Android库或放宽缺依赖检查。GNU Make回归增加这些真实上下文，核对有效库仍完整保留；公开原始文件patch precheck通过。111项本地套件109通过、2项为既有/proc执行器限制跳过；完整编译仍待重试。Native/main、585原pin、publish=false与15分钟后每分钟检查规则不变。
+
+## 2026-10-26 — 用户调整并行度及首查间隔
+
+用户明确要求将 `lunch twrp_selene-eng; mka bootimage -j2` 改为 `-j4`，监控调整为每轮启动后静默等待18分钟，再每60秒检查一次。同步编译命令、固定公开命令模板、追踪测试、build.jobs元数据、README与AGENTS。保留现有12GiB新增Swap、GOMAXPROCS=2、各阶段限时与全部失败判定；尚未以-j4取得成功成品，实际资源行为由下一轮确认。既有237f14b运行使用提交时的-j2命令，不会在运行中被更改；新提交的运行使用-j4。所有旧15分钟记录仅为历史，当前维护规范以18分钟为准。

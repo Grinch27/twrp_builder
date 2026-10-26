@@ -151,7 +151,7 @@ timeout --signal=TERM --kill-after=60s 160m bash -c '
   set -eo pipefail
   source build/envsetup.sh
   lunch twrp_selene-eng
-  mka bootimage -j2
+  mka bootimage -j4
 ' > "${WORK}/logs/compile.log" 2>&1
 
 set_stage static_validation

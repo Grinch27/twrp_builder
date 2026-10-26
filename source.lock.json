@@ -1978,7 +1978,7 @@
   "build": {
     "product": "twrp_selene-eng",
     "target": "bootimage",
-    "jobs": 2,
+    "jobs": 4,
     "container": "ubuntu:22.04",
     "max_image_bytes": 67108864
   },
