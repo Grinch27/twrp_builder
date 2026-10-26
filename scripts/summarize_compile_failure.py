@@ -166,7 +166,7 @@ def dependency_names(line):
     return result
 
 
-def public_dependency_sources(source, projects, candidates, excluded):
+def public_dependency_sources(source, projects, candidates, excluded, locations=()):
     """Find literal proof in pinned public Git, never in worktree/default overlays."""
     pending = {name for name in candidates if NAME.fullmatch(name)}
     if not pending:
@@ -184,8 +184,20 @@ def public_dependency_sources(source, projects, candidates, excluded):
             pending.difference_update(hits)
             verified.update(hits)
             seen.add(BUILDER_PATCH)
+    # Prioritize pinned public files identified by this run's verified error locations.
+    # The existing 45-second, 32-file, and exact-Git-blob evidence limits remain.
+    focus = [item['path'] for item in locations if isinstance(item, dict)
+             and isinstance(item.get('path'), str)]
     priority = {'build/soong': 0, 'frameworks/base': 1}
-    ordered = sorted(projects, key=lambda p: priority.get(p.get('path', p.get('name')), 2))
+
+    def rank(project):
+        prefix = project.get('path', project.get('name', ''))
+        for index, path in enumerate(focus):
+            if path.startswith(prefix + '/'):
+                return (0, index)
+        return (1, priority.get(prefix, 2))
+
+    ordered = sorted(projects, key=rank)
     for project in ordered:
         remaining = deadline - time.monotonic()
         if not pending or remaining <= 0 or len(seen) >= 32:
@@ -268,7 +280,7 @@ def summarize(text, manifest, source, excluded=()):
     if checker is not None and all(marker in checker for marker in
                                    ('Missing required dependencies:', 'requires non-existent')):
         candidates.update(make_candidates)
-    evidence, inherited = public_dependency_sources(source, projects, candidates - dependencies, excluded)
+    evidence, inherited = public_dependency_sources(source, projects, candidates - dependencies, excluded, locations)
     result = {'categories': categories or ['UNCLASSIFIED_COMPILE_FAILURE'],
               'public_locations': locations,
               'public_dependencies': sorted(dependencies | inherited)[:128]}
