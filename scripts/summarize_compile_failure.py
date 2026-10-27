@@ -159,7 +159,7 @@ def dependency_evidence_line(text, name, path=''):
         r'LOCAL_REQUIRED_MODULES|LOCAL_SHARED_LIBRARIES|'
         r'LOCAL_STATIC_LIBRARIES|LOCAL_WHOLE_STATIC_LIBRARIES|'
         r'LOCAL_HEADER_LIBRARIES|TWRP_REQUIRED_MODULES|TARGET_RECOVERY_DEVICE_MODULES|'
-        r'PRODUCT_PACKAGES|PRODUCT_HOST_PACKAGES|my_modules|instrumentation_metric_tests)\s*'
+        r'PRODUCT_PACKAGES|PRODUCT_HOST_PACKAGES|my_modules|instrumentation_metric_tests|instrumentation_tests)\s*'
         r'(?::=|\+=|\?=|=)\s*(.*)$')
     relink_assignment = re.compile(
         r'^\s*RECOVERY_(BINARY_SOURCE|LIBRARY_SOURCE|VENDOR_HW_BINARY)_FILES\s*'

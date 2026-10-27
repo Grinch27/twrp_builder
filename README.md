@@ -20,7 +20,7 @@ flowchart TD
 | 暂缓的 Docker 工作流 | `.github/workflows/twrp_allinone.yml`，保留代码和手动入口，暂停 push/PR 自动运行 |
 | Runner | 共享 `resolve-runner-image@main` 动态解析 Ubuntu x64 |
 | 编译环境 | 原生 Ubuntu Runner，使用锁定源码中的 JDK / Clang；旧主机 ABI 通过官方归档二进制包安装 |
-| 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和 321 项公开补充项目 SHA，共 603 项 |
+| 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和 326 项公开补充项目 SHA，共 608 项 |
 | 公开测试资源 | 同版本 AOSP Recovery 的 25 张测试图片和 NOTICE；单独锁定，恢复 `res-testdata` 文件组，十项私有输入不变 |
 | 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j"$(($(nproc) + 1))"`，`NINJA_ARGS=-v` |
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度为可用 CPU 数加一。原生路线使用 Runner 可用内存并新增 12 GiB Swap，Docker 路线另限 14 GiB |
@@ -114,3 +114,5 @@ python3 scripts/source_inputs.py manifest /absolute/path/to/default.xml
 599 项已越过 `atest`、`ld.mc` 缺项检查。测试打包清单直接引用、但当前图未提供的 `MtpServicePerfTests` 由同标签完整 `packages/services/Mtp` 补齐，合计 600 项；同时增加严格核验的打包安装文件缺项摘要，保留测试和原失败退出。
 
 600 项运行的打包检查确认缺少 DownloadProviderTests、TelephonyProviderTests、TelecomUnitTests 的安装文件；现补齐同标签完整 DownloadProvider、TelephonyProvider、Telecomm，合计 603 项。其余 6 个未经公开证明的候选仍未知，不据此猜测或禁用打包检查。
+
+603 项重试将常规测试包安装文件缺项从 9 个减至 6 个。按同一锁定公开清单，补齐 Traceur、BlockedNumberProvider、EmergencyInfo、CarrierConfig、ContactsProvider 的完整同标签项目，分别提供清单内 6 个测试模块，合计 608 项；保留测试与全部旧 SHA。

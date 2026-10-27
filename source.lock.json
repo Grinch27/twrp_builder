@@ -2069,6 +2069,36 @@
       "path": "packages/services/Telecomm",
       "revision": "a5d37a82c499af9cafe2c8978338620d02f19f0c",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/Traceur",
+      "path": "packages/apps/Traceur",
+      "revision": "f1a6020ac985e3c742ec0d2495323ea7594766d9",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/providers/BlockedNumberProvider",
+      "path": "packages/providers/BlockedNumberProvider",
+      "revision": "a161f6409d55d1693b6ed346c6d82ad06e43ee58",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/EmergencyInfo",
+      "path": "packages/apps/EmergencyInfo",
+      "revision": "943ca0bbc676344949759b9175999dfcc70d51b6",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/CarrierConfig",
+      "path": "packages/apps/CarrierConfig",
+      "revision": "9084849cc042f1811d7648a1087de7c2d4dfdf64",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/providers/ContactsProvider",
+      "path": "packages/providers/ContactsProvider",
+      "revision": "46438093740902d286d219b15365655e9ef6683a",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

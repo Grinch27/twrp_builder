@@ -742,3 +742,26 @@ main 405461d / Native Run 40456110345 attempt 1 已结束 failure。受限记录
 - https://android.googlesource.com/platform/packages/providers/DownloadProvider/+/f5fe371f0df2527d4683e3a4c7b554f3b87afbf2/tests/Android.bp
 - https://android.googlesource.com/platform/packages/providers/TelephonyProvider/+/0a98cea5b0c5b2b8df8d78abc163b76fec5540f0/tests/Android.bp
 - https://android.googlesource.com/platform/packages/services/Telecomm/+/a5d37a82c499af9cafe2c8978338620d02f19f0c/Android.bp
+
+## 2026-10-27 — 基于最新603项补齐同包清单的剩余提供方至608项
+
+提交前检测到main已由另一执行轮更新为07e03d9，并启动Native 40470292127；本轮未覆盖或重复触发，保留本地调查，等待超过20分钟后读取实际结果。该轮静态检查通过，603项同步、校验和预检完成，compile375.427秒后仍在同一continuous_instrumentation_tests包失败，候选已从9降为6，6项均未公开输出名字。
+
+以07e03d9重新检出并保留其三个新增项目和[gpt-work]触发支持。继续依据锁定platform_testing af7eaff31e0aed03c06f6bade385397d792f4008的build/tasks/tests/instrumentation_test_list.mk直接清单，核对当前完整manifest没有下列五个项目。完整同标签官方Git tree及所有Blueprint/Make定义分别提供TraceurUiTests、BlockedNumberProviderTest、EmergencyInfoUnitTests、CarrierConfigTests、ContactsProviderTests、ContactsProviderTests2；这是同一实际触发包的公开直接依赖闭包，不声称从未知日志还原名字。
+
+- platform/packages/apps/Traceur，packages/apps/Traceur@f1a6020ac985e3c742ec0d2495323ea7594766d9；130文件、886933 bytes。
+
+- platform/packages/providers/BlockedNumberProvider，packages/providers/BlockedNumberProvider@a161f6409d55d1693b6ed346c6d82ad06e43ee58；100文件、193937 bytes。
+
+- platform/packages/apps/EmergencyInfo，packages/apps/EmergencyInfo@943ca0bbc676344949759b9175999dfcc70d51b6；300文件、1570397 bytes。
+
+- platform/packages/apps/CarrierConfig，packages/apps/CarrierConfig@9084849cc042f1811d7648a1087de7c2d4dfdf64；383文件、237004 bytes。
+
+- platform/packages/providers/ContactsProvider，packages/providers/ContactsProvider@46438093740902d286d219b15365655e9ef6683a；323文件、4623134 bytes。
+
+
+已识别普通模块引用均在既有公开catalog或本批定义中存在；生成变体及安装输出仍由真实构建验证。补齐instrumentation_tests明确模块清单的完整token证明规则，发布端沿用同一独立公开Git复核，回归继续拒绝普通变量。没有删除或禁用测试，没有放宽安装文件检查。
+
+本地环境恢复后旧交付会话的私钥不可访问，现有用户交付文件检索未找到可恢复副本。按既有合同生成本轮收件密钥并仅更新公开delivery-recipient.pem；对应私钥已保存为用户可取回的私人交付文件，位于仓库和Runner之外。不新增镜像、证书指纹或其他产物核验，不启用失败日志Artifact；成功镜像仍按既有CMS方式交付。
+
+本地123项120通过、3项为既有/proc与Go环境限制跳过；Shell、YAML和差异检查通过，本地无actionlint，保留工作流前置检查。严格组合实际原归档manifest得到608项目，原603项SHA及十项输入完全不变。326公开补充项目加282原项目，Native/main、CPU数加一、NINJA_ARGS=-v、publish=false及静态镜像验收不变。工作流仅同步注释中的项目数，保留最新已有触发条件。每轮静默20分钟，再每60秒查询直至完成。

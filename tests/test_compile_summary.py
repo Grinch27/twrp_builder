@@ -129,6 +129,8 @@ class CompileSummaryTests(unittest.TestCase):
             {'build/make/core/tasks/tools/package-modules.mk'})['public_dependencies'], [])
         self.assertEqual(dependency_evidence_line('my_modules := public_pack\n',
                                                 'public_pack', 'List.mk'), 1)
+        self.assertEqual(dependency_evidence_line('instrumentation_tests := public_pack\n',
+                                                'public_pack', 'List.mk'), 1)
         self.assertIsNone(dependency_evidence_line('other_list := private_pack\n',
                                                   'private_pack', 'List.mk'))
 
