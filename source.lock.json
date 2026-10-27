@@ -2051,6 +2051,24 @@
       "path": "packages/services/Mtp",
       "revision": "23d0c1896d6d1f27f4b8a92fc359b6a7ac148898",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/providers/DownloadProvider",
+      "path": "packages/providers/DownloadProvider",
+      "revision": "f5fe371f0df2527d4683e3a4c7b554f3b87afbf2",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/providers/TelephonyProvider",
+      "path": "packages/providers/TelephonyProvider",
+      "revision": "0a98cea5b0c5b2b8df8d78abc163b76fec5540f0",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/services/Telecomm",
+      "path": "packages/services/Telecomm",
+      "revision": "a5d37a82c499af9cafe2c8978338620d02f19f0c",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

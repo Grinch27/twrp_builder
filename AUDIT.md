@@ -719,3 +719,26 @@ ee312de运行40448141223的静态检查、完整588项同步、校验及预检�
 读取锁定Make package-modules.mk，确认Unknown installed file for module的缺项消息与my_missing_error/$(error done)检查。诊断仅在该实际公开Git helper获验证时提取最多128名字，仍要求独立公开字面量证明；将my_modules及instrumentation_metric_tests这两类明确模块清单加入原完整token赋值规则，普通变量仍拒绝。新增合成回归覆盖checker前提、公开名字、私有缺项拒绝与发布端复核；新增两个有界计数，不删除模块或放宽打包规则。保留其他尚未知安装文件的真实失败。
 
 本地环境仍不可用，123项套件及本轮Python变更的实际检查待GitHub runner-image执行，不声称本地通过。现有依赖关系保证原生编译只在标准测试、Shell、actionlint、公开同步smoke成功后开始；未改工作流。原599项目SHA及十项输入不变；318公开补充项目加原282合计600。Native/main、CPU数加一、NINJA_ARGS=-v、publish=false、无失败日志Artifact、成功镜像加密与每轮静默20分钟后每60秒查询保持。
+
+## 2026-10-27 — 修复三个已证实测试包提供方，603项非发布重试
+
+main 405461d / Native Run 40456110345 attempt 1 已结束 failure。受限记录在 compile 510.986 秒后以 exit 1 返回，类别 MISSING_PACKAGE_INSTALLED_FILE；9 个候选中明确公开证明 DownloadProviderTests、TelephonyProviderTests、TelecomUnitTests，另 6 个仍未知。不把局部 Ninja 383/384 当作完整构建成功，不读取或上传原始失败日志。
+
+核对官方 android-12.1.0_r4 manifest 的三个项目路径，直接从官方 Gitiles 解析同标签 commit；前两个另与 AOSP GitHub 镜像同标签的 commit 和完整 tree 对照。实际提供方为 DownloadProvider/tests/Android.bp、TelephonyProvider/tests/Android.bp 及 Telecomm/Android.bp。读取前两个项目完整 tree 所列全部 8 份 Android.bp，以及 Telecomm 锁定 Git tree 的全部 5 份 Android.bp；已识别普通模块依赖在本批定义或本轮公开 catalog 中存在。此检查不证明生成模块、命名空间、安装变体或完整编译可用。
+
+新增完整官方项目（同标签、官方同步源）：
+- platform/packages/providers/DownloadProvider，packages/providers/DownloadProvider@f5fe371f0df2527d4683e3a4c7b554f3b87afbf2。
+- platform/packages/providers/TelephonyProvider，packages/providers/TelephonyProvider@0a98cea5b0c5b2b8df8d78abc163b76fec5540f0。
+- platform/packages/services/Telecomm，packages/services/Telecomm@a5d37a82c499af9cafe2c8978338620d02f19f0c。
+
+321个公开补充项目加原282项合计603；原600项目锁定项、十项私有输入、构建目标、并行参数、全部现有测试与镜像验收不变。未在本轮读取私有manifest，因此尚未本地验证其与新增路径的组合；现有真实checkout验证仍会拒绝冲突。其余6个未公开证明的名字不猜测、不删除、不绕过，后续由真实受限诊断决定。
+
+原工作流只接受旧提交前缀，和本任务要求的[gpt-work]前缀不匹配；仅为Native main push补充精确“[gpt-work] ”前缀，保留原前缀、paths过滤、runner-image前置检查和共享并发组。push没有publish输入，公开Artifact/Release步骤保持关闭；本次提交只触发一次既有Native流程，不另行dispatch或重试。Docker入口不变。
+
+本地标准库123项：120通过、3项环境限制跳过；修改前后同结果。全部scripts/tests Shell通过bash -n，两个既有工作流通过YAML解析及actionlint 1.7.7（-shellcheck=''），git diff --check通过；既有lock字段及前318项补充项目逐项保持一致，新增路径无重复。未追加SHA256、证书、DEX、版本标记或产物下载核验。完整bootimage、既有静态验收、CMS上传及对应有效sealed Artifact仍待真实构建；每次启动后20分钟内不查询进度，运行中结束本轮，不空等和轮询。
+
+公开依据：
+- https://android.googlesource.com/platform/manifest/+/refs/tags/android-12.1.0_r4/default.xml
+- https://android.googlesource.com/platform/packages/providers/DownloadProvider/+/f5fe371f0df2527d4683e3a4c7b554f3b87afbf2/tests/Android.bp
+- https://android.googlesource.com/platform/packages/providers/TelephonyProvider/+/0a98cea5b0c5b2b8df8d78abc163b76fec5540f0/tests/Android.bp
+- https://android.googlesource.com/platform/packages/services/Telecomm/+/a5d37a82c499af9cafe2c8978338620d02f19f0c/Android.bp
