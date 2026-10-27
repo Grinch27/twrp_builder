@@ -20,7 +20,7 @@ flowchart TD
 | 暂缓的 Docker 工作流 | `.github/workflows/twrp_allinone.yml`，保留代码和手动入口，暂停 push/PR 自动运行 |
 | Runner | 共享 `resolve-runner-image@main` 动态解析 Ubuntu x64 |
 | 编译环境 | 原生 Ubuntu Runner，使用锁定源码中的 JDK / Clang；旧主机 ABI 通过官方归档二进制包安装 |
-| 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和 306 项公开补充项目 SHA，共 588 项 |
+| 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和 317 项公开补充项目 SHA，共 599 项 |
 | 公开测试资源 | 同版本 AOSP Recovery 的 25 张测试图片和 NOTICE；单独锁定，恢复 `res-testdata` 文件组，十项私有输入不变 |
 | 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j"$(($(nproc) + 1))"`，`NINJA_ARGS=-v` |
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度为可用 CPU 数加一。原生路线使用 Runner 可用内存并新增 12 GiB Swap，Docker 路线另限 14 GiB |
@@ -108,3 +108,5 @@ python3 scripts/source_inputs.py manifest /absolute/path/to/default.xml
 - [GitHub workflow syntax](https://docs.github.com/zh/actions/reference/workflows-and-actions/workflow-syntax)、[YAML anchors](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations)、[GITHUB_TOKEN 范围](https://docs.github.com/en/actions/concepts/security/github_token)、[Runner 规格](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)。
 
 585 项后续构建已确认测试应用缺少 `libnnbenchmark_jni`。按同版本公开 CTS、VTS 与 RenderScript 的直接声明，补齐完整 `test/mlts/benchmark`、模型资源 `test/mlts/models` 和 `external/xmp_toolkit`，合计 588 项；保留原测试和所有既有 SHA，完整镜像构建仍待实际验收。
+
+588 项运行已通过原有链接缺项检查，随后确认 `PRODUCT_HOST_PACKAGES` 缺少 `atest`、`ld.mc`。现补齐同标签完整 `tools/asuite`、`frameworks/compile/mclinker` 及 Asuite 的 9 个直接/传递 Python 提供方，合计 599 项；真实编译与镜像静态验收仍是成功依据。

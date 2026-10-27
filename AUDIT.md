@@ -687,3 +687,25 @@ ee312de运行40448141223的静态检查、完整588项同步、校验及预检�
 读取同一锁定main.mk:1269–1278，确认maybe-print-list-and-error先输出公开固定heading，再输出Offending entries:及逐行条目，最后error Build failed。本轮仅在该公开Git checker同时含这些精确标记时识别PRODUCT_PACKAGES/PRODUCT_HOST_PACKAGES缺项列表；最多128个候选，终止于非名字行。候选名字仍须单独通过锁定公开Git字面量证明，:32/:64仅移除固定Make后缀；未知列表条目与产品名不输出。发布端保留原有独立字面量复核，新增两个有界计数；不修改任何PRODUCT_HOST_PACKAGES或缺项检查。
 
 122项本地测试119通过、3项为原环境限制跳过；新增回归覆盖固定heading/list/checker要求、公开条目证明、私有条目不泄露、缺失checker与其他列表拒绝。Shell、YAML和差异检查通过。588项pin、十项输入、Native/main、CPU数加一、详细Ninja、publish=false、无失败日志Artifact和成功镜像加密边界不变，下一轮用于读取真实公开主机工具缺项；首查静默20分钟后每60秒查询。
+
+## 2026-10-27 — 实际主机工具atest/ld.mc与Asuite闭包至599项
+
+363574c运行40450718292的静态检查、588项同步和预检通过，compile481.168秒后在PRODUCT_HOST_PACKAGES校验失败；安全摘要明确识别两个候选atest、ld.mc，均由锁定公开build/make/target/product/base_system.mk的字面量独立证明，未知候选0。无成功boot.img，不移除主机工具要求或绕过存在性校验。
+
+根据官方AOSP android-12.1.0_r4 manifest核对路径，读取保留该tag对象的公开Git镜像中相应commit的完整Git tree及全部44份Blueprint/Make构建定义：tools/asuite/atest/Android.bp中的python_binary_host name atest（输出stem为atest-dev）和frameworks/compile/mclinker/tools/mcld/Android.bp的host_supported ld.mc是实际提供方。Asuite直接依赖py-mock、py-google-api-python-client、py-oauth2client，并传递引用funcsigs、httplib2、pyasn1、pyasn1-modules、rsa和uritemplate；本轮补齐这9个完整同tag Python项目。其余已识别普通模块引用在本批定义或本轮18796公开名字catalog中存在；不据此声明变体或命名空间可用。未纳入不提供所需atest源码模块的prebuilts/asuite，也未使用异版本工具替代。
+
+- platform/frameworks/compile/mclinker，frameworks/compile/mclinker@1511d73219b49d6c650d760bae02c8363313bd69；555文件、2663784 bytes。
+- platform/tools/asuite，tools/asuite@4af94bafec6a1286b50c3015977834e11d40b7d1；464文件、3555720 bytes。
+- platform/external/python/mock，external/python/mock@fbce0709151a758bcc3a0db2b1b041ac7c3d99cc；40文件、322993 bytes。
+- platform/external/python/google-api-python-client，external/python/google-api-python-client@946fa774c47ea62243894dcb2fa21d849067678c；2728文件、107630967 bytes。
+- platform/external/python/oauth2client，external/python/oauth2client@a4c08b854e4687d26d751124907bd25a423bd907；156文件、838339 bytes。
+- platform/external/python/funcsigs，external/python/funcsigs@7bbce7c8a753bc6cb0188b9bababf3da2de10d5d；28文件、119565 bytes。
+- platform/external/python/httplib2，external/python/httplib2@8f5b2c3fc8de7998b318772469c1c5471a05795e；189文件、1340007 bytes。
+- platform/external/python/pyasn1，external/python/pyasn1@33231fc3ff6aeb3153ef06f776afdc5ee7db01fb；169文件、801848 bytes。
+- platform/external/python/pyasn1-modules，external/python/pyasn1-modules@861017f420aa2ebd07cc5eacedd802a81845185e；231文件、1143149 bytes。
+- platform/external/python/rsa，external/python/rsa@82ae51681b1efb3243005c5f803c196f9524a424；67文件、232967 bytes。
+- platform/external/python/uritemplates，external/python/uritemplates@c0f0d2a1620c7f95b00b296b2844a37fb61dcb62；38文件、137933 bytes。
+
+共新增11项，317个公开补充项目与原282项合计599。原588项对象、十项输入、设备/目标、编译参数与所有隐私交付边界保持不变。源码仍从android.googlesource.com的官方项目按锁定SHA和同tag upstream完整同步，原checkout身份验证保留；镜像仅用于本轮读取公开tag/commit/tree及源码定义，不改变下载来源。
+
+本轮本地执行环境于等待期间不可用，无法重新运行Shell/Python测试，未声称本地通过。已在可用执行器中解析生成的JSON、核对官方清单路径、同tag commit、完整tree、普通依赖引用与新增路径不覆盖已锁补充项目；source/files身份保持一致。未改脚本或工作流。现有Native工作流的runner-image先执行标准库套件、Shell及actionlint/公开同步smoke，native依赖该job成功才会启动；以这次实际CI结果作为检查证据。每轮启动后静默20分钟，再每60秒查询；失败日志Artifact关闭、publish=false和成功镜像加密交付保持。

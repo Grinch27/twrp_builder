@@ -1979,6 +1979,72 @@
       "path": "external/xmp_toolkit",
       "revision": "0e19b5cebd0daef15c0dd25a52971e3313d424f6",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/compile/mclinker",
+      "path": "frameworks/compile/mclinker",
+      "revision": "1511d73219b49d6c650d760bae02c8363313bd69",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/tools/asuite",
+      "path": "tools/asuite",
+      "revision": "4af94bafec6a1286b50c3015977834e11d40b7d1",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/python/mock",
+      "path": "external/python/mock",
+      "revision": "fbce0709151a758bcc3a0db2b1b041ac7c3d99cc",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/python/google-api-python-client",
+      "path": "external/python/google-api-python-client",
+      "revision": "946fa774c47ea62243894dcb2fa21d849067678c",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/python/oauth2client",
+      "path": "external/python/oauth2client",
+      "revision": "a4c08b854e4687d26d751124907bd25a423bd907",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/python/funcsigs",
+      "path": "external/python/funcsigs",
+      "revision": "7bbce7c8a753bc6cb0188b9bababf3da2de10d5d",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/python/httplib2",
+      "path": "external/python/httplib2",
+      "revision": "8f5b2c3fc8de7998b318772469c1c5471a05795e",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/python/pyasn1",
+      "path": "external/python/pyasn1",
+      "revision": "33231fc3ff6aeb3153ef06f776afdc5ee7db01fb",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/python/pyasn1-modules",
+      "path": "external/python/pyasn1-modules",
+      "revision": "861017f420aa2ebd07cc5eacedd802a81845185e",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/python/rsa",
+      "path": "external/python/rsa",
+      "revision": "82ae51681b1efb3243005c5f803c196f9524a424",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/python/uritemplates",
+      "path": "external/python/uritemplates",
+      "revision": "c0f0d2a1620c7f95b00b296b2844a37fb61dcb62",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
