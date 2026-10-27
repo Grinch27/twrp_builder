@@ -279,12 +279,19 @@ def public_dependency_sources(source, projects, candidates, excluded, locations=
                                            timeout=min(2, remaining)).decode().strip()
             if head != revision:
                 continue
-            # The broad Git search only finds files; exact proof is checked below.
-            patterns = [arg for name in sorted(pending)[:128] for arg in ('-e', name)]
+            # Select full references before spending the file budget on Git proof.
+            # Substrings such as libfoo_suffix must not hide a later libfoo literal.
+            patterns = []
+            for dependency in sorted(pending)[:128]:
+                escaped = re.escape(dependency)
+                references = ('"(:)?' + escaped + '"',
+                              '(^|[[:space:]])' + escaped + '([[:space:]]|$)',
+                              '/' + escaped + r'(\.so)?([[:space:]]|$)')
+                patterns.extend(arg for reference in references for arg in ('-e', reference))
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 break
-            result = subprocess.run(['git', '-C', str(root), 'grep', '-l', '-z', '-F',
+            result = subprocess.run(['git', '-C', str(root), 'grep', '-l', '-z', '-E',
                                      *patterns, revision, '--', '*.bp', '*.mk', '*.go'],
                                     stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                                     timeout=min(2, remaining), check=False)

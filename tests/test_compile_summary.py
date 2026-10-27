@@ -180,6 +180,26 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertEqual(result['public_dependencies'], [])
         self.assertNotIn('private_parent', json.dumps(result))
 
+    def test_literal_search_does_not_exhaust_file_budget_on_substring_decoys(self):
+        (self.project / 'Android.bp').write_text('cc_library { name: "demo" }\n')
+        for index in range(40):
+            (self.project / ('aaa_decoy_%02d.bp' % index)).write_text(
+                'cc_library { name: "libpublic_suffix_%02d" }\n' % index)
+        (self.project / 'zzz_provider.bp').write_text('cc_library { name: "libpublic" }\n')
+        self.git('add', '.')
+        self.git('commit', '--quiet', '-m', 'public bounded-search decoys')
+        self.manifest = self.manifest.replace(
+            self.revision.encode(), self.git('rev-parse', 'HEAD').strip().encode())
+        manifest = self.commit_make_checker()
+        text = ('build/make/core/main.mk:750: warning: Missing required dependencies:\n'
+                'TARGET module private_parent requires non-existent TARGET module: libpublic\n')
+        result = summarize(text, manifest, self.source)
+        self.assertEqual(result['public_dependencies'], ['libpublic'])
+        value = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                       result, self.source, manifest)
+        self.assertEqual(value['public_dependencies'], ['libpublic'])
+        self.assertNotIn('private_parent', json.dumps(value))
+
     def test_host_cross_prefix_requires_the_public_make_transformation(self):
         checker = ('$(warning Missing required dependencies:)\n'
                    'requires non-existent\n'
