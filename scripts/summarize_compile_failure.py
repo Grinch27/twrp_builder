@@ -190,8 +190,11 @@ def public_variant_suffixes(source, projects, excluded):
                  'VendorSuffix': '.vendor', 'ramdiskSuffix': '.ramdisk',
                  'VendorRamdiskSuffix': '.vendor_ramdisk', 'recoverySuffix': '.recovery',
                  'sdkSuffix': '.sdk'}
-    return {suffix for name, suffix in constants.items()
-            if re.search(r'\b' + name + r'\s*=\s*"' + re.escape(suffix) + '"', text)}
+    suffixes = {suffix for name, suffix in constants.items()
+                if re.search(r'\b' + name + r'\s*=\s*"' + re.escape(suffix) + '"', text)}
+    # Bootstrap and CFI use literal SubName assignments rather than the table.
+    suffixes.update(re.findall(r'\bentries\.SubName\s*(?:=|\+=)\s*"(\.[A-Za-z0-9_]{1,32})"', text))
+    return suffixes
 
 
 def public_recovery_suffix(source, projects, excluded):

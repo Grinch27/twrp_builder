@@ -611,3 +611,9 @@ b0e3825 的40335394699完整同步、三份补丁和预检通过；compile515.43
 a7fe0b5运行40417392155的静态检查、同步及预检通过，实际CPU动态并行/详细Ninja配置已运行；compile506.592秒返回1，仍为LINK_VARIANT_MISSING。新增计数首次明确3个候选、0个.recovery候选、3个未证明名字；无新资源耗尽分类，也无boot.img成功证据。
 
 已读取锁定Soong cc/androidmk.go:26–34的完整固定后缀表：native_bridge、product、vendor、ramdisk、vendor_ramdisk、recovery、sdk。本轮将原recovery专用取证推广到这七种**在实际锁定Git blob中分别确认存在的常量**；基础名仍须单独在锁定公开源码中精确证明。发布仅含公开基础名与固定后缀枚举，发布端再次核对，不输出未知变体或任意后缀；不放宽字面量匹配、不修改Android源码或变体配置，不声明变体可用。测试补充vendor与recovery独立验证、私有基础名及伪造后缀拒绝。本地116项113通过、3环境限制跳过；Shell与差异检查通过。动态编译、15分钟首查、每分钟轮询、585原pin、publish=false与加密交付边界不变，下一轮需确认具体缺项。
+
+## 2026-10-27 — APEX bootstrap / CFI字面量后缀
+
+d8eb0d0运行40421578755仍有3个LINK_VARIANT_MISSING候选，固定常量表后缀命中0、无已证明名字。当前证据仍不足以断言具体模块；源码图和构建失败保持原样。
+
+进一步读取同一锁定公开Soong的cc/androidmk.go:300–313发现APEX库实现通过entries.SubName=".bootstrap"命名，这一字面量不在七项常量表中；同文件也有SubName的.cfi追加。本轮仅将该固定公开Git blob内entries.SubName的直接字符串赋值/追加纳入后缀取证，格式限定为点加1–32位字母数字/下划线；不纳入其他变量中的字符串，也不执行Go、读取工作树或放行任意后缀。公开基础名与发布端复核要求不变。回归覆盖bootstrap合法、无关.secret字符串拒绝；116项本地测试113通过、3环境限制跳过，Shell与差异检查通过。尚无成品或具体缺项修复结论，须由下一轮实际诊断确认。
