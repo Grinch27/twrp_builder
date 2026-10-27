@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "run_id": 40450718292,
+  "builder_commit": "363574ce739d591f771d722120d2587ea56f04eb",
+  "stage": "initialization",
+  "metrics": {
+    "elapsed_seconds": 0.0,
+    "swap_free_mib": 15359,
+    "memory_available_mib": 14789,
+    "disk_free_mib": 100707,
+    "log_idle_seconds": 0.0,
+    "log_bytes": 0,
+    "load_1m": 1.65,
+    "stage_seconds": {}
+  }
+}
