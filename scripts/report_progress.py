@@ -29,7 +29,7 @@ from build_telemetry import STAGES, read_json, sanitize_metrics
 BRANCH = 'build-progress'
 
 
-def public_module_catalog(manifest, source):
+def public_module_catalog(manifest, source, module_index=None):
     """Classify literal names by project path, never infer module availability."""
     names, prebuilts_names, other_names = set(), set(), set()
     for project in ET.fromstring(manifest).findall('project'):
@@ -44,17 +44,25 @@ def public_module_catalog(manifest, source):
         if head != revision:
             raise ValueError('module catalog checkout mismatch')
         result = subprocess.run([
-            'git', '-C', str(root), 'grep', '-h', '-E',
+            'git', '-C', str(root), 'grep', '-n', '-E',
             '^[[:space:]]*name[[:space:]]*:[[:space:]]*"', revision, '--', '*.bp',
         ], capture_output=True, check=False, timeout=30)
         if result.returncode not in (0, 1) or len(result.stdout) > 8 * 1024**2:
             raise ValueError('module catalog input unavailable')
-        for literal in re.findall(r'\bname\s*:\s*("(?:[^"\\]|\\.)*")',
-                                  result.stdout.decode('utf-8', errors='strict')):
-            value = json.loads(literal)
-            if re.fullmatch(r'[A-Za-z0-9_.@+:/-]{1,160}', value):
-                names.add(value)
-                (prebuilts_names if name.startswith('prebuilts/') else other_names).add(value)
+        for line in result.stdout.decode('utf-8', errors='strict').splitlines():
+            fields = line.split(':', 3)
+            if len(fields) != 4 or fields[0] != revision:
+                continue
+            for literal in re.findall(r'\bname\s*:\s*("(?:[^"\\]|\\.)*")', fields[3]):
+                value = json.loads(literal)
+                if re.fullmatch(r'[A-Za-z0-9_.@+:/-]{1,160}', value):
+                    names.add(value)
+                    (prebuilts_names if name.startswith('prebuilts/') else other_names).add(value)
+                    if module_index is not None and re.fullmatch(r'[A-Za-z0-9_./+-]+', fields[1]):
+                        paths = module_index.setdefault(value, [])
+                        path = name + '/' + fields[1]
+                        if path not in paths and len(paths) < 8:
+                            paths.append(path)
         if len(names) > 100000:
             raise ValueError('module catalog size limit')
     return {'public_module_names': sorted(names),
@@ -279,7 +287,12 @@ def main():
     client.publish(value)
     # The pinned catalog is needed once per attempt, not on every heartbeat/exit.
     if status['stage'] == 'compile' and 'exit_code' not in status:
-        catalog = public_module_catalog(manifest_data, args.work / 'android')
+        module_index = {}
+        catalog = public_module_catalog(manifest_data, args.work / 'android', module_index)
+        # Local hints only: never merge paths into the published catalog payload.
+        index_data = json.dumps(module_index, sort_keys=True)
+        if len(index_data.encode('utf-8')) <= 8 * 1024**2:
+            (args.work / 'output/public-module-index.json').write_text(index_data)
         print('BUILD_CATALOG ' + json.dumps({key: len(names) for key, names in catalog.items()},
                                           sort_keys=True), flush=True)
         client.publish({'schema': 1, 'run_id': run_id, 'builder_commit': commit,

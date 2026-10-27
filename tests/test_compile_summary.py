@@ -270,6 +270,37 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertEqual(value['public_dependencies'], ['libpublic'])
         self.assertNotIn('private_parent', json.dumps(value))
 
+    def test_catalog_hints_find_provider_after_exact_bare_comment_decoys(self):
+        (self.project / 'Android.bp').write_text('cc_library { name: "demo" }\n')
+        for index in range(40):
+            (self.project / ('aaa_comment_%02d.bp' % index)).write_text('// libpublic reference\n')
+        provider = 'external/public/zzz_provider.bp'
+        (self.project / 'zzz_provider.bp').write_text('cc_library {\n name: "libpublic",\n}\n')
+        self.git('add', '.')
+        self.git('commit', '--quiet', '-m', 'public indexed provider fixture')
+        self.manifest = self.manifest.replace(
+            self.revision.encode(), self.git('rev-parse', 'HEAD').strip().encode())
+        manifest = self.commit_make_checker()
+        text = ('build/make/core/main.mk:750: warning: Missing required dependencies:\n'
+                'TARGET module private_parent requires non-existent TARGET module: libpublic\n')
+        # Exact bare comments still consume the bounded fallback's file budget.
+        self.assertEqual(summarize(text, manifest, self.source)['public_dependencies'], [])
+        index = {}
+        catalog = public_module_catalog(manifest, self.source, index)
+        self.assertEqual(index['libpublic'], [provider])
+        self.assertNotIn('zzz_provider', json.dumps(catalog))
+        result = summarize(text, manifest, self.source, module_index=index)
+        self.assertEqual(result['public_dependencies'], ['libpublic'])
+        self.assertEqual(record({'stage': 'compile'}, 42, 'a' * 40, result,
+                                self.source, manifest)['public_dependencies'], ['libpublic'])
+        self.assertEqual(summarize(text, manifest, self.source, {provider}, index)
+                         ['public_dependencies'], [])
+        (self.project / 'zzz_provider.bp').write_text('name: "private_hint"\n')
+        forged = {'private_hint': [provider, '../../private.bp'], 'libpublic': [provider]}
+        private_text = text.replace('libpublic', 'private_hint')
+        self.assertEqual(summarize(private_text, manifest, self.source, module_index=forged)
+                         ['public_dependencies'], [])
+
     def test_host_cross_prefix_requires_the_public_make_transformation(self):
         checker = ('$(warning Missing required dependencies:)\n'
                    'requires non-existent\n'

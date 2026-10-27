@@ -22,7 +22,8 @@ finish() {
   if ((result != 0)) && [[ "${stage}" == compile && -f "${WORK}/logs/compile.log" ]]; then
     if ! python3 "${SELF}/scripts/summarize_compile_failure.py" \
       --log "${WORK}/logs/compile.log" --manifest "${WORK}/manifest/default.xml" \
-      --source "${WORK}/android" --output "${WORK}/output/compile-error-summary.json"; then
+      --source "${WORK}/android" --output "${WORK}/output/compile-error-summary.json" \
+      --public-index "${WORK}/output/public-module-index.json"; then
       printf 'Structured compiler diagnostics unavailable.\n' >&2
     fi
   fi

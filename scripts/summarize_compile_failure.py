@@ -259,7 +259,7 @@ def dependency_names(line):
     return result
 
 
-def public_dependency_sources(source, projects, candidates, excluded, locations=()):
+def public_dependency_sources(source, projects, candidates, excluded, locations=(), module_index=None):
     """Find literal proof in pinned public Git, never in worktree/default overlays."""
     pending = {name for name in candidates if NAME.fullmatch(name)}
     if not pending:
@@ -283,6 +283,16 @@ def public_dependency_sources(source, projects, candidates, excluded, locations=
              and isinstance(item.get('path'), str)]
     focus += [project.get('path') + '/device.mk' for project in projects
               if project.get('path') == 'device/xiaomi/selene']
+    # Catalog locations are untrusted hints; public_file and literal proof below
+    # still independently enforce pinned revisions and private-overlay exclusions.
+    if isinstance(module_index, dict):
+        indexed = []
+        for dependency in sorted(pending)[:128]:
+            paths = module_index.get(dependency, [])
+            if isinstance(paths, list):
+                indexed.extend(path for path in paths[:8] if isinstance(path, str)
+                               and re.fullmatch(r'[A-Za-z0-9_./+-]{1,512}', path))
+        focus = indexed + focus
     # Check these exact locations before scanning potentially large projects.
     for name in dict.fromkeys(focus):
         if not pending or time.monotonic() >= deadline or len(seen) >= 32:
@@ -369,7 +379,7 @@ def public_dependency_sources(source, projects, candidates, excluded, locations=
     return evidence, verified
 
 
-def summarize(text, manifest, source, excluded=()):
+def summarize(text, manifest, source, excluded=(), module_index=None):
     categories = [name for name, rule in RULES.items() if re.search(rule, text, re.I)]
     projects = ET.fromstring(manifest).findall('project')
     locations, dependencies, candidates, cache = [], set(), set(), {}
@@ -437,7 +447,8 @@ def summarize(text, manifest, source, excluded=()):
         if '$(eval r := $(addprefix host_cross_,$(r)))' in checker:
             candidates.update(host_cross_candidates)
             cross_prefix_verified = True
-    evidence, inherited = public_dependency_sources(source, projects, candidates - dependencies, excluded, locations)
+    evidence, inherited = public_dependency_sources(source, projects, candidates - dependencies,
+                                                     excluded, locations, module_index)
     result = {'categories': categories or ['UNCLASSIFIED_COMPILE_FAILURE'],
               'public_locations': locations,
               'public_dependencies': sorted(dependencies | inherited)[:128]}
@@ -485,13 +496,21 @@ def main():
     parser.add_argument('--manifest', type=Path, required=True)
     parser.add_argument('--source', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--public-index', type=Path)
     args = parser.parse_args()
     with args.log.open('rb') as stream:
         first = stream.read(2 * 1024**2)
         stream.seek(max(len(first), args.log.stat().st_size - 2 * 1024**2))
         text = (first + b'\n' + stream.read(2 * 1024**2)).decode('utf-8', errors='replace')
     excluded = {entry['destination'].removeprefix('overlay/') for entry in load_lock()['files']}
-    result = summarize(text, args.manifest.read_bytes(), args.source, excluded)
+    module_index = None
+    if args.public_index and args.public_index.is_file() and not args.public_index.is_symlink():
+        if args.public_index.stat().st_size <= 8 * 1024**2:
+            try:
+                module_index = json.loads(args.public_index.read_text())
+            except (OSError, ValueError, UnicodeError):
+                pass
+    result = summarize(text, args.manifest.read_bytes(), args.source, excluded, module_index)
     args.output.write_text(json.dumps(result, indent=2) + '\n')
 
 
