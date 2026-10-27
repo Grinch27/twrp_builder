@@ -657,3 +657,11 @@ e227736运行40440760858的静态检查（含actionlint与公开同步smoke）�
 本轮在同一锁定Make link-type-missing消息格式上，补充调用方与变体上下文：只输出固定白名单的模块class及arm/arm64/x86/x86_64；调用方名必须单独通过原有锁定公开Git字面量证明，报错路径亦需公开Git核验。发布端再次核对，未知调用方/缺项名、私有路径、原始日志不输出。将已验证调用方与真正缺依赖分开，避免误称调用方是缺项。此信息用于确定实际报错归属与是否存在架构/class差异，不修改Android图或绕过检查。
 
 120项本地测试117通过、3项为原环境限制跳过；回归覆盖公开调用方、arm64至arm上下文、私有调用方与未知依赖不泄露、伪造路径及class被发布端拒绝。Shell、YAML及差异检查通过。继续用户授权的Native/main非发布构建；失败日志Artifact关闭，每次启动后静默20分钟再每60秒查询。
+
+## 2026-10-27 — 实际APPS失败与Make应用变量的字面量证据
+
+47ef4b9运行40443139189的真实摘要把范围缩小为APPS调用方：JAVA_LIBRARIES/android-arm64，以及SHARED_LIBRARIES/android-arm64和android-arm三个上下文；调用方与依赖名均未获公开证明。静态检查、同步及预检通过，compile411.671秒后失败，仍无成品。此前Recovery与sepolicy文件只是日志中已核验位置，不能据此当作这三条链接失败的归属。
+
+按锁定TeamWin Make 1b692e2的core/package_internal.mk:20–46核验，应用使用LOCAL_PACKAGE_NAME并由构建系统赋给LOCAL_MODULE、class设为APPS；core/java.mk与core/install_jni_libs_internal.mk分别使用LOCAL_JAVA_LIBRARIES和LOCAL_JNI_SHARED_LIBRARIES。原字面量证明遗漏了这三项明确的模块变量。本轮仅将其纳入既有完整token/续行赋值规则，继续拒绝普通LOCAL_SETTING、子串及非Make文件中的裸token。复用原模块扫描额外记录Make中直接字面量LOCAL_MODULE/LOCAL_PACKAGE_NAME的本地位置；公开Blueprint catalog内容和18788名字范围不变，不执行Make表达式、不推断生成名、命名空间或可用性。
+
+121项本地测试118通过、3项为已有环境限制跳过；新合成用例证明APPS名称、Java与JNI依赖能够分别由公开赋值核验，普通设置中同名、子串、工作树改写不能授权新输出。Shell、YAML与差异检查通过。下一轮用于验证真实APPS缺项是否由这一遗漏遮蔽。所有源码pin、Native/main非发布、无失败日志上传、成功镜像加密及20分钟首查/60秒后续查询约束不变。

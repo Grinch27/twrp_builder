@@ -46,13 +46,24 @@ def public_module_catalog(manifest, source, module_index=None):
             raise ValueError('module catalog checkout mismatch')
         result = subprocess.run([
             'git', '-C', str(root), 'grep', '-n', '-E',
-            '^[[:space:]]*name[[:space:]]*:[[:space:]]*"', revision, '--', '*.bp',
+            '^[[:space:]]*(name[[:space:]]*:[[:space:]]*"|LOCAL_(MODULE|PACKAGE_NAME)[[:space:]]*:?=)',
+            revision, '--', '*.bp', '*.mk',
         ], capture_output=True, check=False, timeout=30)
         if result.returncode not in (0, 1) or len(result.stdout) > 8 * 1024**2:
             raise ValueError('module catalog input unavailable')
         for line in result.stdout.decode('utf-8', errors='strict').splitlines():
             fields = line.split(':', 3)
             if len(fields) != 4 or fields[0] != revision:
+                continue
+            if fields[1].endswith('.mk'):
+                literal = re.fullmatch(r'\s*LOCAL_(?:MODULE|PACKAGE_NAME)\s*(?::=|=)\s*'
+                                      r'([A-Za-z0-9_.@+:/-]{1,160})\s*(?:#.*)?', fields[3])
+                if (module_index is not None and literal is not None
+                        and re.fullmatch(r'[A-Za-z0-9_./+-]+', fields[1])):
+                    paths = module_index.setdefault(literal[1], [])
+                    path = name + '/' + fields[1]
+                    if path not in paths and len(paths) < 8:
+                        paths.append(path)
                 continue
             for literal in re.findall(r'\bname\s*:\s*("(?:[^"\\]|\\.)*")', fields[3]):
                 value = json.loads(literal)

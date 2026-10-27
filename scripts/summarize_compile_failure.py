@@ -152,7 +152,8 @@ def dependency_evidence_line(text, name, path=''):
     if not path.endswith('.mk'):
         return None
     assignment = re.compile(
-        r'^\s*(?:LOCAL_MODULE|LOCAL_REQUIRED_MODULES|LOCAL_SHARED_LIBRARIES|'
+        r'^\s*(?:LOCAL_MODULE|LOCAL_PACKAGE_NAME|LOCAL_JAVA_LIBRARIES|LOCAL_JNI_SHARED_LIBRARIES|'
+        r'LOCAL_REQUIRED_MODULES|LOCAL_SHARED_LIBRARIES|'
         r'LOCAL_STATIC_LIBRARIES|LOCAL_WHOLE_STATIC_LIBRARIES|'
         r'LOCAL_HEADER_LIBRARIES|TWRP_REQUIRED_MODULES|TARGET_RECOVERY_DEVICE_MODULES|PRODUCT_PACKAGES)\s*'
         r'(?::=|\+=|\?=|=)\s*(.*)$')

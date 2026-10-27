@@ -323,6 +323,36 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertEqual(summarize(private_text, manifest, self.source, module_index=forged)
                          ['public_dependencies'], [])
 
+    def test_make_app_names_and_dependencies_use_exact_public_assignments(self):
+        make = ('LOCAL_PACKAGE_NAME := PublicApp\n'
+                'LOCAL_JAVA_LIBRARIES := public_java\n'
+                'LOCAL_JNI_SHARED_LIBRARIES := public_jni\n'
+                'LOCAL_SETTING := private_unrelated\n')
+        (self.project / 'App.mk').write_text(make)
+        self.git('add', '.')
+        self.git('commit', '--quiet', '-m', 'public Make app fixture')
+        self.manifest = self.manifest.replace(
+            self.revision.encode(), self.git('rev-parse', 'HEAD').strip().encode())
+        manifest = self.commit_make_checker('define link-type-missing\n'
+            'define link-type-error\n$(error exiting from previous errors)\n')
+        index = {}
+        catalog = public_module_catalog(manifest, self.source, index)
+        self.assertEqual(index['PublicApp'], ['external/public/App.mk'])
+        self.assertNotIn('PublicApp', catalog['public_module_names'])
+        log = ('build/make/core/main.mk:1118: error: exiting from previous errors\n'
+               'PublicApp (APPS android-arm64) missing public_java (JAVA_LIBRARIES android-arm64)\n'
+               'PublicApp (APPS android-arm64) missing public_jni (SHARED_LIBRARIES android-arm64)\n'
+               'PublicApp (APPS android-arm) missing private_unrelated (SHARED_LIBRARIES android-arm)\n')
+        result = summarize(log, manifest, self.source, module_index=index)
+        value = record({'stage': 'compile'}, 42, 'a' * 40, result, self.source, manifest)
+        self.assertEqual(value['public_dependencies'], ['public_java', 'public_jni'])
+        self.assertTrue(all(c['parent'] == 'PublicApp' for c in value['public_link_contexts']))
+        self.assertNotIn('private_unrelated', json.dumps(value))
+        (self.project / 'App.mk').write_text(make.replace('public_java', 'private_worktree'))
+        self.assertIsNone(dependency_evidence_line(make, 'public_jni_suffix', 'App.mk'))
+        self.assertIsNone(dependency_evidence_line(make, 'private_unrelated', 'App.mk'))
+        self.assertIsNone(dependency_evidence_line(make, 'public_java', 'NotMake.bp'))
+
     def test_host_cross_prefix_requires_the_public_make_transformation(self):
         checker = ('$(warning Missing required dependencies:)\n'
                    'requires non-existent\n'
