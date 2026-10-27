@@ -21,6 +21,7 @@ from source_inputs import load_lock, relative_path
 RULES = {
     'UNDEFINED_MODULE': r'depends on undefined module|missing dependencies:',
     'MISSING_REQUIRED_MODULE': r'Missing required dependencies:|requires non-existent (?:TARGET|HOST|HOST_CROSS) module:',
+    'MISSING_PACKAGE_INSTALLED_FILE': r"Unknown installed file for module '[A-Za-z0-9_.@+-]{1,128}'",
     'MISSING_PRODUCT_PACKAGE': r'includes non-existent modules in PRODUCT_(?:HOST_)?PACKAGES',
     'INVALID_APEX_AVAILABLE': r'apex_available:\s*"[^"\r\n]+"\s+is not a valid module name',
     'MISSING_SOURCE_INPUT': r'source path .*does not exist|missing and no known rule to make it',
@@ -158,7 +159,7 @@ def dependency_evidence_line(text, name, path=''):
         r'LOCAL_REQUIRED_MODULES|LOCAL_SHARED_LIBRARIES|'
         r'LOCAL_STATIC_LIBRARIES|LOCAL_WHOLE_STATIC_LIBRARIES|'
         r'LOCAL_HEADER_LIBRARIES|TWRP_REQUIRED_MODULES|TARGET_RECOVERY_DEVICE_MODULES|'
-        r'PRODUCT_PACKAGES|PRODUCT_HOST_PACKAGES)\s*'
+        r'PRODUCT_PACKAGES|PRODUCT_HOST_PACKAGES|my_modules|instrumentation_metric_tests)\s*'
         r'(?::=|\+=|\?=|=)\s*(.*)$')
     relink_assignment = re.compile(
         r'^\s*RECOVERY_(BINARY_SOURCE|LIBRARY_SOURCE|VENDOR_HW_BINARY)_FILES\s*'
@@ -419,6 +420,15 @@ def summarize(text, manifest, source, excluded=(), module_index=None):
                 if has_public_dependency(public, dependency, name):
                     dependencies.add(dependency)
     checker = cache.get('build/make/core/main.mk')
+    packaging_candidates = set()
+    packaging_checker = cache.get('build/make/core/tasks/tools/package-modules.mk')
+    if packaging_checker is not None and all(marker in packaging_checker for marker in (
+            "Unknown installed file for module '$(1)'", 'my_missing_error := true', '$(error done)')):
+        packaging_candidates.update(re.findall(
+            r"Unknown installed file for module '([A-Za-z0-9_.@+-]{1,128})'", text)[:128])
+        candidates.update(packaging_candidates)
+    else:
+        categories = [name for name in categories if name != 'MISSING_PACKAGE_INSTALLED_FILE']
     product_candidates = set()
     product_checker = checker is not None and all(marker in checker for marker in (
         'define maybe-print-list-and-error', '$(info Offending entries:)',
@@ -503,6 +513,9 @@ def summarize(text, manifest, source, excluded=(), module_index=None):
     result = {'categories': categories or ['UNCLASSIFIED_COMPILE_FAILURE'],
               'public_locations': locations,
               'public_dependencies': sorted(dependencies | (inherited & candidates))[:128]}
+    if 'MISSING_PACKAGE_INSTALLED_FILE' in categories:
+        result['packaging_candidates'] = len(packaging_candidates)
+        result['unverified_packaging_candidates'] = len(packaging_candidates - dependencies - inherited)
     if 'MISSING_PRODUCT_PACKAGE' in categories:
         result['product_package_candidates'] = len(product_candidates)
         result['unverified_product_package_candidates'] = len(product_candidates - dependencies - inherited)

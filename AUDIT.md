@@ -709,3 +709,13 @@ ee312de运行40448141223的静态检查、完整588项同步、校验及预检�
 共新增11项，317个公开补充项目与原282项合计599。原588项对象、十项输入、设备/目标、编译参数与所有隐私交付边界保持不变。源码仍从android.googlesource.com的官方项目按锁定SHA和同tag upstream完整同步，原checkout身份验证保留；镜像仅用于本轮读取公开tag/commit/tree及源码定义，不改变下载来源。
 
 本轮本地执行环境于等待期间不可用，无法重新运行Shell/Python测试，未声称本地通过。已在可用执行器中解析生成的JSON、核对官方清单路径、同tag commit、完整tree、普通依赖引用与新增路径不覆盖已锁补充项目；source/files身份保持一致。未改脚本或工作流。现有Native工作流的runner-image先执行标准库套件、Shell及actionlint/公开同步smoke，native依赖该job成功才会启动；以这次实际CI结果作为检查证据。每轮启动后静默20分钟，再每60秒查询；失败日志Artifact关闭、publish=false和成功镜像加密交付保持。
+
+## 2026-10-27 — 主机工具已通过，补齐公开指标测试MTP提供方至600项
+
+2e41324运行40453099253的122项标准测试、Shell、actionlint及公开同步smoke成功；599项从官方Git源完整同步并通过身份校验、预检，证明前轮镜像读取的同tag SHA可用于原官方来源。原PRODUCT_HOST_PACKAGES缺项消失。compile522.454秒后进入更后的build/make/core/main.mk:1437，再于platform_testing/build/tasks/continuous_instrumentation_metric_tests.mk:27调用的core/tasks/tools/package-modules.mk:91失败。安全摘要未包含原始错误名，仍无成功镜像。
+
+读取锁定platform_testing af7eaff31e0aed03c06f6bade385397d792f4008的任务及tests/instrumentation_metric_test_list.mk，明确指标测试包包含MtpServicePerfTests。当前完整manifest没有packages/services/Mtp，当前公开BP目录也没有该定义。核对官方同标签清单及完整公开Git tree，新增platform/packages/services/Mtp@23d0c1896d6d1f27f4b8a92fc359b6a7ac148898：142文件、524127 bytes，perf_tests/Android.bp实际提供MtpServicePerfTests，根与tests/Android.bp提供MtpService、MtpServiceTests。三份构建定义的已识别直接模块引用在现有公开目录或本项目定义中存在；不声称它是本次唯一实际缺项。
+
+读取锁定Make package-modules.mk，确认Unknown installed file for module的缺项消息与my_missing_error/$(error done)检查。诊断仅在该实际公开Git helper获验证时提取最多128名字，仍要求独立公开字面量证明；将my_modules及instrumentation_metric_tests这两类明确模块清单加入原完整token赋值规则，普通变量仍拒绝。新增合成回归覆盖checker前提、公开名字、私有缺项拒绝与发布端复核；新增两个有界计数，不删除模块或放宽打包规则。保留其他尚未知安装文件的真实失败。
+
+本地环境仍不可用，123项套件及本轮Python变更的实际检查待GitHub runner-image执行，不声称本地通过。现有依赖关系保证原生编译只在标准测试、Shell、actionlint、公开同步smoke成功后开始；未改工作流。原599项目SHA及十项输入不变；318公开补充项目加原282合计600。Native/main、CPU数加一、NINJA_ARGS=-v、publish=false、无失败日志Artifact、成功镜像加密与每轮静默20分钟后每60秒查询保持。

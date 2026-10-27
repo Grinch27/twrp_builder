@@ -102,6 +102,36 @@ class CompileSummaryTests(unittest.TestCase):
         malformed = log.replace('Offending entries:', 'Some other list:')
         self.assertEqual(summarize(malformed, manifest, self.source)['product_package_candidates'], 0)
 
+    def test_package_installed_errors_need_public_checker_and_literal_proof(self):
+        manifest = self.commit_make_checker()
+        root = self.source / 'build/make'
+        def checker_git(*args):
+            return subprocess.check_output(['git', '-C', str(root), *args],
+                                           text=True, stderr=subprocess.DEVNULL).strip()
+        old = checker_git('rev-parse', 'HEAD')
+        helper = root / 'core/tasks/tools/package-modules.mk'
+        helper.parent.mkdir(parents=True)
+        helper.write_text("Unknown installed file for module '$(1)'\n"
+                          'my_missing_error := true\n$(error done)\n')
+        checker_git('add', '.')
+        checker_git('commit', '--quiet', '-m', 'public package checker fixture')
+        manifest = manifest.replace(old.encode(), checker_git('rev-parse', 'HEAD').encode())
+        log = ("external/public/Android.bp:1: error: zip: Unknown installed file for module 'libpublic'\n"
+               "private/location:2: error: zip: Unknown installed file for module 'private_missing'\n"
+               'build/make/core/tasks/tools/package-modules.mk:91: error: done\n')
+        result = summarize(log, manifest, self.source)
+        value = record({'stage': 'compile'}, 42, 'a' * 40, result, self.source, manifest)
+        self.assertEqual(value['public_dependencies'], ['libpublic'])
+        self.assertEqual(value['packaging_candidates'], 2)
+        self.assertEqual(value['unverified_packaging_candidates'], 1)
+        self.assertNotIn('private_', json.dumps(value))
+        self.assertEqual(summarize(log, manifest, self.source,
+            {'build/make/core/tasks/tools/package-modules.mk'})['public_dependencies'], [])
+        self.assertEqual(dependency_evidence_line('my_modules := public_pack\n',
+                                                'public_pack', 'List.mk'), 1)
+        self.assertIsNone(dependency_evidence_line('other_list := private_pack\n',
+                                                  'private_pack', 'List.mk'))
+
     def test_link_type_variants_require_pinned_checker_and_public_literal(self):
         checker = ('define link-type-missing\n'
                    '$(shell $(call echo-error,$($(1).MAKEFILE),"module missing dependency"))\n'

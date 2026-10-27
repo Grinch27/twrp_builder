@@ -2045,6 +2045,12 @@
       "path": "external/python/uritemplates",
       "revision": "c0f0d2a1620c7f95b00b296b2844a37fb61dcb62",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/services/Mtp",
+      "path": "packages/services/Mtp",
+      "revision": "23d0c1896d6d1f27f4b8a92fc359b6a7ac148898",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
