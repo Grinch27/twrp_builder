@@ -120,6 +120,28 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertEqual(result['categories'], ['UNCLASSIFIED_COMPILE_FAILURE'])
         self.assertEqual(result['public_dependencies'], [])
 
+    def test_link_context_reveals_only_public_parent_and_fixed_variant_metadata(self):
+        manifest = self.commit_make_checker('define link-type-missing\n'
+            'define link-type-error\n$(error exiting from previous errors)\n')
+        log = ('build/make/core/main.mk:1118: error: exiting from previous errors\n'
+               'external/public/Android.bp:1: error: demo (EXECUTABLES android-arm64) '
+               'missing private_dependency (SHARED_LIBRARIES android-arm)\n'
+               'external/public/Android.bp:1: error: private_parent (ETC android-arm64) '
+               'missing private_other (ETC android-arm64)\n')
+        result = summarize(log, manifest, self.source)
+        self.assertEqual(result['public_dependencies'], [])
+        value = record({'stage': 'compile'}, 42, 'a' * 40, result, self.source, manifest)
+        self.assertEqual(value['public_link_contexts'][0], {
+            'parent': 'demo', 'parent_class': 'EXECUTABLES', 'dependency_class': 'SHARED_LIBRARIES',
+            'parent_arch': 'arm64', 'dependency_arch': 'arm',
+            'path': 'external/public/Android.bp', 'line': 1})
+        self.assertNotIn('private_', json.dumps(value))
+        result['public_link_contexts'][0].update(parent='private_forged', path='private/path', line=9)
+        result['public_link_contexts'].append({'parent_class': 'PRIVATE_CLASS'})
+        value = record({'stage': 'compile'}, 42, 'a' * 40, result, self.source, manifest)
+        self.assertNotIn('private_', json.dumps(value))
+        self.assertNotIn('PRIVATE_CLASS', json.dumps(value))
+
     def test_recovery_link_base_needs_pinned_suffix_and_literal_base_proof(self):
         checker = ('define link-type-missing\ndefine link-type-error\n'
                    '$(error exiting from previous errors)\n')

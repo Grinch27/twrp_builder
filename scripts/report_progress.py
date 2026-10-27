@@ -23,6 +23,7 @@ import xml.etree.ElementTree as ET
 from source_inputs import NoRedirect, SHA, compose_manifest, load_lock, relative_path
 from summarize_compile_failure import RULES, has_public_dependency, public_file, public_recovery_suffix, public_variant_suffixes
 from summarize_compile_failure import public_generated_families
+from summarize_compile_failure import LINK_CLASSES, LINK_ARCHES
 from summarize_repo_failure import RULES as REPO_RULES
 from build_telemetry import STAGES, read_json, sanitize_metrics
 
@@ -130,6 +131,26 @@ def record(status, run_id, commit, summary=None, source=None, manifest=None, exc
         result['public_dependencies'] = sorted({name for name in summary.get('public_dependencies', [])
             if isinstance(name, str) and re.fullmatch(r'[A-Za-z0-9_.@+-]{1,128}', name)
             and any(has_public_dependency(text, name, path) for path, text in texts)})[:128]
+        contexts = []
+        for item in summary.get('public_link_contexts', [])[:32]:
+            if (not isinstance(item, dict) or item.get('parent_class') not in LINK_CLASSES
+                    or item.get('dependency_class') not in LINK_CLASSES
+                    or item.get('parent_arch') not in LINK_ARCHES
+                    or item.get('dependency_arch') not in LINK_ARCHES):
+                continue
+            context = {key: item[key] for key in ('parent_class', 'dependency_class',
+                                                 'parent_arch', 'dependency_arch')}
+            parent = item.get('parent')
+            if (isinstance(parent, str) and re.fullmatch(r'[A-Za-z0-9_.@+-]{1,128}', parent)
+                    and any(has_public_dependency(text, parent, path) for path, text in texts)):
+                context['parent'] = parent
+            location = {'path': item.get('path'), 'line': item.get('line')}
+            if location in locations:
+                context.update(location)
+            if context not in contexts:
+                contexts.append(context)
+        if contexts:
+            result['public_link_contexts'] = contexts
         if summary.get('public_recovery_link_bases') and public_recovery_suffix(source, projects, excluded):
             bases = sorted({name for name in summary['public_recovery_link_bases']
                             if isinstance(name, str) and name in result['public_dependencies']})[:128]
@@ -193,6 +214,10 @@ def render_summary(value):
         lines.append(f"- Public variant: `{item['base']}` + `{item['suffix']}`")
     for item in value.get('public_generated_links', []):
         lines.append(f"- Public generated name: `{item['base']}`; family: `{item['family']}`")
+    for item in value.get('public_link_contexts', []):
+        lines.append('- Link context: ' + item.get('parent', 'unverified parent')
+                     + f" ({item['parent_class']} android-{item['parent_arch']}) -> "
+                     + f"{item['dependency_class']} android-{item['dependency_arch']}")
     for location in value.get('public_locations', []):
         lines.append(f"- Public source: `{location['path']}:{location['line']}`")
     for source in value.get('public_dependency_sources', []):

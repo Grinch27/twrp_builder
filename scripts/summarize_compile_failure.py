@@ -55,6 +55,12 @@ HOST_CROSS_REQUIRED = re.compile(
     r'requires non-existent HOST_CROSS module: '
     r'host_cross_([A-Za-z0-9_.@+-]{1,117})(?::(?:32|64))?\s*$')
 NAME = re.compile(r'[A-Za-z0-9_.@+-]{1,128}\Z')
+LINK_CLASSES = {'SHARED_LIBRARIES', 'STATIC_LIBRARIES', 'EXECUTABLES', 'ETC',
+                'HEADER_LIBRARIES', 'JAVA_LIBRARIES', 'APPS', 'NATIVE_TESTS', 'PHONY_PACKAGE'}
+LINK_ARCHES = {'arm', 'arm64', 'x86', 'x86_64'}
+LINK_CONTEXT = re.compile(
+    r'([A-Za-z0-9_.@+-]{1,128}) \(([A-Z_]{2,32}) android-([A-Za-z0-9_]+)\) '
+    r'missing ([A-Za-z0-9_.@+-]{1,128}) \(([A-Z_]{2,32}) android-([A-Za-z0-9_]+)\)')
 BUILDER_ROOT = Path(__file__).resolve().parents[1]
 BUILDER_PATCH = 'builder-public/patches/recovery-required-modules.patch'
 
@@ -413,6 +419,7 @@ def summarize(text, manifest, source, excluded=(), module_index=None):
     # generic "missing" message alone. Public names still need exact Git proof.
     link_categories = {'LINK_TYPE_INCOMPATIBLE', 'LINK_VARIANT_MISSING'}
     link_candidates, recovery_bases, variant_names, generated_names = set(), set(), {}, {}
+    link_contexts, parent_names = [], set()
     if checker is not None and all(marker in checker for marker in
                                    ('define link-type-missing', 'define link-type-error',
                                     '$(error exiting from previous errors)')):
@@ -420,6 +427,23 @@ def summarize(text, manifest, source, excluded=(), module_index=None):
         link_candidates.update(LINK_INCOMPATIBLE.findall(text)[:128])
         link_candidates = set(sorted(link_candidates)[:128])
         candidates.update(link_candidates)
+        for line in text.splitlines():
+            match = LINK_CONTEXT.search(line)
+            if match is None or len(link_contexts) >= 32:
+                continue
+            parent, parent_class, parent_arch, dependency, dep_class, dep_arch = match.groups()
+            if (parent_class not in LINK_CLASSES or dep_class not in LINK_CLASSES
+                    or parent_arch not in LINK_ARCHES or dep_arch not in LINK_ARCHES):
+                continue
+            context = {'parent_class': parent_class, 'dependency_class': dep_class,
+                       'parent_arch': parent_arch, 'dependency_arch': dep_arch}
+            for location in LOCATION.finditer(line):
+                path, number = location.groups()
+                if cache.get(path) is not None:
+                    context.update(path=path, line=int(number))
+                    break
+            link_contexts.append((parent, context))
+            parent_names.add(parent)
         suffixes = public_variant_suffixes(source, projects, excluded) if link_candidates else set()
         for name in sorted(link_candidates):
             for suffix in sorted(suffixes, key=len, reverse=True):
@@ -447,11 +471,20 @@ def summarize(text, manifest, source, excluded=(), module_index=None):
         if '$(eval r := $(addprefix host_cross_,$(r)))' in checker:
             candidates.update(host_cross_candidates)
             cross_prefix_verified = True
-    evidence, inherited = public_dependency_sources(source, projects, candidates - dependencies,
+    evidence, inherited = public_dependency_sources(source, projects, (candidates | parent_names) - dependencies,
                                                      excluded, locations, module_index)
     result = {'categories': categories or ['UNCLASSIFIED_COMPILE_FAILURE'],
               'public_locations': locations,
-              'public_dependencies': sorted(dependencies | inherited)[:128]}
+              'public_dependencies': sorted(dependencies | (inherited & candidates))[:128]}
+    if link_contexts:
+        contexts = []
+        for parent, context in link_contexts:
+            if parent in inherited or any(has_public_dependency(blob, parent, path)
+                                          for path, blob in cache.items() if blob is not None):
+                context['parent'] = parent
+            if context not in contexts:
+                contexts.append(context)
+        result['public_link_contexts'] = contexts
     if link_categories & set(categories):
         verified = dependencies | inherited
         bases = recovery_bases & verified
