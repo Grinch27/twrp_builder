@@ -3,20 +3,21 @@
   "run_id": 40443139189,
   "builder_commit": "47ef4b9a6d947986839517b0ca385656fb83b64e",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "swap_free_mib": 15189,
-    "disk_free_mib": 40350,
-    "memory_available_mib": 14597,
-    "log_bytes": 19980,
-    "log_idle_seconds": 0.0,
-    "load_1m": 3.83,
-    "stage_elapsed_seconds": 11.1,
-    "elapsed_seconds": 690.1,
+    "log_bytes": 44010,
+    "elapsed_seconds": 1099.8,
+    "log_idle_seconds": 22.9,
+    "swap_free_mib": 15119,
+    "disk_free_mib": 34414,
+    "load_1m": 1.93,
+    "memory_available_mib": 15000,
+    "stage_elapsed_seconds": 420.8,
     "progress": {
       "kind": "ninja",
-      "completed": 150,
-      "total": 246,
-      "percent": 61.0
+      "completed": 382,
+      "total": 383,
+      "percent": 99.7
     },
     "stage_seconds": {
       "initialization": 0.061,
@@ -26,7 +27,57 @@
       "source_sync": 599.726,
       "checkout_verification": 68.472,
       "public_resources": 2.516,
-      "preflight": 5.799
+      "preflight": 5.799,
+      "compile": 411.671
     }
-  }
+  },
+  "categories": [
+    "LINK_VARIANT_MISSING"
+  ],
+  "public_locations": [
+    {
+      "path": "bootable/recovery/prebuilt/Android.mk",
+      "line": 445
+    },
+    {
+      "path": "system/sepolicy/Android.mk",
+      "line": 57
+    },
+    {
+      "path": "build/make/core/main.mk",
+      "line": 1118
+    }
+  ],
+  "public_dependencies": [],
+  "public_link_contexts": [
+    {
+      "parent_class": "APPS",
+      "dependency_class": "JAVA_LIBRARIES",
+      "parent_arch": "arm64",
+      "dependency_arch": "arm64"
+    },
+    {
+      "parent_class": "APPS",
+      "dependency_class": "SHARED_LIBRARIES",
+      "parent_arch": "arm64",
+      "dependency_arch": "arm64"
+    },
+    {
+      "parent_class": "APPS",
+      "dependency_class": "SHARED_LIBRARIES",
+      "parent_arch": "arm",
+      "dependency_arch": "arm"
+    }
+  ],
+  "link_candidates": 3,
+  "unverified_link_candidates": 3,
+  "recovery_link_candidates": 0,
+  "variant_link_candidates": 0,
+  "generated_link_candidates": 0,
+  "link_android_candidates": 3,
+  "link_linux_candidates": 0,
+  "link_darwin_candidates": 0,
+  "link_windows_candidates": 0,
+  "link_aidl_name_candidates": 0,
+  "link_second_arch_name_candidates": 0
 }
