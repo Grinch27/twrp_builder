@@ -21,6 +21,7 @@ from source_inputs import load_lock, relative_path
 RULES = {
     'UNDEFINED_MODULE': r'depends on undefined module|missing dependencies:',
     'MISSING_REQUIRED_MODULE': r'Missing required dependencies:|requires non-existent (?:TARGET|HOST|HOST_CROSS) module:',
+    'MISSING_PRODUCT_PACKAGE': r'includes non-existent modules in PRODUCT_(?:HOST_)?PACKAGES',
     'INVALID_APEX_AVAILABLE': r'apex_available:\s*"[^"\r\n]+"\s+is not a valid module name',
     'MISSING_SOURCE_INPUT': r'source path .*does not exist|missing and no known rule to make it',
     'DUPLICATE_MODULE': r'module .*already defined|duplicate module',
@@ -156,7 +157,8 @@ def dependency_evidence_line(text, name, path=''):
         r'LOCAL_JNI_SHARED_LIBRARIES|'
         r'LOCAL_REQUIRED_MODULES|LOCAL_SHARED_LIBRARIES|'
         r'LOCAL_STATIC_LIBRARIES|LOCAL_WHOLE_STATIC_LIBRARIES|'
-        r'LOCAL_HEADER_LIBRARIES|TWRP_REQUIRED_MODULES|TARGET_RECOVERY_DEVICE_MODULES|PRODUCT_PACKAGES)\s*'
+        r'LOCAL_HEADER_LIBRARIES|TWRP_REQUIRED_MODULES|TARGET_RECOVERY_DEVICE_MODULES|'
+        r'PRODUCT_PACKAGES|PRODUCT_HOST_PACKAGES)\s*'
         r'(?::=|\+=|\?=|=)\s*(.*)$')
     relink_assignment = re.compile(
         r'^\s*RECOVERY_(BINARY_SOURCE|LIBRARY_SOURCE|VENDOR_HW_BINARY)_FILES\s*'
@@ -417,6 +419,29 @@ def summarize(text, manifest, source, excluded=(), module_index=None):
                 if has_public_dependency(public, dependency, name):
                     dependencies.add(dependency)
     checker = cache.get('build/make/core/main.mk')
+    product_candidates = set()
+    product_checker = checker is not None and all(marker in checker for marker in (
+        'define maybe-print-list-and-error', '$(info Offending entries:)',
+        '$(error Build failed)', 'includes non-existent modules in PRODUCT_HOST_PACKAGES'))
+    if product_checker:
+        heading, entries = False, False
+        for line in text.splitlines():
+            if re.search(RULES['MISSING_PRODUCT_PACKAGE'], line):
+                heading, entries = True, False
+                continue
+            if heading and line.strip() == 'Offending entries:':
+                entries = True
+                continue
+            if entries:
+                name = line.strip()
+                if not re.fullmatch(r'[A-Za-z0-9_.@+-]{1,128}(?::(?:32|64))?', name):
+                    heading, entries = False, False
+                    continue
+                if len(product_candidates) < 128:
+                    product_candidates.add(re.sub(r':(?:32|64)$', '', name))
+        candidates.update(product_candidates)
+    else:
+        categories = [name for name in categories if name != 'MISSING_PRODUCT_PACKAGE']
     # Require the actual pinned Make link checker, not a log path or a
     # generic "missing" message alone. Public names still need exact Git proof.
     link_categories = {'LINK_TYPE_INCOMPATIBLE', 'LINK_VARIANT_MISSING'}
@@ -478,6 +503,9 @@ def summarize(text, manifest, source, excluded=(), module_index=None):
     result = {'categories': categories or ['UNCLASSIFIED_COMPILE_FAILURE'],
               'public_locations': locations,
               'public_dependencies': sorted(dependencies | (inherited & candidates))[:128]}
+    if 'MISSING_PRODUCT_PACKAGE' in categories:
+        result['product_package_candidates'] = len(product_candidates)
+        result['unverified_product_package_candidates'] = len(product_candidates - dependencies - inherited)
     if link_contexts:
         contexts = []
         for parent, context in link_contexts:

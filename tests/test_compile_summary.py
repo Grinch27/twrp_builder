@@ -84,6 +84,24 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertEqual(summarize(text, manifest, self.source,
                                   {'build/make/core/main.mk'})['public_dependencies'], [])
 
+    def test_product_host_list_requires_pinned_checker_and_exact_public_names(self):
+        manifest = self.commit_make_checker('define maybe-print-list-and-error\n'
+            '$(info Offending entries:)\n$(error Build failed)\n'
+            'includes non-existent modules in PRODUCT_HOST_PACKAGES\n')
+        log = ('build/make/core/main.mk:1313: warning: private_product includes non-existent modules in PRODUCT_HOST_PACKAGES\n'
+               'Offending entries:\n   libpublic:64\n   private_host_tool\n'
+               'build/make/core/main.mk:1313: error: Build failed\n')
+        result = summarize(log, manifest, self.source)
+        self.assertEqual(result['product_package_candidates'], 2)
+        self.assertEqual(result['unverified_product_package_candidates'], 1)
+        value = record({'stage': 'compile'}, 42, 'a' * 40, result, self.source, manifest)
+        self.assertEqual(value['public_dependencies'], ['libpublic'])
+        self.assertNotIn('private_', json.dumps(value))
+        self.assertEqual(summarize(log, manifest, self.source, {'build/make/core/main.mk'})
+                         ['public_dependencies'], [])
+        malformed = log.replace('Offending entries:', 'Some other list:')
+        self.assertEqual(summarize(malformed, manifest, self.source)['product_package_candidates'], 0)
+
     def test_link_type_variants_require_pinned_checker_and_public_literal(self):
         checker = ('define link-type-missing\n'
                    '$(shell $(call echo-error,$($(1).MAKEFILE),"module missing dependency"))\n'

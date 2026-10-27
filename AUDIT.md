@@ -679,3 +679,11 @@ e227736运行40440760858的静态检查（含actionlint与公开同步smoke）�
 检查了全部公开Blueprint/Make定义及直接引用；已识别普通Blueprint依赖在既有公开模块集合或本批定义中有提供方。这不证明生成变体或全部Make解析可用。另按锁定core/java_common.mk的my_link_deps定义，将LOCAL_STATIC_JAVA_LIBRARIES纳入既有完整token赋值证明，避免静态Java缺项继续被摘要遮蔽；无源码删除、测试禁用或缺项绕过。
 
 121项本地测试118通过、3项为原环境限制跳过；Shell、YAML和差异检查通过。严格本地组合实际manifest得到588项目，原282项、既有303个补充项目SHA、十项输入、设备/目标和成功镜像验收不变。当前仅新增3个同标签完整项目，306公开补充项目合计588。Native/main、CPU数加一、NINJA_ARGS=-v、publish=false、无失败日志Artifact和成功镜像加密交付不变；下一轮仍须完整编译及静态验收，首查静默20分钟后每60秒查询。
+
+## 2026-10-27 — 588项已越过链接检查，提取PRODUCT_HOST_PACKAGES缺项
+
+ee312de运行40448141223的静态检查、完整588项同步、校验及预检通过。原来的LINK_VARIANT_MISSING消失；compile468.984秒后在锁定build/make/core/main.mk:1313停止，摘要暂为UNCLASSIFIED_COMPILE_FAILURE。该锁定公开位置是PRODUCT_HOST_PACKAGES的非空缺项校验；没有成功镜像，不能将局部Ninja 383/384视为全量成功。
+
+读取同一锁定main.mk:1269–1278，确认maybe-print-list-and-error先输出公开固定heading，再输出Offending entries:及逐行条目，最后error Build failed。本轮仅在该公开Git checker同时含这些精确标记时识别PRODUCT_PACKAGES/PRODUCT_HOST_PACKAGES缺项列表；最多128个候选，终止于非名字行。候选名字仍须单独通过锁定公开Git字面量证明，:32/:64仅移除固定Make后缀；未知列表条目与产品名不输出。发布端保留原有独立字面量复核，新增两个有界计数；不修改任何PRODUCT_HOST_PACKAGES或缺项检查。
+
+122项本地测试119通过、3项为原环境限制跳过；新增回归覆盖固定heading/list/checker要求、公开条目证明、私有条目不泄露、缺失checker与其他列表拒绝。Shell、YAML和差异检查通过。588项pin、十项输入、Native/main、CPU数加一、详细Ninja、publish=false、无失败日志Artifact和成功镜像加密边界不变，下一轮用于读取真实公开主机工具缺项；首查静默20分钟后每60秒查询。

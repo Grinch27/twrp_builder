@@ -190,7 +190,8 @@ def record(status, run_id, commit, summary=None, source=None, manifest=None, exc
                     'unverified_link_candidates', 'recovery_link_candidates', 'variant_link_candidates',
                     'generated_link_candidates', 'link_android_candidates', 'link_linux_candidates',
                     'link_darwin_candidates', 'link_windows_candidates', 'link_aidl_name_candidates',
-                    'link_second_arch_name_candidates'):
+                    'link_second_arch_name_candidates', 'product_package_candidates',
+                    'unverified_product_package_candidates'):
             count = summary.get(key)
             if type(count) is int and 0 <= count <= 128:
                 result[key] = count
@@ -218,7 +219,8 @@ def render_summary(value):
                 'unverified_link_candidates', 'recovery_link_candidates', 'variant_link_candidates',
                 'generated_link_candidates', 'link_android_candidates', 'link_linux_candidates',
                 'link_darwin_candidates', 'link_windows_candidates', 'link_aidl_name_candidates',
-                'link_second_arch_name_candidates'):
+                'link_second_arch_name_candidates', 'product_package_candidates',
+                'unverified_product_package_candidates'):
         if key in value:
             lines.append(f'- {key}: {value[key]}')
     for item in value.get('public_link_variants', []):
