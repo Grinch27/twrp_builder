@@ -3,20 +3,21 @@
   "run_id": 40456110345,
   "builder_commit": "405461dab80754a943ca056b4df6f102cf15069a",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "disk_free_mib": 39645,
-    "swap_free_mib": 15240,
-    "elapsed_seconds": 713.7,
-    "memory_available_mib": 14375,
-    "stage_elapsed_seconds": 14.1,
-    "log_bytes": 20215,
-    "load_1m": 3.53,
-    "log_idle_seconds": 0.1,
+    "log_idle_seconds": 21.7,
+    "memory_available_mib": 15061,
+    "stage_elapsed_seconds": 519.0,
+    "swap_free_mib": 15144,
+    "log_bytes": 42087,
+    "elapsed_seconds": 1218.6,
+    "disk_free_mib": 33703,
+    "load_1m": 1.6,
     "progress": {
       "kind": "ninja",
-      "completed": 152,
-      "total": 246,
-      "percent": 61.8
+      "completed": 383,
+      "total": 384,
+      "percent": 99.7
     },
     "stage_seconds": {
       "initialization": 0.091,
@@ -26,7 +27,51 @@
       "source_sync": 604.829,
       "checkout_verification": 80.555,
       "public_resources": 4.417,
-      "preflight": 6.808
+      "preflight": 6.808,
+      "compile": 510.986
     }
-  }
+  },
+  "categories": [
+    "MISSING_PACKAGE_INSTALLED_FILE"
+  ],
+  "public_locations": [
+    {
+      "path": "bootable/recovery/prebuilt/Android.mk",
+      "line": 445
+    },
+    {
+      "path": "system/sepolicy/Android.mk",
+      "line": 57
+    },
+    {
+      "path": "build/make/core/main.mk",
+      "line": 1437
+    },
+    {
+      "path": "platform_testing/build/tasks/continuous_instrumentation_tests.mk",
+      "line": 27
+    },
+    {
+      "path": "build/make/core/tasks/tools/package-modules.mk",
+      "line": 91
+    }
+  ],
+  "public_dependency_sources": [
+    {
+      "path": "build/soong/java/legacy_core_platform_api_usage.go",
+      "line": 79,
+      "dependencies": [
+        "DownloadProviderTests",
+        "TelecomUnitTests",
+        "TelephonyProviderTests"
+      ]
+    }
+  ],
+  "public_dependencies": [
+    "DownloadProviderTests",
+    "TelecomUnitTests",
+    "TelephonyProviderTests"
+  ],
+  "packaging_candidates": 9,
+  "unverified_packaging_candidates": 6
 }
