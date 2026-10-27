@@ -633,3 +633,11 @@ d8eb0d0运行40421578755仍有3个LINK_VARIANT_MISSING候选，固定常量表�
 本地已准备但未提交/启用新的加密诊断出口：仅编译失败时读取compile.log，小于等于4MiB保留全文，大于时仅保留首尾各2MiB；以现有收件公钥进行AES-256-GCM CMS和RSA-OAEP加密，拟议Artifact只保留1天。原始失败状态保留；明文仅在临时本地目录，不上传源文件、私钥或明文日志，不创建Release。现有收件公钥和本地私钥已通过仅含合成数据的实际加解密验证。新增用例验证窗口、符号链接/FIFO/空文件拒绝、实际CMS解密和禁止覆盖；合并本地套件120项117通过、3项原环境限制跳过；拟议YAML解析和差异检查通过。该出口受AGENTS的external private-log storage separate approval约束，等待用户明确批准；本次续行要求没有被解释为批准新的日志外存。
 
 当前已提交规范为每轮首查静默20分钟，之后每60秒一次；Native/main、CPU数加一、NINJA_ARGS=-v、585原pin、publish=false不变。后续若日志出口获批，应先按新main复核补丁，再用受限密文诊断获取具体缺项后继续修复；不应以当前未识别的3个名字猜测或禁用检查。
+
+## 2026-10-27 — 拒绝失败日志Artifact，继续公开生成名诊断
+
+用户明确表示不需要失败日志首尾各最多2MiB加密后上传Artifact。本轮使用新的干净main检出，未带入或提交此前本地待批的脚本、测试、工作流步骤；该出口保持未启用，并将选择写入AGENTS与README。成功镜像的现有加密交付不受此决定影响。监控仍为每轮启动后静默20分钟，再每60秒检查。
+
+此前固定后缀诊断没有覆盖版本/架构组合及前缀构造。本轮完整读取锁定TeamWin Soong c6c059ab28c8c67921c0838a994bb70d53594aa7的cc/vndk_prebuilt.go、cc/snapshot_prebuilt.go和android/prebuilt.go，以及锁定Make core/base_rules.mk：VNDK采用.vndk.<version>[.<arch>][.binder32]；快照采用.vendor/recovery加_shared/_static等、版本及架构；另有prebuilt_和host_cross_公开前缀。新增诊断仅在实际锁定Git blob含精确构造代码时解析这些已知形式，再独立证明公开基础名字；输出仅含公开基础名和固定family类别，不输出原始版本、架构、父模块、未知名字或原始日志。发布端分别重读对应公开构造与字面量证据。另加入固定OS/命名形态的有界计数，供未知名字仍未识别时定位类别；不改变依赖判定或源码实现。
+
+合成Git回归覆盖VNDK、版本化快照、prebuilt与host-cross基础名通过，未知基础名拒绝、构造证据排除后的发布端拒绝，以及不导出原版本/架构。本地118项115通过、3项为原有/proc及Go环境限制跳过；Shell、YAML与差异检查通过。585源码pin、私有输入、CPU数加一、NINJA_ARGS=-v、Native/main、publish=false及镜像验收不变。当前3个真实缺项仍未确认，这次仅验证更完整的安全诊断，下一轮真实构建决定后续修复。

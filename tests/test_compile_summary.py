@@ -180,6 +180,76 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertEqual(result['public_dependencies'], [])
         self.assertNotIn('private_parent', json.dumps(result))
 
+    def test_versioned_snapshot_names_require_public_constructor_and_base(self):
+        checker = ('define link-type-missing\ndefine link-type-error\n'
+                   '$(error exiting from previous errors)\n')
+        manifest = self.commit_make_checker(checker)
+        log = ('build/make/core/main.mk:1118: error: exiting from previous errors\n'
+               'generated.mk:1: error: parent missing libpublic.vndk.29.arm64 '
+               '(SHARED_LIBRARIES android-arm64)\n'
+               'generated.mk:2: error: parent missing libpublic.vendor_static.30.arm64 '
+               '(STATIC_LIBRARIES android-arm64)\n'
+               'generated.mk:3: error: parent missing private_name.vndk.29.arm64 '
+               '(SHARED_LIBRARIES android-arm64)\n'
+               'generated.mk:4: error: parent missing prebuilt_libpublic '
+               '(STATIC_LIBRARIES linux-x86_64)\n'
+               'generated.mk:5: error: parent missing host_cross_libpublic '
+               '(SHARED_LIBRARIES windows-x86_64)\n')
+        self.assertEqual(summarize(log, manifest, self.source)['public_dependencies'], [])
+        soong = self.source / 'build/soong'
+        (soong / 'cc').mkdir(parents=True)
+        (soong / 'android').mkdir()
+        (soong / 'android/prebuilt.go').write_text('return "prebuilt_" + name\n')
+        (soong / 'cc/androidmk.go').write_text('var VendorSuffix = ".vendor"\n')
+        (soong / 'cc/vndk_prebuilt.go').write_text(
+            'vndkSuffix = ".vndk."\nbinder32Suffix = ".binder32"\n'
+            'return name + p.NameSuffix()\nsuffix := p.version()\n'
+            'suffix += "." + p.arch()\nreturn vndkSuffix + suffix\n')
+        (soong / 'cc/snapshot_prebuilt.go').write_text(
+            'return name + p.NameSuffix()\nreturn moduleSuffix + versionSuffix\n'
+            'return getSnapshotNameSuffix(p.moduleSuffix(), p.version(), p.arch())\n'
+            'p.baseProperties.ModuleSuffix = image.moduleNameSuffix() + moduleSuffix\n'
+            + ''.join('snapshot' + kind.title() + 'Suffix = "_' + kind + '."\n'
+                      for kind in ('header', 'shared', 'static', 'binary', 'object')))
+        def git(*args):
+            return subprocess.check_output(['git', '-C', str(soong), *args],
+                                           text=True, stderr=subprocess.DEVNULL).strip()
+        git('init', '--quiet')
+        git('config', 'user.name', 'test')
+        git('config', 'user.email', 'test@example.invalid')
+        git('add', '.')
+        git('commit', '--quiet', '-m', 'public versioned name constructors')
+        manifest = manifest.replace(b'</manifest>', ('<project name="platform/build/soong" '
+            'path="build/soong" revision="' + git('rev-parse', 'HEAD') + '"/></manifest>').encode())
+        make = self.source / 'build/make'
+        command = ['git', '-C', str(make)]
+        old_revision = subprocess.check_output(command + ['rev-parse', 'HEAD']).strip()
+        (make / 'core/base_rules.mk').write_text('my_register_name := host_cross_$(LOCAL_MODULE)\n')
+        subprocess.run(command + ['add', '.'], check=True, capture_output=True)
+        subprocess.run(command + ['commit', '--quiet', '-m', 'public host-cross prefix'],
+                       check=True, capture_output=True)
+        manifest = manifest.replace(old_revision, subprocess.check_output(command + ['rev-parse', 'HEAD']).strip())
+        result = summarize(log, manifest, self.source)
+        expected = [{'base': 'libpublic', 'family': 'host_cross'},
+                    {'base': 'libpublic', 'family': 'prebuilt'},
+                    {'base': 'libpublic', 'family': 'vendor_snapshot'},
+                    {'base': 'libpublic', 'family': 'vndk'}]
+        self.assertEqual(result['public_dependencies'], ['libpublic'])
+        self.assertEqual(result['public_generated_links'], expected)
+        self.assertEqual(result['unverified_link_candidates'], 1)
+        self.assertEqual(result['link_android_candidates'], 3)
+        self.assertEqual(result['link_windows_candidates'], 1)
+        self.assertEqual(result['link_linux_candidates'], 1)
+        value = record({'stage': 'compile', 'exit_code': 1}, 42, 'a' * 40,
+                       result, self.source, manifest)
+        self.assertEqual(value['public_generated_links'], expected)
+        self.assertNotIn('private_name', json.dumps(value))
+        self.assertNotIn('29.arm64', json.dumps(value))
+        excluded = {'build/soong/cc/vndk_prebuilt.go', 'build/soong/cc/snapshot_prebuilt.go',
+                    'build/soong/android/prebuilt.go', 'build/make/core/base_rules.mk'}
+        self.assertNotIn('public_generated_links', record({'stage': 'compile'}, 42, 'a' * 40,
+                        result, self.source, manifest, excluded))
+
     def test_literal_search_does_not_exhaust_file_budget_on_substring_decoys(self):
         (self.project / 'Android.bp').write_text('cc_library { name: "demo" }\n')
         for index in range(40):

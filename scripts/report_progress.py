@@ -22,6 +22,7 @@ import xml.etree.ElementTree as ET
 
 from source_inputs import NoRedirect, SHA, compose_manifest, load_lock, relative_path
 from summarize_compile_failure import RULES, has_public_dependency, public_file, public_recovery_suffix, public_variant_suffixes
+from summarize_compile_failure import public_generated_families
 from summarize_repo_failure import RULES as REPO_RULES
 from build_telemetry import STAGES, read_json, sanitize_metrics
 
@@ -135,9 +136,21 @@ def record(status, run_id, commit, summary=None, source=None, manifest=None, exc
                     variants.append({'base': item['base'], 'suffix': item['suffix']})
             if variants:
                 result['public_link_variants'] = variants
+        if summary.get('public_generated_links'):
+            families = public_generated_families(source, projects, excluded)
+            generated = []
+            for item in summary['public_generated_links'][:128]:
+                if (isinstance(item, dict) and item.get('base') in result['public_dependencies']
+                        and item.get('family') in families):
+                    generated.append({'base': item['base'], 'family': item['family']})
+            if generated:
+                result['public_generated_links'] = generated
         for key in ('required_candidates', 'unverified_required_candidates',
                     'host_cross_required_candidates', 'link_candidates',
-                    'unverified_link_candidates', 'recovery_link_candidates', 'variant_link_candidates'):
+                    'unverified_link_candidates', 'recovery_link_candidates', 'variant_link_candidates',
+                    'generated_link_candidates', 'link_android_candidates', 'link_linux_candidates',
+                    'link_darwin_candidates', 'link_windows_candidates', 'link_aidl_name_candidates',
+                    'link_second_arch_name_candidates'):
             count = summary.get(key)
             if type(count) is int and 0 <= count <= 128:
                 result[key] = count
@@ -162,11 +175,16 @@ def render_summary(value):
             lines.append(f"- {key}: " + ', '.join('`' + item + '`' for item in value[key]))
     for key in ('required_candidates', 'unverified_required_candidates',
                 'host_cross_required_candidates', 'link_candidates',
-                'unverified_link_candidates', 'recovery_link_candidates', 'variant_link_candidates'):
+                'unverified_link_candidates', 'recovery_link_candidates', 'variant_link_candidates',
+                'generated_link_candidates', 'link_android_candidates', 'link_linux_candidates',
+                'link_darwin_candidates', 'link_windows_candidates', 'link_aidl_name_candidates',
+                'link_second_arch_name_candidates'):
         if key in value:
             lines.append(f'- {key}: {value[key]}')
     for item in value.get('public_link_variants', []):
         lines.append(f"- Public variant: `{item['base']}` + `{item['suffix']}`")
+    for item in value.get('public_generated_links', []):
+        lines.append(f"- Public generated name: `{item['base']}`; family: `{item['family']}`")
     for location in value.get('public_locations', []):
         lines.append(f"- Public source: `{location['path']}:{location['line']}`")
     for source in value.get('public_dependency_sources', []):

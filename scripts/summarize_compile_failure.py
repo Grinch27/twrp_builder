@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Requirements: classify a failed compile without exporting private log text.
 # Ambiguity: unknown diagnostics remain unclassified; no guessed source fixes.
-# Research: public module assignments and literal Recovery relink file names.
+# Research: pinned public name constructors and exact module/relink literals.
 # Optimization: bounded log fragments, 64 locations and a 45-second literal search.
 # Risks: private overlay contents, paths, identifiers or credentials in errors.
 # Validation: fixed categories and Git-confirmed public metadata; synthetic tests.
@@ -201,6 +201,53 @@ def public_recovery_suffix(source, projects, excluded):
     return '.recovery' in public_variant_suffixes(source, projects, excluded)
 
 
+def public_generated_families(source, projects, excluded):
+    """Verify public name constructors without exporting version or device values."""
+    families = set()
+    vndk = public_file(source, 'build/soong/cc/vndk_prebuilt.go', projects, excluded)
+    if (vndk is not None and re.search(r'\bvndkSuffix\s*=\s*"\.vndk\."', vndk)
+            and re.search(r'\bbinder32Suffix\s*=\s*"\.binder32"', vndk)
+            and all(marker in vndk for marker in ('return name + p.NameSuffix()',
+                'suffix := p.version()', 'suffix += "." + p.arch()', 'return vndkSuffix + suffix'))):
+        families.add('vndk')
+    snapshot = public_file(source, 'build/soong/cc/snapshot_prebuilt.go', projects, excluded)
+    if (snapshot is not None and all(marker in snapshot for marker in (
+            'return name + p.NameSuffix()', 'return moduleSuffix + versionSuffix',
+            'return getSnapshotNameSuffix(p.moduleSuffix(), p.version(), p.arch())',
+            'p.baseProperties.ModuleSuffix = image.moduleNameSuffix() + moduleSuffix'))):
+        suffixes = public_variant_suffixes(source, projects, excluded)
+        if '.vendor' in suffixes:
+            families.add('vendor_snapshot')
+        if '.recovery' in suffixes:
+            families.add('recovery_snapshot')
+        for kind in ('header', 'shared', 'static', 'binary', 'object'):
+            if not re.search(r'\bsnapshot' + kind.title() + r'Suffix\s*=\s*"_' + kind + r'\."', snapshot):
+                families.discard('vendor_snapshot')
+                families.discard('recovery_snapshot')
+    prebuilt = public_file(source, 'build/soong/android/prebuilt.go', projects, excluded)
+    if prebuilt is not None and 'return "prebuilt_" + name' in prebuilt:
+        families.add('prebuilt')
+    make = public_file(source, 'build/make/core/base_rules.mk', projects, excluded)
+    if make is not None and 'my_register_name := host_cross_$(LOCAL_MODULE)' in make:
+        families.add('host_cross')
+    return families
+
+
+def generated_link_base(name, families):
+    """Decode only the checked public constructors; return no private suffix data."""
+    tail = r'[0-9]{1,3}(?:\.(?:arm64|arm|x86_64|x86|mips64|mips))?'
+    match = re.fullmatch(r'([A-Za-z0-9_.@+-]{1,100})\.vndk\.' + tail + r'(?:\.binder32)?', name)
+    if match and 'vndk' in families:
+        return match[1], 'vndk'
+    match = re.fullmatch(r'([A-Za-z0-9_.@+-]{1,100})\.(vendor|recovery)_(?:header|shared|static|binary|object)\.' + tail, name)
+    if match and match[2] + '_snapshot' in families:
+        return match[1], match[2] + '_snapshot'
+    for family, prefix in (('prebuilt', 'prebuilt_'), ('host_cross', 'host_cross_')):
+        if family in families and name.startswith(prefix) and NAME.fullmatch(name[len(prefix):]):
+            return name[len(prefix):], family
+    return None
+
+
 def dependency_names(line):
     """Recognize quoted Blueprint names and Soong's bare comma-separated list."""
     result = set(DEPENDENCY.findall(line))
@@ -355,12 +402,13 @@ def summarize(text, manifest, source, excluded=()):
     # Require the actual pinned Make link checker, not a log path or a
     # generic "missing" message alone. Public names still need exact Git proof.
     link_categories = {'LINK_TYPE_INCOMPATIBLE', 'LINK_VARIANT_MISSING'}
-    link_candidates, recovery_bases, variant_names = set(), set(), {}
+    link_candidates, recovery_bases, variant_names, generated_names = set(), set(), {}, {}
     if checker is not None and all(marker in checker for marker in
                                    ('define link-type-missing', 'define link-type-error',
                                     '$(error exiting from previous errors)')):
         link_candidates.update(LINK_VARIANT.findall(text)[:128])
         link_candidates.update(LINK_INCOMPATIBLE.findall(text)[:128])
+        link_candidates = set(sorted(link_candidates)[:128])
         candidates.update(link_candidates)
         suffixes = public_variant_suffixes(source, projects, excluded) if link_candidates else set()
         for name in sorted(link_candidates):
@@ -372,6 +420,12 @@ def summarize(text, manifest, source, excluded=()):
                     if suffix == '.recovery':
                         recovery_bases.add(base)
                     break
+        families = public_generated_families(source, projects, excluded) if link_candidates else set()
+        for name in sorted(link_candidates):
+            decoded = generated_link_base(name, families)
+            if decoded:
+                generated_names[name] = decoded
+                candidates.add(decoded[0])
     else:
         categories = [name for name in categories if name not in link_categories]
     cross_prefix_verified = False
@@ -392,8 +446,20 @@ def summarize(text, manifest, source, excluded=()):
         bases = recovery_bases & verified
         result['link_candidates'] = min(len(link_candidates), 128)
         confirmed_variants = {name: item for name, item in variant_names.items() if item[0] in verified}
+        confirmed_generated = {name: item for name, item in generated_names.items() if item[0] in verified}
         result['unverified_link_candidates'] = min(len(link_candidates - verified
-            - confirmed_variants.keys()), 128)
+            - confirmed_variants.keys() - confirmed_generated.keys()), 128)
+        result['generated_link_candidates'] = min(len(generated_names), 128)
+        for platform in ('android', 'linux', 'darwin', 'windows'):
+            names = re.findall(r'\bmissing ([A-Za-z0-9_.@+-]{1,128}) \([A-Z_]{2,32} '
+                               + platform + r'-[A-Za-z0-9_.+-]+\)', text)
+            result['link_' + platform + '_candidates'] = min(len(set(names)), 128)
+        result['link_aidl_name_candidates'] = sum(bool(re.fullmatch(
+            r'.+-V[0-9]{1,3}-(?:ndk_platform|ndk|cpp|java)', name)) for name in link_candidates)
+        result['link_second_arch_name_candidates'] = sum(name.endswith(('_32', '_64')) for name in link_candidates)
+        if confirmed_generated:
+            result['public_generated_links'] = [{'base': base, 'family': family}
+                for base, family in sorted(set(confirmed_generated.values()))[:128]]
         result['variant_link_candidates'] = min(len(variant_names), 128)
         result['recovery_link_candidates'] = min(len(recovery_bases), 128)
         if confirmed_variants:
