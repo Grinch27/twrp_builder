@@ -3,20 +3,21 @@
   "run_id": 40445484992,
   "builder_commit": "32012157e9f393c63d8ac86faa773f01c2e4ce11",
   "stage": "compile",
+  "exit_code": 1,
   "metrics": {
-    "load_1m": 2.92,
-    "log_bytes": 5501,
-    "disk_free_mib": 39310,
-    "log_idle_seconds": 0.1,
-    "swap_free_mib": 15243,
-    "stage_elapsed_seconds": 5.9,
-    "memory_available_mib": 14370,
-    "elapsed_seconds": 714.2,
+    "swap_free_mib": 15143,
+    "elapsed_seconds": 1247.8,
+    "stage_elapsed_seconds": 539.5,
+    "disk_free_mib": 33213,
+    "log_bytes": 44010,
+    "log_idle_seconds": 23.8,
+    "load_1m": 1.35,
+    "memory_available_mib": 14976,
     "progress": {
       "kind": "ninja",
-      "completed": 24,
-      "total": 246,
-      "percent": 9.8
+      "completed": 382,
+      "total": 383,
+      "percent": 99.7
     },
     "stage_seconds": {
       "initialization": 0.075,
@@ -26,7 +27,156 @@
       "source_sync": 611.599,
       "checkout_verification": 80.824,
       "public_resources": 5.554,
-      "preflight": 6.818
+      "preflight": 6.818,
+      "compile": 525.744
     }
-  }
+  },
+  "categories": [
+    "LINK_VARIANT_MISSING"
+  ],
+  "public_locations": [
+    {
+      "path": "bootable/recovery/prebuilt/Android.mk",
+      "line": 445
+    },
+    {
+      "path": "system/sepolicy/Android.mk",
+      "line": 57
+    },
+    {
+      "path": "build/make/core/main.mk",
+      "line": 1118
+    }
+  ],
+  "public_dependency_sources": [
+    {
+      "path": "cts/tests/tests/neuralnetworks/benchmark/Android.mk",
+      "line": 19,
+      "dependencies": [
+        "CtsNNAPIBenchmarkTestCases",
+        "libnnbenchmark_jni"
+      ]
+    },
+    {
+      "path": "cts/tests/tests/renderscript/Android.mk",
+      "line": 20,
+      "dependencies": [
+        "CtsRenderscriptTestCases"
+      ]
+    },
+    {
+      "path": "frameworks/rs/tests/java_api/Refocus/Android.mk",
+      "line": 27,
+      "dependencies": [
+        "Refocus"
+      ]
+    },
+    {
+      "path": "test/vts-testcase/hal/neuralnetworks/V1_2/benchmark/java/Android.mk",
+      "line": 19,
+      "dependencies": [
+        "VtsHalNeuralnetworksV1_2BenchmarkTestCases"
+      ]
+    },
+    {
+      "path": "test/vts-testcase/hal/neuralnetworks/V1_3/benchmark/java/Android.mk",
+      "line": 19,
+      "dependencies": [
+        "VtsHalNeuralnetworksV1_3BenchmarkTestCases"
+      ]
+    }
+  ],
+  "public_dependencies": [
+    "libnnbenchmark_jni"
+  ],
+  "public_link_contexts": [
+    {
+      "parent_class": "APPS",
+      "dependency_class": "JAVA_LIBRARIES",
+      "parent_arch": "arm64",
+      "dependency_arch": "arm64",
+      "parent": "CtsNNAPIBenchmarkTestCases"
+    },
+    {
+      "parent_class": "APPS",
+      "dependency_class": "SHARED_LIBRARIES",
+      "parent_arch": "arm64",
+      "dependency_arch": "arm64",
+      "parent": "CtsNNAPIBenchmarkTestCases"
+    },
+    {
+      "parent_class": "APPS",
+      "dependency_class": "SHARED_LIBRARIES",
+      "parent_arch": "arm",
+      "dependency_arch": "arm",
+      "parent": "CtsNNAPIBenchmarkTestCases"
+    },
+    {
+      "parent_class": "APPS",
+      "dependency_class": "JAVA_LIBRARIES",
+      "parent_arch": "arm64",
+      "dependency_arch": "arm64",
+      "parent": "CtsRenderscriptTestCases"
+    },
+    {
+      "parent_class": "APPS",
+      "dependency_class": "JAVA_LIBRARIES",
+      "parent_arch": "arm64",
+      "dependency_arch": "arm64",
+      "parent": "Refocus"
+    },
+    {
+      "parent_class": "APPS",
+      "dependency_class": "JAVA_LIBRARIES",
+      "parent_arch": "arm64",
+      "dependency_arch": "arm64",
+      "parent": "VtsHalNeuralnetworksV1_2BenchmarkTestCases"
+    },
+    {
+      "parent_class": "APPS",
+      "dependency_class": "SHARED_LIBRARIES",
+      "parent_arch": "arm64",
+      "dependency_arch": "arm64",
+      "parent": "VtsHalNeuralnetworksV1_2BenchmarkTestCases"
+    },
+    {
+      "parent_class": "APPS",
+      "dependency_class": "SHARED_LIBRARIES",
+      "parent_arch": "arm",
+      "dependency_arch": "arm",
+      "parent": "VtsHalNeuralnetworksV1_2BenchmarkTestCases"
+    },
+    {
+      "parent_class": "APPS",
+      "dependency_class": "JAVA_LIBRARIES",
+      "parent_arch": "arm64",
+      "dependency_arch": "arm64",
+      "parent": "VtsHalNeuralnetworksV1_3BenchmarkTestCases"
+    },
+    {
+      "parent_class": "APPS",
+      "dependency_class": "SHARED_LIBRARIES",
+      "parent_arch": "arm64",
+      "dependency_arch": "arm64",
+      "parent": "VtsHalNeuralnetworksV1_3BenchmarkTestCases"
+    },
+    {
+      "parent_class": "APPS",
+      "dependency_class": "SHARED_LIBRARIES",
+      "parent_arch": "arm",
+      "dependency_arch": "arm",
+      "parent": "VtsHalNeuralnetworksV1_3BenchmarkTestCases"
+    }
+  ],
+  "link_candidates": 3,
+  "unverified_link_candidates": 2,
+  "recovery_link_candidates": 0,
+  "variant_link_candidates": 0,
+  "generated_link_candidates": 0,
+  "link_android_candidates": 3,
+  "link_linux_candidates": 0,
+  "link_darwin_candidates": 0,
+  "link_windows_candidates": 0,
+  "link_aidl_name_candidates": 0,
+  "link_second_arch_name_candidates": 0
 }
