@@ -665,3 +665,17 @@ e227736运行40440760858的静态检查（含actionlint与公开同步smoke）�
 按锁定TeamWin Make 1b692e2的core/package_internal.mk:20–46核验，应用使用LOCAL_PACKAGE_NAME并由构建系统赋给LOCAL_MODULE、class设为APPS；core/java.mk与core/install_jni_libs_internal.mk分别使用LOCAL_JAVA_LIBRARIES和LOCAL_JNI_SHARED_LIBRARIES。原字面量证明遗漏了这三项明确的模块变量。本轮仅将其纳入既有完整token/续行赋值规则，继续拒绝普通LOCAL_SETTING、子串及非Make文件中的裸token。复用原模块扫描额外记录Make中直接字面量LOCAL_MODULE/LOCAL_PACKAGE_NAME的本地位置；公开Blueprint catalog内容和18788名字范围不变，不执行Make表达式、不推断生成名、命名空间或可用性。
 
 121项本地测试118通过、3项为已有环境限制跳过；新合成用例证明APPS名称、Java与JNI依赖能够分别由公开赋值核验，普通设置中同名、子串、工作树改写不能授权新输出。Shell、YAML与差异检查通过。下一轮用于验证真实APPS缺项是否由这一遗漏遮蔽。所有源码pin、Native/main非发布、无失败日志上传、成功镜像加密及20分钟首查/60秒后续查询约束不变。
+
+## 2026-10-27 — 补齐实际NN基准缺项与公开直接资源闭包至588项
+
+3201215运行40445484992静态检查、同步和预检通过，compile525.744秒后仍失败。安全摘要已独立证明真实缺项libnnbenchmark_jni；调用方为CtsNNAPIBenchmarkTestCases及两个VTS NN基准应用，另外两个Java缺项涉及这些应用及CtsRenderscriptTestCases/Refocus。没有输出其余未知名字或原始日志。
+
+直接读取锁定CTS tests/tests/neuralnetworks/benchmark/Android.mk，确认JNI libnnbenchmark_jni、静态Java NeuralNetworksApiBenchmark_Lib及test/mlts/models/assets引用；锁定CTS RenderScript和frameworks/rs Refocus的Make声明都引用xmp_toolkit。按同一官方android-12.1.0_r4清单核验并获取三个完整项目：
+
+- platform/test/mlts/benchmark，test/mlts/benchmark@3503295ec1ad7207fb04551dbeb9ea9d1863a403：真实提供NeuralNetworksApiBenchmark_Lib、libnnbenchmark_jni及相关JNI/native测试；149文件、889976 bytes。
+- platform/test/mlts/models，test/mlts/models@d3efb82b5b346cbe5f63607f946b016f23db28b8：保留上述公开调用方直接引用的完整模型资源；1787文件、310369263 bytes，不替换设备镜像或十项私有输入。
+- platform/external/xmp_toolkit，external/xmp_toolkit@0e19b5cebd0daef15c0dd25a52971e3313d424f6：XMPCore/Android.bp提供xmp_toolkit Java库；58文件、506475 bytes。
+
+检查了全部公开Blueprint/Make定义及直接引用；已识别普通Blueprint依赖在既有公开模块集合或本批定义中有提供方。这不证明生成变体或全部Make解析可用。另按锁定core/java_common.mk的my_link_deps定义，将LOCAL_STATIC_JAVA_LIBRARIES纳入既有完整token赋值证明，避免静态Java缺项继续被摘要遮蔽；无源码删除、测试禁用或缺项绕过。
+
+121项本地测试118通过、3项为原环境限制跳过；Shell、YAML和差异检查通过。严格本地组合实际manifest得到588项目，原282项、既有303个补充项目SHA、十项输入、设备/目标和成功镜像验收不变。当前仅新增3个同标签完整项目，306公开补充项目合计588。Native/main、CPU数加一、NINJA_ARGS=-v、publish=false、无失败日志Artifact和成功镜像加密交付不变；下一轮仍须完整编译及静态验收，首查静默20分钟后每60秒查询。

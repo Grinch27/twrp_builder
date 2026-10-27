@@ -326,6 +326,7 @@ class CompileSummaryTests(unittest.TestCase):
     def test_make_app_names_and_dependencies_use_exact_public_assignments(self):
         make = ('LOCAL_PACKAGE_NAME := PublicApp\n'
                 'LOCAL_JAVA_LIBRARIES := public_java\n'
+                'LOCAL_STATIC_JAVA_LIBRARIES := public_static\n'
                 'LOCAL_JNI_SHARED_LIBRARIES := public_jni\n'
                 'LOCAL_SETTING := private_unrelated\n')
         (self.project / 'App.mk').write_text(make)
@@ -341,11 +342,12 @@ class CompileSummaryTests(unittest.TestCase):
         self.assertNotIn('PublicApp', catalog['public_module_names'])
         log = ('build/make/core/main.mk:1118: error: exiting from previous errors\n'
                'PublicApp (APPS android-arm64) missing public_java (JAVA_LIBRARIES android-arm64)\n'
+               'PublicApp (APPS android-arm64) missing public_static (JAVA_LIBRARIES android-arm64)\n'
                'PublicApp (APPS android-arm64) missing public_jni (SHARED_LIBRARIES android-arm64)\n'
                'PublicApp (APPS android-arm) missing private_unrelated (SHARED_LIBRARIES android-arm)\n')
         result = summarize(log, manifest, self.source, module_index=index)
         value = record({'stage': 'compile'}, 42, 'a' * 40, result, self.source, manifest)
-        self.assertEqual(value['public_dependencies'], ['public_java', 'public_jni'])
+        self.assertEqual(value['public_dependencies'], ['public_java', 'public_jni', 'public_static'])
         self.assertTrue(all(c['parent'] == 'PublicApp' for c in value['public_link_contexts']))
         self.assertNotIn('private_unrelated', json.dumps(value))
         (self.project / 'App.mk').write_text(make.replace('public_java', 'private_worktree'))

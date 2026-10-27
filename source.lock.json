@@ -1961,6 +1961,24 @@
       "path": "packages/modules/vndk",
       "revision": "2f357bae4dd7fcf6f1d79b0ff283579d29ac65a3",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/test/mlts/benchmark",
+      "path": "test/mlts/benchmark",
+      "revision": "3503295ec1ad7207fb04551dbeb9ea9d1863a403",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/test/mlts/models",
+      "path": "test/mlts/models",
+      "revision": "d3efb82b5b346cbe5f63607f946b016f23db28b8",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/xmp_toolkit",
+      "path": "external/xmp_toolkit",
+      "revision": "0e19b5cebd0daef15c0dd25a52971e3313d424f6",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {
