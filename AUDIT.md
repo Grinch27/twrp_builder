@@ -796,3 +796,11 @@ be48ec2运行40473795328的静态检查、608项同步/身份校验和预检通�
 已识别普通字面量模块引用均有既有或本批提供方；SDK的android.test.*.stubs及framework-wifi/framework-connectivity.impl分别仍须实际构建验证。其公开基础名均非prebuilts-only，已读取同一锁定Soong java/sdk_library.go确认.stubs和.impl是SDK库构造，但不据此替换依赖或声明变体可用。新增platform_tests明确模块清单的完整token证明及回归，发布端继续独立读取公开Git，普通变量仍拒绝。所有实际测试及安装文件校验保留。
 
 本地123项120通过、3项为既有环境限制跳过；Shell、YAML与差异检查通过。实际原归档manifest严格组合615项通过，原609项目pin及十项输入保持。333公开补充项目加282原项目；工作流仅同步项目数注释，Native/main、CPU数加一、NINJA_ARGS=-v、publish=false、当前收件密钥和成功镜像静态验收不变。失败日志Artifact关闭，启动后静默20分钟再每60秒查询。
+
+## 2026-10-27 — 首次完整Native成品构建成功，收尾恢复手动入口
+
+成功基线a01a8089fab3cea8876908b85f68b483ae3e0452，Native Run 40480759870 attempt 1（https://github.com/Grinch27/twrp_builder/actions/runs/40480759870）已整体完成success。runner-image前置检查成功；原生编译与静态验收步骤、加密上传、清理和Complete job均success。最终受限记录stage=complete、exit_code=0；完整615项同步和身份验证通过，compile3542.287秒、static_validation1.640秒、原生会话4116.4秒。此前普通模块及SDK生成名的真实解析已随该完整构建通过，没有使用缺依赖绕过、删除测试或替代镜像。
+
+实际加密Artifact：twrp-selene-native-sealed-40480759870-1，ID12727671032，67123978 bytes，未过期，保留至2026-11-03T10:37:44Z；上传日志给出下载地址https://github.com/Grinch27/twrp_builder/actions/runs/40480759870/artifacts/12727671032。publish=false，明文Artifact和Release步骤均skipped。对应本轮私钥已保存于用户私人交付材料，仓库仅含公开收件证书。未下载、扫描或额外核验镜像/校验和/证书/DEX；确认依据为真实工作流结果、既有静态验收步骤和实际加密Artifact元数据。设备启动、触控、FBE和备份恢复保持NOT_TESTED，未访问设备或分区。
+
+按此前“成功交付后恢复仅手动构建”的约定，移除Native main push的临时完整构建标记条件；完整构建仅接受main上的workflow_dispatch。保留[gpt-work]提交命名习惯、push/PR静态检查、runner-image依赖、全部uses/权限、publish=false和Docker暂停状态。README与AGENTS记录成功基线及解密方法，不改变源图、镜像生成或加密程序。本次文档/触发条件收尾由既有静态CI验证，不重新构建镜像；本地环境当前不可用，不声称本地运行检查。

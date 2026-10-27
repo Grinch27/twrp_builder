@@ -2,7 +2,7 @@
 
 当前集中使用 GitHub Actions 的 Ubuntu 原生路线，为 Xiaomi selene 构建 TWRP 12.1 `bootimage`。目标固件保持 China MIUI `V14.0.4.0.TKUCNXM`。
 
-本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**当前尚无本项目完整编译成功或设备验收的证明。** 检查结果见 [AUDIT.md](AUDIT.md)。
+本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**已完成一次完整原生构建、静态验收与加密交付：[成功运行 40480759870](https://github.com/Grinch27/twrp_builder/actions/runs/40480759870)。设备实机功能尚未验证。** 检查结果见 [AUDIT.md](AUDIT.md)。
 
 ## 构建方式
 
@@ -25,7 +25,7 @@ flowchart TD
 | 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j"$(($(nproc) + 1))"`，`NINJA_ARGS=-v` |
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度为可用 CPU 数加一。原生路线使用 Runner 可用内存并新增 12 GiB Swap，Docker 路线另限 14 GiB |
 | 磁盘检查 | 清理后至少 62 GiB，其中新增 Swap 占 12 GiB；同步前保留至少 50 GiB，编译前至少 18 GiB；不足立即失败 |
-| 自动触发 | 仅原生入口通过 push / PR 运行静态检查和公开同步测试；完整编译接受 main 的 workflow_dispatch。本次持续修复期间，原生路线另接受精确 `[selene-native-build-20261022] ` 或 `[gpt-work] ` 前缀；成功交付后恢复仅手动构建。Docker 入口仅保留 workflow_dispatch |
+| 自动触发 | 仅原生入口通过 push / PR 运行静态检查和公开同步测试；完整编译接受 main 的 workflow_dispatch。持续修复已完成，完整编译恢复仅 main 的手动入口；提交前缀不再触发完整编译。Docker 入口仅保留 workflow_dispatch |
 | 唯一手动输入 | `publish=false`；设为 true 明确允许公开镜像、静态报告和校验和 |
 
 源码预编译 JDK、Clang 等从锁定上游重新同步；不克隆整个 7.44 GiB Git 归档，不回放旧 `out`、Soong 测试禁用、稀疏片段或 `ALLOW_MISSING_DEPENDENCIES`。归档内 18 个 Release 大文件不作为这条干净路线的下载入口。
@@ -34,9 +34,22 @@ flowchart TD
 
 后续补齐同版本 `tools/tradefederation/prebuilts@2a5fd21caf0d161ef6fc2efec1fadf2f31986039`，其原始 Java import/filegroup/JAR 提供两个缺失模块。285 项运行同步和校验通过后，Soong 报告下一组 DEQP、Python 和 VNDK 缺项；已按公开提供方及其直接声明的依赖补齐，实际状态以 [AUDIT.md](AUDIT.md) 的运行证据为准。2026-10-22 用户明确要求持续修正、构建直至得到成品，因此每次失败均保留真实失败状态，再审查和修正后继续尝试，不再将旧的一轮停止约定作为暂停理由。
 
-298 项运行完成完整同步和预检后，Soong 继续报告 Mockito、Objenesis、Google Java Format、Connected Apps SDK、dexlib2 与 modules-utils 缺项。随后补齐这些提供方和 Robolectric/Car 直接引用的同版本项目；326 项运行继续报告 Rust 缺项，363 项运行继续报告 ICU 测试引用的 `junit-params`。首次原生 364 项运行在 Ubuntu 26.04 通过官方旧 ABI 包安装、完整同步与预检，随后报告另外八个缺失依赖；375 项运行继续报告 benchmark、libusb 和 pybind11 头文件缺项，378 项运行报告 CTS 的 `trebuchet-core` 缺项。383 项运行仍在 Soong 因 libtinyalsa、libvixl、libvixld、server_configurable_flags 未定义而失败。386 项运行继续报告 Bionic 的 libjemalloc5 缺项。387 项运行继续报告 fontTools 缺项。388 项补齐同版本 external/fonttools 后，最新运行继续报告 Skia 和 simpleperf 缺项。397 项补齐其六个完整提供方、Skia 直接引用的 harfbuzz_ng，以及 SDK 库默认配置引用的 apifinder 和后者直接引用的 cmdline-tools 后，实际运行继续报告 libFLAC 缺项。随后沿锁定 frameworks/av 的 314 份 Blueprint 直接引用及其传递依赖，补齐 26 个同版本完整项目，合计 423 项；其中仅 libFLAC 是该轮摘要的实际缺项，其余来自公开依赖预检。423 项运行又报告 WebRTC 的 libopus 未定义，补齐同版本完整 external/libopus 后合计 424 项；该轮又报告 libbrillo 的 libcurl 未定义，锁定完整 external/curl 后合计 425 项；该轮又报告 ADB 的两个 Open Screen 模块未定义，补齐完整 external/openscreen 后合计 426 项；该轮又报告 Conscrypt 的 caliper-api-target 未定义，此前补齐 Caliper 及五个直接或传递引用提供方，合计 432 项。随后主线逐批补齐网络工具、Minikin、ART、Java、PDF/NFC 和 Rust 提供方至 467 项；最新实际构建报告 libno_panic、libserde_test 未定义，补入同版本完整 no-panic、serde_test 后合计 469 项；该轮又报告 iconloader_base、libnanohttpd 未定义，补入完整 frameworks/libs/systemui、external/nanohttpd 后合计 471 项；该轮又报告 WifiTrackerLib、ecc-protos-lite 未定义，补齐 Wi-Fi 工具库、Telephony 及其直接依赖 PhoneCommon 后合计 474 项；该轮又报告 libOpenSLES、libartpalette-system、oboe 未定义，补入 Wilhelm、libartpalette 和 Oboe 后合计 477 项；该轮又报告两个 Kotlin 协程模块未定义，补齐 kotlinx.coroutines 及其直接依赖 kotlinx.atomicfu 后合计 479 项；该轮又报告 Android 通用库、Camera Extensions、Setup Wizard 和 XZ Java 缺项，结合完整 CTS 引用预检补入 15 个提供方后合计 494 项；该轮又报告 NeuralNetworks 的 tensorflow_headers 未定义，补齐 TensorFlow 及五个直接或传递提供方后合计 500 项；该轮又报告 Wi-Fi 服务的 ksoap2 未定义，补齐完整 external/ksoap2 后合计 501 项；该轮又报告 NetworkStack JNI 测试的 libapf、libpcap 未定义，补齐同版本完整 APF、libpcap 后合计 503 项；该轮又报告音频路由的 libtinyalsav2 未定义，补入官方清单单列的 tinyalsa_new 后合计 504 项；该轮又报告 Confirmation UI VTS 的 libcn-cbor 未定义，补齐完整 cn-cbor 后合计 505 项；该轮又报告 profcollectd 的四个 Rust 库未定义，补齐其完整提供方及四个传递依赖后合计 513 项；该轮又报告 libteeui_hal_support 未定义，当前补齐完整 system/teeui，并纳入已核验公开调用方的 XNNPACK、字体、MIME 提供方及其三项传递依赖，合计 521 项；该轮与保持同图的诊断修正轮均在 Soong 根 Blueprint 失败，修正后明确提取到 mingw-libwinpthread-notice，当前补齐其同版本完整预编译项目，并纳入已验证的 switcher4 提供方 tools/doc_generation，合计 523 项；该轮又报告 Wi-Fi 框架的 libwificond_ipc_aidl 未定义，当前补齐完整 system/connectivity/wificond，合计 524 项；该轮又报告 startop 的 iorap-aidl 未定义，当前补齐完整 system/iorap，及其直接/传递引用的 Google Fruit、RxCpp、Catch2，合计 528 项。公开字面量索引仍不证明生成模块、命名空间或变体正确，实际构建是验收依据。当前尚未取得成功镜像。
+298 项运行完成完整同步和预检后，Soong 继续报告 Mockito、Objenesis、Google Java Format、Connected Apps SDK、dexlib2 与 modules-utils 缺项。随后补齐这些提供方和 Robolectric/Car 直接引用的同版本项目；326 项运行继续报告 Rust 缺项，363 项运行继续报告 ICU 测试引用的 `junit-params`。首次原生 364 项运行在 Ubuntu 26.04 通过官方旧 ABI 包安装、完整同步与预检，随后报告另外八个缺失依赖；375 项运行继续报告 benchmark、libusb 和 pybind11 头文件缺项，378 项运行报告 CTS 的 `trebuchet-core` 缺项。383 项运行仍在 Soong 因 libtinyalsa、libvixl、libvixld、server_configurable_flags 未定义而失败。386 项运行继续报告 Bionic 的 libjemalloc5 缺项。387 项运行继续报告 fontTools 缺项。388 项补齐同版本 external/fonttools 后，最新运行继续报告 Skia 和 simpleperf 缺项。397 项补齐其六个完整提供方、Skia 直接引用的 harfbuzz_ng，以及 SDK 库默认配置引用的 apifinder 和后者直接引用的 cmdline-tools 后，实际运行继续报告 libFLAC 缺项。随后沿锁定 frameworks/av 的 314 份 Blueprint 直接引用及其传递依赖，补齐 26 个同版本完整项目，合计 423 项；其中仅 libFLAC 是该轮摘要的实际缺项，其余来自公开依赖预检。423 项运行又报告 WebRTC 的 libopus 未定义，补齐同版本完整 external/libopus 后合计 424 项；该轮又报告 libbrillo 的 libcurl 未定义，锁定完整 external/curl 后合计 425 项；该轮又报告 ADB 的两个 Open Screen 模块未定义，补齐完整 external/openscreen 后合计 426 项；该轮又报告 Conscrypt 的 caliper-api-target 未定义，此前补齐 Caliper 及五个直接或传递引用提供方，合计 432 项。随后主线逐批补齐网络工具、Minikin、ART、Java、PDF/NFC 和 Rust 提供方至 467 项；最新实际构建报告 libno_panic、libserde_test 未定义，补入同版本完整 no-panic、serde_test 后合计 469 项；该轮又报告 iconloader_base、libnanohttpd 未定义，补入完整 frameworks/libs/systemui、external/nanohttpd 后合计 471 项；该轮又报告 WifiTrackerLib、ecc-protos-lite 未定义，补齐 Wi-Fi 工具库、Telephony 及其直接依赖 PhoneCommon 后合计 474 项；该轮又报告 libOpenSLES、libartpalette-system、oboe 未定义，补入 Wilhelm、libartpalette 和 Oboe 后合计 477 项；该轮又报告两个 Kotlin 协程模块未定义，补齐 kotlinx.coroutines 及其直接依赖 kotlinx.atomicfu 后合计 479 项；该轮又报告 Android 通用库、Camera Extensions、Setup Wizard 和 XZ Java 缺项，结合完整 CTS 引用预检补入 15 个提供方后合计 494 项；该轮又报告 NeuralNetworks 的 tensorflow_headers 未定义，补齐 TensorFlow 及五个直接或传递提供方后合计 500 项；该轮又报告 Wi-Fi 服务的 ksoap2 未定义，补齐完整 external/ksoap2 后合计 501 项；该轮又报告 NetworkStack JNI 测试的 libapf、libpcap 未定义，补齐同版本完整 APF、libpcap 后合计 503 项；该轮又报告音频路由的 libtinyalsav2 未定义，补入官方清单单列的 tinyalsa_new 后合计 504 项；该轮又报告 Confirmation UI VTS 的 libcn-cbor 未定义，补齐完整 cn-cbor 后合计 505 项；该轮又报告 profcollectd 的四个 Rust 库未定义，补齐其完整提供方及四个传递依赖后合计 513 项；该轮又报告 libteeui_hal_support 未定义，当前补齐完整 system/teeui，并纳入已核验公开调用方的 XNNPACK、字体、MIME 提供方及其三项传递依赖，合计 521 项；该轮与保持同图的诊断修正轮均在 Soong 根 Blueprint 失败，修正后明确提取到 mingw-libwinpthread-notice，当前补齐其同版本完整预编译项目，并纳入已验证的 switcher4 提供方 tools/doc_generation，合计 523 项；该轮又报告 Wi-Fi 框架的 libwificond_ipc_aidl 未定义，当前补齐完整 system/connectivity/wificond，合计 524 项；该轮又报告 startop 的 iorap-aidl 未定义，当前补齐完整 system/iorap，及其直接/传递引用的 Google Fruit、RxCpp、Catch2，合计 528 项。公开字面量索引仍不证明生成模块、命名空间或变体正确，实际构建是验收依据。该阶段尚未取得成功镜像；当前成功基线见顶部记录。
 
 原生入口按 AGENTS.md 使用统一的 `runner-image` 输出，以及经核对的 `checkout@main`、`upload-artifact@main` 和共享 `run-sudo@main`。主机依赖优先安装 Ubuntu 二进制包；旧工具需要的 ABI 5 使用 Ubuntu 官方 Jammy `libtinfo5`、`libncurses5` 的 `6.3-2ubuntu0.3` amd64 安装包，逐个核验 SHA-256、包名、版本、架构与安装状态，不自行编译 ncurses，不修改全局 Java/Python。JDK、Clang 仍来自锁定源码。此路线尚须完整编译与静态验收，不能据静态检查认定稳定。
+
+## 成功产物
+
+成功基线：`a01a8089fab3cea8876908b85f68b483ae3e0452`，615 项锁定源码，`twrp_selene-eng / bootimage`。Native 编译、既有静态验收和加密上传全部通过；编译耗时约 59 分钟。该结果不代表已验证设备启动、触控、FBE 或备份恢复。
+
+[下载加密 Artifact](https://github.com/Grinch27/twrp_builder/actions/runs/40480759870/artifacts/12727671032)，67,123,978 bytes，保留至北京时间 2026-11-03 18:37。解压下载文件得到 `sealed-output.cms`，使用本轮匹配的收件私钥解密：
+
+```bash
+openssl cms -decrypt -binary -inform DER -in sealed-output.cms -inkey /path/to/recipient-private.pem -out twrp-selene.tar
+tar -xf twrp-selene.tar
+```
+
+包内为 `boot.img`、`static-validation.json` 和原有 `SHA256SUMS`。私钥由交付方保存，不进入仓库或 Runner；失败日志 Artifact 仍保持关闭。后续完整构建通过 Native 的手动入口执行。
 
 ## 首次运行
 

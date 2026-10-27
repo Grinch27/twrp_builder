@@ -88,10 +88,7 @@ jobs:
     name: selene - bootimage - native Ubuntu
     if: >-
       github.ref == 'refs/heads/main' &&
-      (github.event_name == 'workflow_dispatch' ||
-       (github.event_name == 'push' &&
-        (startsWith(github.event.head_commit.message, '[selene-native-build-20261022] ') ||
-         startsWith(github.event.head_commit.message, '[gpt-work] '))))
+      github.event_name == 'workflow_dispatch'
     needs: runner-image
     runs-on: ${{ needs.runner-image.outputs.RUNNER_IMAGE }}
     timeout-minutes: 350
