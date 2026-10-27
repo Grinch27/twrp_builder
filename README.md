@@ -20,7 +20,7 @@ flowchart TD
 | 暂缓的 Docker 工作流 | `.github/workflows/twrp_allinone.yml`，保留代码和手动入口，暂停 push/PR 自动运行 |
 | Runner | 共享 `resolve-runner-image@main` 动态解析 Ubuntu x64 |
 | 编译环境 | 原生 Ubuntu Runner，使用锁定源码中的 JDK / Clang；旧主机 ABI 通过官方归档二进制包安装 |
-| 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和 327 项公开补充项目 SHA，共 609 项 |
+| 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和 333 项公开补充项目 SHA，共 615 项 |
 | 公开测试资源 | 同版本 AOSP Recovery 的 25 张测试图片和 NOTICE；单独锁定，恢复 `res-testdata` 文件组，十项私有输入不变 |
 | 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j"$(($(nproc) + 1))"`，`NINJA_ARGS=-v` |
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度为可用 CPU 数加一。原生路线使用 Runner 可用内存并新增 12 GiB Swap，Docker 路线另限 14 GiB |
@@ -118,3 +118,5 @@ python3 scripts/source_inputs.py manifest /absolute/path/to/default.xml
 603 项重试将常规测试包安装文件缺项从 9 个减至 6 个。按同一锁定公开清单，补齐 Traceur、BlockedNumberProvider、EmergencyInfo、CarrierConfig、ContactsProvider 的完整同标签项目，分别提供清单内 6 个测试模块，合计 608 项；保留测试与全部旧 SHA。
 
 608 项已通过常规 instrumentation 测试包，随后 native 测试包报告一个安装文件缺项。其公开直接清单中的 `clatd_test` 由本轮补入的同标签完整 `external/android-clat` 提供，合计 609 项；保留全部原生测试和检查。
+
+609 项已通过 native 测试包，随后 platform_tests 报告三个安装文件缺项。按其公开直接清单补齐完整 Contacts、Calendar、SL4A，以及 Calendar 直接依赖的 chips、colorpicker、timezonepicker，均锁定同一标签，合计 615 项；保留全部测试和旧项目版本。

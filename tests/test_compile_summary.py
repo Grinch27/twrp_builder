@@ -133,6 +133,8 @@ class CompileSummaryTests(unittest.TestCase):
                                                 'public_pack', 'List.mk'), 1)
         self.assertEqual(dependency_evidence_line('native_tests := public_pack\n',
                                                 'public_pack', 'List.mk'), 1)
+        self.assertEqual(dependency_evidence_line('platform_tests += public_pack\n',
+                                                'public_pack', 'List.mk'), 1)
         self.assertIsNone(dependency_evidence_line('other_list := private_pack\n',
                                                   'private_pack', 'List.mk'))
 

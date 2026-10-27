@@ -2105,6 +2105,42 @@
       "path": "external/android-clat",
       "revision": "0c6e1b40702542773919e4c410f61ffe1f5943c4",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/Contacts",
+      "path": "packages/apps/Contacts",
+      "revision": "0c292ef2132fbbee26d829e4cedbf21871ae1036",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/packages/apps/Calendar",
+      "path": "packages/apps/Calendar",
+      "revision": "c44bcbee8c9375b36cfbcefb439cfbd95ea4060a",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/sl4a",
+      "path": "external/sl4a",
+      "revision": "8da2830fb106c101c7f7862c8448f559b52d5ba5",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/opt/chips",
+      "path": "frameworks/opt/chips",
+      "revision": "62980c671c9b9add53f8a87518a8cf9e3529fd94",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/opt/colorpicker",
+      "path": "frameworks/opt/colorpicker",
+      "revision": "82a3935623ba22108a7c9f6fea1947b44883a4e2",
+      "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/frameworks/opt/timezonepicker",
+      "path": "frameworks/opt/timezonepicker",
+      "revision": "bd3b8e422f71898a6867d62594d729981ddd0082",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

@@ -773,3 +773,26 @@ be48ec2运行40473795328的静态检查、608项同步/身份校验和预检通�
 完整读取锁定platform_testing的build/tasks/tests/native_test_list.mk及本轮18918公开Blueprint名字。五个未在BP目录中的直接清单名字中，camera_client_test在锁定frameworks/av camera/tests/Android.mk、kernel-config-unit-tests和scrape_mmap_addr在锁定TeamWin system/extras tests/kernel.config/Android.mk、crashcollector在锁定platform_testing utils/crashcollector/Android.mk均有实际Make定义；当前完整manifest没有external/android-clat。按同一官方android-12.1.0_r4清单获取完整platform/external/android-clat@0c6e1b40702542773919e4c410f61ffe1f5943c4，38文件、173335 bytes，Android.bp实际提供clatd_test、clatd及clatd_common。全部构建定义的已识别直接模块引用在现有公开目录或本项目定义中存在；这是实际失败包的公开直接依赖闭包，不根据未知日志名字猜测或关闭测试。
 
 将native_tests明确模块清单加入既有完整token证明，发布端仍独立检查锁定Git blob，新增回归断言并保持普通变量拒绝。本地123项120通过、3项为已有环境限制跳过；Shell、YAML、差异检查通过。实际原归档manifest严格组合通过609项，原608项pin与十项输入未变。工作流仅同步项目数注释，327公开补充项目加282原项目；Native/main、CPU数加一、NINJA_ARGS=-v、publish=false、当前收件密钥和成功镜像静态验收保持。无失败日志Artifact，启动后静默20分钟再每60秒查询。
+
+## 2026-10-27 — native测试包已通过，platform_tests直接闭包至615项
+
+054587e运行40476897932的静态检查、609项同步、身份校验与预检通过，原continuous_native_tests包缺项消失；随后锁定platform_testing/build/tasks/platform_tests.mk:27调用的安装文件检查报告3项未知候选，compile554.518秒后失败。没有成功镜像。
+
+完整读取同一锁定platform_testing的tests/platform_test_list.mk，确认其中直接包含ContactsTests、CalendarTests、sl4a。当前完整manifest均无对应提供项目；核对官方同标签清单并获取完整Contacts、Calendar及SL4A。实际定义分别为Contacts/tests/Android.bp、Calendar/tests/Android.mk及sl4a/ScriptingLayerForAndroid/Android.bp。进一步读取全部Blueprint及Make依赖赋值，Calendar/Android.mk直接引用当前图缺少的libchips、colorpicker、android-opt-timezonepicker，故一并补齐其三个完整同标签提供方。
+
+- platform/packages/apps/Contacts，packages/apps/Contacts@0c292ef2132fbbee26d829e4cedbf21871ae1036；851文件、10993505 bytes。
+
+- platform/packages/apps/Calendar，packages/apps/Calendar@c44bcbee8c9375b36cfbcefb439cfbd95ea4060a；789文件、4973219 bytes。
+
+- platform/external/sl4a，external/sl4a@8da2830fb106c101c7f7862c8448f559b52d5ba5；372文件、2846132 bytes。
+
+- platform/frameworks/opt/chips，frameworks/opt/chips@62980c671c9b9add53f8a87518a8cf9e3529fd94；236文件、685089 bytes。
+
+- platform/frameworks/opt/colorpicker，frameworks/opt/colorpicker@82a3935623ba22108a7c9f6fea1947b44883a4e2；102文件、139415 bytes。
+
+- platform/frameworks/opt/timezonepicker，frameworks/opt/timezonepicker@bd3b8e422f71898a6867d62594d729981ddd0082；197文件、494400 bytes。
+
+
+已识别普通字面量模块引用均有既有或本批提供方；SDK的android.test.*.stubs及framework-wifi/framework-connectivity.impl分别仍须实际构建验证。其公开基础名均非prebuilts-only，已读取同一锁定Soong java/sdk_library.go确认.stubs和.impl是SDK库构造，但不据此替换依赖或声明变体可用。新增platform_tests明确模块清单的完整token证明及回归，发布端继续独立读取公开Git，普通变量仍拒绝。所有实际测试及安装文件校验保留。
+
+本地123项120通过、3项为既有环境限制跳过；Shell、YAML与差异检查通过。实际原归档manifest严格组合615项通过，原609项目pin及十项输入保持。333公开补充项目加282原项目；工作流仅同步项目数注释，Native/main、CPU数加一、NINJA_ARGS=-v、publish=false、当前收件密钥和成功镜像静态验收不变。失败日志Artifact关闭，启动后静默20分钟再每60秒查询。
