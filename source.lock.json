@@ -2099,6 +2099,12 @@
       "path": "packages/providers/ContactsProvider",
       "revision": "46438093740902d286d219b15365655e9ef6683a",
       "upstream": "refs/tags/android-12.1.0_r4"
+    },
+    {
+      "name": "platform/external/android-clat",
+      "path": "external/android-clat",
+      "revision": "0c6e1b40702542773919e4c410f61ffe1f5943c4",
+      "upstream": "refs/tags/android-12.1.0_r4"
     }
   ],
   "device": {

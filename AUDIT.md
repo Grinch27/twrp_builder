@@ -765,3 +765,11 @@ main 405461d / Native Run 40456110345 attempt 1 已结束 failure。受限记录
 本地环境恢复后旧交付会话的私钥不可访问，现有用户交付文件检索未找到可恢复副本。按既有合同生成本轮收件密钥并仅更新公开delivery-recipient.pem；对应私钥已保存为用户可取回的私人交付文件，位于仓库和Runner之外。不新增镜像、证书指纹或其他产物核验，不启用失败日志Artifact；成功镜像仍按既有CMS方式交付。
 
 本地123项120通过、3项为既有/proc与Go环境限制跳过；Shell、YAML和差异检查通过，本地无actionlint，保留工作流前置检查。严格组合实际原归档manifest得到608项目，原603项SHA及十项输入完全不变。326公开补充项目加282原项目，Native/main、CPU数加一、NINJA_ARGS=-v、publish=false及静态镜像验收不变。工作流仅同步注释中的项目数，保留最新已有触发条件。每轮静默20分钟，再每60秒查询直至完成。
+
+## 2026-10-27 — instrumentation已通过，补齐native清单的CLAT提供方至609项
+
+be48ec2运行40473795328的静态检查、608项同步/身份校验和预检通过；常规instrumentation包已通过，随后continuous_native_tests包报告1个MISSING_PACKAGE_INSTALLED_FILE候选。compile531.418秒后失败，无公开候选名、无成品。保持真实失败状态。
+
+完整读取锁定platform_testing的build/tasks/tests/native_test_list.mk及本轮18918公开Blueprint名字。五个未在BP目录中的直接清单名字中，camera_client_test在锁定frameworks/av camera/tests/Android.mk、kernel-config-unit-tests和scrape_mmap_addr在锁定TeamWin system/extras tests/kernel.config/Android.mk、crashcollector在锁定platform_testing utils/crashcollector/Android.mk均有实际Make定义；当前完整manifest没有external/android-clat。按同一官方android-12.1.0_r4清单获取完整platform/external/android-clat@0c6e1b40702542773919e4c410f61ffe1f5943c4，38文件、173335 bytes，Android.bp实际提供clatd_test、clatd及clatd_common。全部构建定义的已识别直接模块引用在现有公开目录或本项目定义中存在；这是实际失败包的公开直接依赖闭包，不根据未知日志名字猜测或关闭测试。
+
+将native_tests明确模块清单加入既有完整token证明，发布端仍独立检查锁定Git blob，新增回归断言并保持普通变量拒绝。本地123项120通过、3项为已有环境限制跳过；Shell、YAML、差异检查通过。实际原归档manifest严格组合通过609项，原608项pin与十项输入未变。工作流仅同步项目数注释，327公开补充项目加282原项目；Native/main、CPU数加一、NINJA_ARGS=-v、publish=false、当前收件密钥和成功镜像静态验收保持。无失败日志Artifact，启动后静默20分钟再每60秒查询。
