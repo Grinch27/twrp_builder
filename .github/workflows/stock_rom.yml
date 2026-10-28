@@ -42,6 +42,7 @@ env:
   ROM_VERSION: V14.0.4.0.TKUCNXM
   GH_PROMPT_DISABLED: '1'
   # Five-minute relay acceptance passed; reserve 30 minutes before the six-hour limit.
+  # A workflow-file push starts a fresh chain; resume IDs are supplied only by dispatch.
   RELAY_SECONDS: '19800'
   MAX_RELAY_ROUNDS: '12'
 
