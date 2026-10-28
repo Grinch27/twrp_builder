@@ -3,7 +3,7 @@
 # Research: aria2 SIGINT, sparse tar, one-day Artifacts and workflow_dispatch.
 # Optimization: 16 connections, five-second progress and sparse checkpoint storage.
 # Risks: job limits, partial uploads, disk copies and automatic continuation loops.
-# Validation: synthetic extraction/relay tests and an initial five-minute Actions test.
+# Validation: synthetic extraction/relay tests and successful five-minute Actions relay acceptance.
 name: Selene Stock ROM Images
 
 # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax
@@ -41,8 +41,8 @@ env:
   ROM_URL: https://bigota.d.miui.com/V14.0.4.0.TKUCNXM/selene_images_V14.0.4.0.TKUCNXM_20231228.0000.00_13.0_cn_cfe62df805.tgz
   ROM_VERSION: V14.0.4.0.TKUCNXM
   GH_PROMPT_DISABLED: '1'
-  # Five-minute acceptance test; 19800 seconds is NOT enabled yet.
-  RELAY_SECONDS: '300'
+  # Five-minute relay acceptance passed; reserve 30 minutes before the six-hour limit.
+  RELAY_SECONDS: '19800'
   MAX_RELAY_ROUNDS: '12'
 
 jobs:
@@ -65,7 +65,7 @@ jobs:
         run: /usr/bin/python3 -m unittest discover -s tests -p 'test_stock_rom*.py' -v
 
   download:
-    name: Download or checkpoint official ROM (five-minute test)
+    name: Download or checkpoint official ROM (5h30m)
     if: >-
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
