@@ -29,6 +29,8 @@ METADATA_NAMES = ('archive-inventory.json', 'stock-rom-manifest.json', 'original
 SCRIPT_SUFFIXES = {'.sh', '.bat', '.cmd', '.ps1', '.exe'}
 IMAGE_SUFFIXES = {'.img', '.bin', '.elf', '.mbn'}
 SAFE_NAME = re.compile(r'[A-Za-z0-9](?:[A-Za-z0-9._-]{0,178}[A-Za-z0-9_-])?\Z')
+STOCK_TAG = re.compile(re.escape(f'selene-stock-{ROM_VERSION}-') + r'[1-9][0-9]*-[1-9][0-9]*\Z')
+DA_NAMES = {'MTK_AllInOne_DA_mt6768.bin', 'MTK_AllInOne_DA.bin'}
 
 
 def safe_parts(name):
@@ -57,7 +59,8 @@ def inspect_archive(archive):
             })
             if member.isdir():
                 continue
-            if parts == (f'selene_images_{ROM_VERSION}_13.0', 'MTK_AllInOne_DA_mt6768.bin'):
+            if (len(parts) == 2 and parts[0] == f'selene_images_{ROM_VERSION}_13.0'
+                    and parts[1] in DA_NAMES):
                 if not member.isfile() or member.issparse() or member.size <= 0:
                     raise ValueError('Non-regular or empty download-agent companion')
                 inventory[-1]['role'] = 'download-agent-companion'
@@ -176,14 +179,34 @@ def prepare_original_rom(archive, output, part_bytes=PART_BYTES):
     return original
 
 
+def find_original_release(repo):
+    """Prefer the newest stock backup marker, including drafts, before upstream IO."""
+    pages = json.loads(subprocess.check_output(
+        ['gh', 'api', '--paginate', '--slurp', f'repos/{repo}/releases?per_page=100'],
+        text=True))
+    candidates = [release for page in pages for release in page
+                  if STOCK_TAG.fullmatch(release['tag_name'])
+                  and any(a['name'] == METADATA_NAMES[2]
+                          and a.get('state') == 'uploaded' and 0 < a['size'] <= 16384
+                          for a in release['assets'])]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda release: release['id'])['tag_name']
+
+
 def restore_original_release(tag, archive):
     """Restore only the exact fixed-ROM parts declared by a saved Release manifest."""
     archive = Path(archive)
-    if not re.fullmatch(re.escape(f'selene-stock-{ROM_VERSION}-') + r'[1-9][0-9]*-[1-9][0-9]*', tag):
+    repo = os.environ['GITHUB_REPOSITORY']
+    if tag == 'auto':
+        tag = find_original_release(repo)
+        if tag is None:
+            print('No saved original-ROM backup found; use the official source.', flush=True)
+            return None
+    if not STOCK_TAG.fullmatch(tag):
         raise ValueError('Unexpected stock Release tag')
     if archive.exists():
         raise FileExistsError(archive)
-    repo = os.environ['GITHUB_REPOSITORY']
     prefix = ['gh', 'release']
     remote = json.loads(subprocess.check_output(
         prefix + ['view', tag, '--repo', repo, '--json', 'assets'], text=True))['assets']
@@ -225,6 +248,7 @@ def restore_original_release(tag, archive):
                     shutil.copyfileobj(source, target, length=1024 * 1024)
         partial.rename(archive)
     print(f'Restored complete original ROM from Release {tag}; bytes={size}', flush=True)
+    return tag
 
 
 def extract_rom(archive, output, part_bytes=PART_BYTES, include_original=True):
@@ -322,7 +346,10 @@ def main():
     mode.add_argument('--restore-release')
     args = parser.parse_args()
     if args.restore_release:
-        restore_original_release(args.restore_release, args.archive)
+        tag = restore_original_release(args.restore_release, args.archive)
+        if tag and os.environ.get('GITHUB_ENV'):
+            with Path(os.environ['GITHUB_ENV']).open('a') as target:
+                target.write(f'ROM_RELEASE_TAG={tag}\n')
     elif args.output is None:
         parser.error('output is required when preparing Release assets')
     elif args.prepare_original:

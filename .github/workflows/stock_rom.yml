@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       rom_release_tag:
-        description: Restore a complete original ROM from this stock Release tag (optional)
+        description: Original-ROM Release tag (blank prefers the newest saved backup)
         type: string
         default: ''
       resume_run_id:
@@ -110,9 +110,16 @@ jobs:
           set -euo pipefail
           command -v gh
           /usr/bin/python3 scripts/stock_rom_relay.py prepare
+      - name: Prefer a saved original ROM from Release before downloading upstream
+        if: env.RESUME_RUN_ID == ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: /usr/bin/python3 scripts/stock_rom.py "${ROM_WORK}/rom.tgz" --restore-release "${ROM_RELEASE_TAG:-auto}"
       - name: Install job-scoped run_sudo
+        if: env.ROM_RELEASE_TAG == ''
         uses: Grinch27/github-actions/.github/actions/run-sudo@main
       - name: Install aria2 binary package when needed
+        if: env.ROM_RELEASE_TAG == ''
         env:
           DEBIAN_FRONTEND: noninteractive
           NEEDRESTART_MODE: a
@@ -123,7 +130,7 @@ jobs:
             run_sudo apt-get -y --no-install-recommends install aria2
           fi
       - name: Verify real aria2 interruption and resume with a tiny loopback fixture
-        if: env.RESUME_RUN_ID == ''
+        if: env.RESUME_RUN_ID == '' && env.ROM_RELEASE_TAG == ''
         run: |
           PYTHONPATH=tests /usr/bin/python3 -m unittest \
             test_stock_rom_relay.RelayTests.test_real_aria2_range_resume_across_checkpoint -v
@@ -137,11 +144,6 @@ jobs:
           artifact-ids: ${{ env.RESUME_ARTIFACT_ID }}
           merge-multiple: true
           path: ${{ env.ROM_WORK }}/incoming
-      - name: Restore a saved original ROM from Release when requested
-        if: env.ROM_RELEASE_TAG != ''
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: /usr/bin/python3 scripts/stock_rom.py "${ROM_WORK}/rom.tgz" --restore-release "${ROM_RELEASE_TAG}"
       - name: Resume with aria2 and package stopped or complete data
         id: download
         run: /usr/bin/python3 scripts/stock_rom_relay.py download

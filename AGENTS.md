@@ -594,8 +594,8 @@ Read README.md, AUDIT.md and source.lock.json before changes. Use Chinese for us
 ## 原包先备份与Release恢复（2026-10-28）
 
 - 用户要求先上传原包到Release，避免提取失败后重下。原包备份与目录检查解耦；新增rom_release_tag输入用于从同仓库旧草稿/正式Release读取完整原包，与aria2断点输入互斥，缺分片、错误来源/版本/名称/长度则拒绝恢复，不静默回退重新下载。
-- 为读取本仓库草稿，下载/恢复Job使用contents:write，actions:read；调度Job继续单独持有actions:write。不覆盖已有Release，恢复后使用新的唯一草稿。
-- 已由真实日志确认的固定ROM根目录MTK_AllInOne_DA_mt6768.bin允许作为非空常规辅助文件记录于inventory，不当分区提取、不执行；未知目录外镜像、链接、空文件仍拒绝。此精确例外替代对此特定DA文件的旧拒绝规则。
+- 未指定断点的新任务默认优先使用本仓库同一固定ROM最新带备份标记的Release（含草稿），也可用rom_release_tag指定实际标签；只有查无备份标记才下载小米源，API错误或恢复失败均停止。为读取本仓库草稿，下载/恢复Job使用contents:write，actions:read；调度Job继续单独持有actions:write。不覆盖已有Release，恢复后使用新的唯一草稿。
+- 已由真实日志确认的固定ROM根目录MTK_AllInOne_DA_mt6768.bin与MTK_AllInOne_DA.bin允许作为非空常规辅助文件记录于inventory，不当分区提取、不执行；未知目录外镜像、链接、空文件仍拒绝。此精确例外替代对此特定DA文件的旧拒绝规则。
 
 <!--
 本轮讨论状态（非已批准的新增规范）：

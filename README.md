@@ -140,9 +140,9 @@ Actions 使用 aria2 下载压缩包，`--max-connection-per-server=16 --split=1
 
 现在的执行顺序为：完整下载/恢复原包 → 原包按原字节分片 → 新建草稿Release并上传全部原包分片 → 最后上传 `original-rom-manifest.json` 作为完整备份标记 → 检查目录并提取分区 → 追加分区附件并公开发布同一Release。原包备份不依赖解包成功。原包上传成功后清理本轮临时分片副本，分区提取使用 `--payload-only`，避免重复生成原包分片。若提取或后续上传失败，草稿及已上传附件保留，不自动删除或过期。
 
-重新运行时，填写新增手动输入 **`rom_release_tag`** 为上次草稿的标签，其他三个断点输入留空。流程会从同仓库Release恢复完整原包，核对固定URL/版本、允许的文件名、分片清单与长度，然后直接进入原包备份和提取，不再调用aria2从小米重新下载；缺少备份标记或分片会明确失败。草稿访问使用本仓库Token的contents:write权限，actions权限仍仅为read。新的尝试创建新的唯一草稿，不覆盖旧Release。
+新任务未指定断点时，优先查找本仓库同一固定ROM最新带完整备份标记的Release（含草稿），从其恢复原包；仅完全没有备份标记时才从小米下载。API查询或已有备份恢复失败会明确停止，不静默重新下载。也可填写手动输入 **`rom_release_tag`** 为指定草稿的实际标签，其他三个断点输入留空。GitHub草稿页面可能显示 `untagged-*`，实际标签以Release数据或Job Summary为准。流程会从同仓库Release恢复完整原包，核对固定URL/版本、允许的文件名、分片清单与长度，然后直接进入原包备份和提取，不再调用aria2从小米重新下载；缺少备份标记或分片会明确失败。草稿访问使用本仓库Token的contents:write权限，actions权限仍仅为read。新的尝试创建新的唯一草稿，不覆盖旧Release。
 
-已确认的包根目录 `selene_images_V14.0.4.0.TKUCNXM_13.0/MTK_AllInOne_DA_mt6768.bin` 仅以非空常规辅助文件记录在归档清单，不作为分区载荷提取或执行；其余目录外异常镜像检查仍保留。
+已确认的固定ROM根目录下 `MTK_AllInOne_DA_mt6768.bin` 与 `MTK_AllInOne_DA.bin` 仅以非空常规辅助文件记录在归档清单，不作为分区载荷提取或执行；其余目录外异常镜像检查仍保留。
 
 公开明文 Release 标签为 `selene-stock-V14.0.4.0.TKUCNXM-<run_id>-<attempt>`，附件包含实际载荷、`archive-inventory.json` 和 `stock-rom-manifest.json`。先创建新草稿并上传，全部上传成功后才发布；失败保留真实失败及未发布草稿，不覆盖旧 Release、不设为 Latest。此独立入口已按用户要求允许发布，不使用 Native 的 `publish` 开关或 CMS 加密。
 

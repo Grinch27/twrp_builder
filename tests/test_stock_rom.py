@@ -101,19 +101,47 @@ class StockRomTests(unittest.TestCase):
     def test_known_da_is_in_inventory_but_not_treated_as_partition(self):
         root = f'selene_images_{stock_rom.ROM_VERSION}_13.0'
         manifest = self.extract([(f'{root}/images/boot.img', b'boot'),
-                                 (f'{root}/MTK_AllInOne_DA_mt6768.bin', b'da')])
+                                 (f'{root}/MTK_AllInOne_DA_mt6768.bin', b'da'),
+                                 (f'{root}/MTK_AllInOne_DA.bin', b'da2')])
         self.assertEqual([p['name'] for p in manifest['payloads']], ['boot.img'])
         inventory = json.loads((self.root / 'output/assets/archive-inventory.json').read_text())
         self.assertEqual(inventory[-1]['role'], 'download-agent-companion')
+        self.assertEqual(inventory[-2]['role'], 'download-agent-companion')
 
     def test_da_exception_does_not_allow_links_or_other_outside_bins(self):
         root = f'selene_images_{stock_rom.ROM_VERSION}_13.0'
-        for name in (f'{root}/other.bin', f'{root}/MTK_AllInOne_DA_mt6768.bin'):
+        for name in (f'{root}/other.bin', f'{root}/MTK_AllInOne_DA_mt6768.bin',
+                     f'{root}/MTK_AllInOne_DA.bin', f'other/MTK_AllInOne_DA.bin'):
             info = tarfile.TarInfo(name)
             info.type = tarfile.SYMTYPE
             info.linkname = '/etc/passwd'
             with self.subTest(name=name), self.assertRaises(ValueError):
                 self.extract([(f'{root}/images/boot.img', b'boot'), (info, b'')])
+
+    def test_both_da_companions_must_be_nonempty_regular_files(self):
+        root = f'selene_images_{stock_rom.ROM_VERSION}_13.0'
+        for name in stock_rom.DA_NAMES:
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'companion'):
+                self.extract([(f'{root}/images/boot.img', b'boot'), (f'{root}/{name}', b'')])
+
+    def test_auto_release_search_prefers_newest_completed_marker_including_drafts(self):
+        prefix = f'selene-stock-{stock_rom.ROM_VERSION}'
+        marker = {'name': 'original-rom-manifest.json', 'size': 784, 'state': 'uploaded'}
+        pages = [[{'id': 3, 'tag_name': prefix + '-300-1', 'assets': []},
+                  {'id': 4, 'tag_name': 'unrelated', 'assets': [marker]}],
+                 [{'id': 1, 'tag_name': prefix + '-100-1', 'assets': [marker]},
+                  {'id': 2, 'tag_name': prefix + '-200-1', 'draft': True, 'assets': [marker]}]]
+        with mock.patch.object(stock_rom.subprocess, 'check_output', return_value=json.dumps(pages)) as gh:
+            self.assertEqual(stock_rom.find_original_release('owner/repo'), prefix + '-200-1')
+            self.assertIn('--paginate', gh.call_args.args[0])
+
+    def test_auto_release_without_backup_allows_upstream_but_api_errors_do_not(self):
+        with mock.patch.dict(os.environ, GITHUB_REPOSITORY='owner/repo'), \
+                mock.patch.object(stock_rom.subprocess, 'check_output', return_value='[[]]'):
+            self.assertIsNone(stock_rom.restore_original_release('auto', self.root / 'rom.tgz'))
+        with mock.patch.object(stock_rom.subprocess, 'check_output', side_effect=RuntimeError('API failed')):
+            with self.assertRaisesRegex(RuntimeError, 'API failed'):
+                stock_rom.find_original_release('owner/repo')
 
     def test_release_restores_exact_rom_and_rejects_missing_or_foreign_parts(self):
         archive = self.archive([('rom/images/boot.img', b'boot')])
@@ -135,6 +163,10 @@ class StockRomTests(unittest.TestCase):
             restored = self.root / 'restored.tgz'
             stock_rom.restore_original_release(tag, restored)
             self.assertEqual(restored.read_bytes(), archive.read_bytes())
+            with mock.patch.object(stock_rom, 'find_original_release', return_value=tag):
+                restored_auto = self.root / 'auto.tgz'
+                self.assertEqual(stock_rom.restore_original_release('auto', restored_auto), tag)
+                self.assertEqual(restored_auto.read_bytes(), archive.read_bytes())
             with mock.patch.object(stock_rom.subprocess, 'check_output',
                                    return_value=json.dumps({'assets': entries[:-1]})):
                 with self.assertRaises(ValueError):
