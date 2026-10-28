@@ -50,7 +50,6 @@ jobs:
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: runner-image
     runs-on: ${{ needs.runner-image.outputs.RUNNER_IMAGE }}
-    timeout-minutes: 150
     permissions:
       contents: write
     steps:
@@ -61,7 +60,6 @@ jobs:
       - name: Install job-scoped run_sudo
         uses: Grinch27/github-actions/.github/actions/run-sudo@main
       - name: Install aria2 binary package when needed
-        timeout-minutes: 10
         env:
           DEBIAN_FRONTEND: noninteractive
           NEEDRESTART_MODE: a
@@ -86,7 +84,6 @@ jobs:
               raise SystemExit('Insufficient download space; at least 7 GiB required')
           PY
       - name: Download official Fastboot archive with aria2 (16 connections)
-        timeout-minutes: 60
         run: |
           set -euo pipefail
           umask 077
@@ -144,10 +141,8 @@ jobs:
           fi
           mv "${ROM_WORK}/rom.tgz.partial" "${ROM_WORK}/rom.tgz"
       - name: List archive and extract all stock image payloads
-        timeout-minutes: 35
         run: /usr/bin/python3 scripts/stock_rom.py "${ROM_WORK}/rom.tgz" "${ROM_WORK}/output"
       - name: Upload to a new draft and publish the complete Release
-        timeout-minutes: 60
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
