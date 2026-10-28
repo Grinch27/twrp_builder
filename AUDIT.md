@@ -826,3 +826,13 @@ be48ec2运行40473795328的静态检查、608项同步/身份校验和预检通�
 明文及加密Artifact仍均保留三天；push没有publish=true输入，不创建Release。source.lock、私有输入白名单、编译参数、现有测试、静态镜像验收及失败日志禁传保持。本次提交即满足自动构建触发条件，不另行dispatch，不监测或重试；真实运行状态与成品上传未在本轮查询。
 
 本地既有标准库123项测试：120通过、3项环境限制跳过；scripts/tests Shell文件及两个工作流内联Shell通过bash -n，YAML解析、actionlint 1.7.7与git diff --check通过。核对main push无路径过滤、PR保留静态边界、build依赖runner-image、并发组含run_id且不取消运行，两类Artifact仍均三天。未额外下载、扫描或核验镜像；静态检查不能证明真实构建或设备测试成功。
+
+## 2026-10-28 — 独立官方 ROM 全载荷提取与 Release 入口
+
+用户明确选择本仓库保存解包工作流、Actions从给定小米官方URL下载全部分区镜像并发布Release。本地仅对该URL做HEAD，实际HTTP200、Content-Length5385341113，未下载ROM或读取包内成员，未访问设备。原厂文件与实机boot_a/boot_b的对应关系保持未确认。
+
+新增stock_rom.yml及标准库提取脚本：独立runner-image先做合成测试，main相关文件push或手动入口才下载及发布；PR不下载。下载固定HTTPS官方TGZ，先枚举再读取唯一images目录的常规载荷和配套元数据，拒绝危险路径、链接、文件名冲突、遗漏的目录外镜像候选及缺失boot。包内脚本从不执行；不存在的recovery不伪造。所有payload保持原字节，大文件直接写成1900000000-byte以内的Release分片，不转换Android sparse格式，不额外做摘要、证书、DEX或版本扫描；磁盘不足真实失败，不清理主机软件、不申请付费资源。
+
+唯一stock标签含ROM版本、run_id与attempt，先上传新草稿再发布，不覆盖历史Release或设为Latest。Release包含实际载荷、归档目录及来源/大小/分片清单，生成合并说明；不使用CMS或私钥，用户已明确授权该公开原厂包的Release交付。三天TTL仍仅适用于Native Artifacts，不自动删除stock Release。本次Native只将既有actionlint覆盖扩展到所有工作流，并为工作流PR保留静态检查；所有原编译、源码锁和交付参数不变。
+
+本地135项标准库测试：132通过、3项为既有环境限制跳过。新增12项使用微型合成压缩包，覆盖全部载荷与bin/配套元数据、分片字节往返、脚本排除、缺失/空boot、危险路径与链接、重名/多根、目录外未覆盖候选、分片/清单命名冲突、空间不足、拒绝覆盖、截断与附件数量上限；无网络、手机或凭据。全部Shell、三个工作流的26个内联Shell块通过bash -n，YAML解析、actionlint 1.7.7及git diff --check通过。真实包内载荷数量、目录布局、提取、上传与Release状态尚未验证；提交会同时触发现有Native完整构建和新的stock入口，沿用当前不监测要求，不轮询或重复触发。

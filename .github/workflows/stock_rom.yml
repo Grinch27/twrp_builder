@@ -1,0 +1,101 @@
+# Requirements: download the fixed official selene Fastboot ROM and publish payloads.
+# Ambiguity: stock images are not device backups; real archive layout is not assumed.
+# Research: GitHub Release asset limits and safe tarfile stream extraction.
+# Optimization: no Android sync, recompression, private inputs or image scans.
+# Risks: public firmware distribution, large download/disk usage and partial uploads.
+# Validation: synthetic extraction tests; draft Release is published after uploads.
+name: Selene Stock ROM Images
+
+# https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/stock_rom.yml', 'scripts/stock_rom.py', 'tests/test_stock_rom.py']
+  pull_request:
+    paths: ['.github/workflows/stock_rom.yml', 'scripts/stock_rom.py', 'tests/test_stock_rom.py']
+  workflow_dispatch:
+
+run-name: Selene stock ROM - ${{ github.event_name }} - ${{ github.ref_name }}
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+env:
+  ROM_URL: https://bigota.d.miui.com/V14.0.4.0.TKUCNXM/selene_images_V14.0.4.0.TKUCNXM_20231228.0000.00_13.0_cn_cfe62df805.tgz
+  ROM_VERSION: V14.0.4.0.TKUCNXM
+  GH_PROMPT_DISABLED: '1'
+
+jobs:
+  runner-image:
+    name: Validate and resolve runner-image
+    runs-on: ubuntu-latest
+    outputs:
+      RUNNER_IMAGE: ${{ steps.resolve.outputs.RUNNER_IMAGE }}
+    steps:
+      - name: Resolve runner-image
+        id: resolve
+        uses: Grinch27/github-actions/.github/actions/resolve-runner-image@main
+      - name: Checkout extractor
+        uses: actions/checkout@main
+        with:
+          persist-credentials: false
+      - name: Test extraction boundaries with synthetic inputs
+        run: /usr/bin/python3 -m unittest discover -s tests -p test_stock_rom.py -v
+
+  extract:
+    name: Extract official selene stock images and publish Release
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs: runner-image
+    runs-on: ${{ needs.runner-image.outputs.RUNNER_IMAGE }}
+    timeout-minutes: 150
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout extractor
+        uses: actions/checkout@main
+        with:
+          persist-credentials: false
+      - name: Prepare isolated temporary directory and check download space
+        run: |
+          set -euo pipefail
+          umask 077
+          command -v curl
+          command -v gh
+          ROM_WORK="$(mktemp -d "${RUNNER_TEMP}/selene-stock.XXXXXXXX")"
+          export ROM_WORK
+          printf 'ROM_WORK=%s\nTMPDIR=%s\n' "${ROM_WORK}" "${ROM_WORK}" >> "${GITHUB_ENV}"
+          /usr/bin/python3 - <<'PY'
+          import os, shutil
+          if shutil.disk_usage(os.environ['ROM_WORK']).free < 7 * 1024 ** 3:
+              raise SystemExit('Insufficient download space; at least 7 GiB required')
+          PY
+      - name: Download official Fastboot archive over HTTPS
+        timeout-minutes: 60
+        run: |
+          set -euo pipefail
+          curl --fail --location --proto '=https' --proto-redir '=https' \
+            --connect-timeout 30 --max-time 3300 --retry 2 --retry-delay 5 \
+            --output "${ROM_WORK}/rom.tgz.partial" "${ROM_URL}"
+          mv "${ROM_WORK}/rom.tgz.partial" "${ROM_WORK}/rom.tgz"
+      - name: List archive and extract all stock image payloads
+        timeout-minutes: 35
+        run: /usr/bin/python3 scripts/stock_rom.py "${ROM_WORK}/rom.tgz" "${ROM_WORK}/output"
+      - name: Upload to a new draft and publish the complete Release
+        timeout-minutes: 60
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          BUILDER_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          tag="selene-stock-${ROM_VERSION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          gh release create "${tag}" --target "${BUILDER_COMMIT}" \
+            --draft --latest=false --title "selene stock ${ROM_VERSION} ${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}" \
+            --notes-file "${ROM_WORK}/output/release-notes.md" \
+            "${ROM_WORK}/output/assets/"*
+          gh release edit "${tag}" --draft=false --latest=false
+          printf '[Download official stock payloads](https://github.com/%s/releases/tag/%s)\n\nStock ROM extraction only; not a device backup or proof of flash safety.\n' \
+            "${GH_REPO}" "${tag}" >> "${GITHUB_STEP_SUMMARY}"

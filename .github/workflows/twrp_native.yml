@@ -15,7 +15,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    paths: ['.github/workflows/twrp_native.yml', 'scripts/**', 'tests/**', 'source.lock.json', 'delivery-recipient.pem']
+    paths: ['.github/workflows/**', 'scripts/**', 'tests/**', 'source.lock.json', 'delivery-recipient.pem']
   workflow_dispatch:
     inputs:
       publish:
@@ -78,7 +78,7 @@ jobs:
             "${release}/actionlint_1.7.7_checksums.txt" --output "${lint_dir}/checksums.txt"
           (cd "${lint_dir}" && sha256sum --check --ignore-missing checksums.txt)
           tar -xzf "${lint_dir}/actionlint_1.7.7_linux_amd64.tar.gz" -C "${lint_dir}" actionlint
-          "${lint_dir}/actionlint" -shellcheck='' .github/workflows/twrp_native.yml .github/workflows/twrp_allinone.yml
+          "${lint_dir}/actionlint" -shellcheck='' .github/workflows/*.yml
       - name: Reproduce native repo initialization with public inputs
         timeout-minutes: 8
         run: bash tests/repo_init_smoke.sh native

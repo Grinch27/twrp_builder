@@ -102,6 +102,24 @@ tar -xf twrp-selene.tar
 
 失败时公开日志仅报告阶段、退出码和受限摘要。同步摘要只含错误类别、HTTP 状态和已知公开上游标识；编译摘要只含固定错误类别，以及经锁定上游 Git blob 核验的公开文件位置和依赖字面量，排除私有覆盖文件。不上传原始日志。公开最小测试使用合成 manifest 初始化，并只同步一个公开 bionic 项目，不读取私有输入。需要保留完整私有诊断时，应先设计私有 runner/私有存储出口；不能通过直接 `cat` 或上传整个工作区绕过边界。本项目不创建服务凭据、付费资源、定时任务或手机操作入口。
 
+## 官方 ROM 分区镜像解包与 Release
+
+独立入口为 **Actions → Selene Stock ROM Images**（`.github/workflows/stock_rom.yml`）。当该工作流、`scripts/stock_rom.py` 或对应测试变更并推送到 main 时自动运行，也支持 main 手动运行；PR 只运行合成测试。它与 TWRP 编译独立，不读取私有归档、私钥或 `TWRP_SOURCE_TOKEN`，不操作手机。
+
+下载地址固定为小米官方完整 Fastboot 包：
+
+https://bigota.d.miui.com/V14.0.4.0.TKUCNXM/selene_images_V14.0.4.0.TKUCNXM_20231228.0000.00_13.0_cn_cfe62df805.tgz
+
+Actions 先下载压缩包并列出目录，再完整保留唯一 `images/` 目录中的常规数据文件，包括 `.img`、`.bin` 和配套元数据；不执行任何包内文件，不提取刷机脚本。不按 `.img` 后缀单独过滤，以免漏掉 preloader 等二进制载荷。发现链接、危险路径、重名、异常目录、目录外的镜像候选或缺少 `boot.img` 时失败，不以不完整提取冒充成功。未发现独立 recovery 时不会生成或伪造 `recovery.img`。
+
+各载荷按原字节交付，不转换 Android sparse 镜像，不重新压缩、不新增 SHA256／签名／证书／DEX 扫描。超过 1,900,000,000 bytes 的文件直接写为 `.part0001` 等分片，避免超过 Release 单文件 2 GiB 上限，也避免存放一份大镜像后再复制分片。Release 的说明中包含对应 `cat` 合并命令；只能在下载全部分片并合并后使用，不能直接刷写分片。
+
+公开明文 Release 标签为 `selene-stock-V14.0.4.0.TKUCNXM-<run_id>-<attempt>`，附件包含实际载荷、`archive-inventory.json` 和 `stock-rom-manifest.json`。先创建新草稿并上传，全部上传成功后才发布；失败保留真实失败及未发布草稿，不覆盖旧 Release、不设为 Latest。此独立入口已按用户要求允许发布，不使用 Native 的 `publish` 开关或 CMS 加密。
+
+Release 附件没有 Actions Artifact 的三天自动过期规则，本流程不自动删除 Release。原厂镜像不是当前 `boot_a`／`boot_b` 的实机备份，不能证明当前槽位内容或刷回安全。包内实际文件、大小和 recovery 是否存在，以该次 Release 清单为准。只检查下载与提取所需空间，不清理主机预装目录，不申请付费 Runner。
+
+本仓库的现有规则仍使每次 main push 同时触发 Native 完整构建；添加这个入口不会暂停该规则。当前会话沿用“不监测”的要求，提交后不查询或轮询任务进度。
+
 ## 验收和限制
 
 成功必须同时具备真实编译 exit 0、独立输出目录内的新 `boot.img`、非空且不超过 67,108,864 bytes、boot header v2 / page 2048、约定加载地址和 2023-12 patch 月份、原厂 kernel/DTB 字节匹配、gzip/newc ramdisk 中的 TWRP ELF、两份 stock-v14 fstab 和 Novatek 固件，以及 AVB 测试密钥签名验证。

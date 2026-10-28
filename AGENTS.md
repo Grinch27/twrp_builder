@@ -569,6 +569,14 @@ Read README.md, AUDIT.md and source.lock.json before changes. Use Chinese for us
 - 保持明文与加密 Artifact 均三天；自动 push 不创建 Release，仍须手动 publish=true。Docker 保持暂停及原手动门槛。
 - 本次按用户要求不监测构建进度，不轮询、不自动重试或重复 dispatch；后续另获查询请求时再读取真实结果。
 
+## 官方原厂镜像解包与发布（2026-10-28）
+
+- 用户明确指定本仓库新增独立 stock_rom.yml，从固定小米官方 selene China V14.0.4.0.TKUCNXM Fastboot URL 下载，提取全部实际分区载荷并公开发布到独立 stock Release。该授权仅适用于此公开原厂包，不扩大 TWRP 私有输入白名单或现有 Native Release 门槛，不运行 Docker 或接入设备。
+- 保留 images/ 常规载荷及配套元数据；不得执行包内刷机程序、脚本或工具，不得生成不存在的 recovery。异常路径、链接、重名、未覆盖的镜像候选或缺少 boot 时失败。
+- 原字节直出；大文件分片严格低于 GitHub Release 单附件限制并提供合并说明，不做额外 SHA256、签名证书、DEX 或版本标记扫描。
+- 独立 stock 工作流允许明文 Release，不需要 CMS 私钥；先上传至唯一新草稿，全部成功后才发布，不覆盖旧产物、不设为 Latest、不自动删除 Release。Native 的三天 Artifact 保留期不等于 Release 到期时间。
+- main 上相关 stock 工作流／脚本／测试的修改可自动执行此公开下载及发布，保留手动入口；PR 只运行公开合成测试。现有 Native 每次 main push 的完整构建规则不变，本次不监测或轮询运行。
+
 <!--
 本轮讨论状态（非已批准的新增规范）：
 
