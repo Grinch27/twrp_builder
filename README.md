@@ -25,7 +25,7 @@ flowchart TD
 | 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j"$(($(nproc) + 1))"`，`NINJA_ARGS=-v` |
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度为可用 CPU 数加一。原生路线使用 Runner 可用内存并新增 12 GiB Swap，Docker 路线另限 14 GiB |
 | 磁盘检查 | 清理后至少 62 GiB，其中新增 Swap 占 12 GiB；同步前保留至少 50 GiB，编译前至少 18 GiB；不足立即失败 |
-| 自动触发 | 仅原生入口通过 push / PR 运行静态检查和公开同步测试；完整编译接受 main 的 workflow_dispatch。持续修复已完成，完整编译恢复仅 main 的手动入口；提交前缀不再触发完整编译。Docker 入口仅保留 workflow_dispatch |
+| 自动触发 | Native 对 main 的每次 push 先运行静态检查和公开同步测试，通过后自动完整编译；不限制文件路径或提交前缀。PR 仅静态检查；保留 main 的 workflow_dispatch。Docker 仍仅保留手动入口 |
 | 唯一手动输入 | Native 的 `publish=false` 仅控制是否另建预发布 Release；成功构建默认上传含 `boot.img` 的明文 Artifact，并保留加密 Artifact |
 
 源码预编译 JDK、Clang 等从锁定上游重新同步；不克隆整个 7.44 GiB Git 归档，不回放旧 `out`、Soong 测试禁用、稀疏片段或 `ALLOW_MISSING_DEPENDENCIES`。归档内 18 个 Release 大文件不作为这条干净路线的下载入口。
@@ -38,9 +38,11 @@ flowchart TD
 
 原生入口按 AGENTS.md 使用统一的 `runner-image` 输出，以及经核对的 `checkout@main`、`upload-artifact@main` 和共享 `run-sudo@main`。主机依赖优先安装 Ubuntu 二进制包；旧工具需要的 ABI 5 使用 Ubuntu 官方 Jammy `libtinfo5`、`libncurses5` 的 `6.3-2ubuntu0.3` amd64 安装包，逐个核验 SHA-256、包名、版本、架构与安装状态，不自行编译 ncurses，不修改全局 Java/Python。JDK、Clang 仍来自锁定源码。此路线尚须完整编译与静态验收，不能据静态检查认定稳定。
 
+每次自动构建对应一次向 `main` 的 push，构建该事件的最新提交；本地未推送的 commit 不触发，一次 push 包含多个 commit 时只产生一轮构建。需要逐 commit 构建时应分别推送。PR 不读取私有输入，也不进行完整编译。
+
 ## 成功产物
 
-后续 Native 手动构建在编译和既有静态验收成功后，提供以下两个 Artifact：
+后续 Native 自动或手动构建在编译和既有静态验收成功后，提供以下两个 Artifact：
 
 | Artifact 名称 | 内容与使用方式 | 保留时间 |
 | --- | --- | --- |
@@ -58,14 +60,14 @@ openssl cms -decrypt -binary -inform DER -in sealed-output.cms -inkey /path/to/r
 tar -xf twrp-selene.tar
 ```
 
-包内为 `boot.img`、`static-validation.json` 和原有 `SHA256SUMS`。私钥由交付方保存，不进入仓库或 Runner；失败日志 Artifact 仍保持关闭。后续完整构建通过 Native 的手动入口执行。
+包内为 `boot.img`、`static-validation.json` 和原有 `SHA256SUMS`。私钥由交付方保存，不进入仓库或 Runner；失败日志 Artifact 仍保持关闭。后续完整构建由 main 的 push 自动触发，也可使用 Native 手动入口。
 
 ## 首次运行
 
 1. 在 `Grinch27/twrp_builder` 的 **Settings → Secrets and variables → Actions** 添加 `TWRP_SOURCE_TOKEN`。使用仅选择 `Grinch27/twrp_selene`、权限仅 **Contents: read** 的 fine-grained token。不要把令牌写入源码、工作流输入或聊天。
    独立的新交付会话还应将 `delivery-recipient.pem` 替换为自己持有本地私钥的 RSA 收件证书；仓库证书属于当前交付会话，不能假定后续会话持有对应私钥。私钥必须保存在仓库和 Runner 之外。
 2. 明确授权 GitHub 托管 runner 处理这十个私有输入后，再配置该 secret 并手动启动。普通 `GITHUB_TOKEN` 只属于 builder 仓库，不能用它读取另一个私有仓库。
-3. 打开 **Actions → TWRP Selene (Native) → Run workflow**，选 `main`；只需明文与加密 Artifact 时保持 `publish=false`，需要额外预发布 Release 时才勾选。Native 成功构建会公开交付明文镜像，其中包含编译所用设备配置与固件。当前只推进原生路线；Docker 研究暂缓，其原有 `publish` 边界不变，需用户明确要求后才恢复其手动入口。两条路线仍保留共享并发组。
+3. 打开 **Actions → TWRP Selene (Native) → Run workflow**，选 `main`；只需明文与加密 Artifact 时保持 `publish=false`，需要额外预发布 Release 时才勾选。Native 成功构建会公开交付明文镜像，其中包含编译所用设备配置与固件。当前只推进原生路线；Docker 研究暂缓，其原有 `publish` 边界不变，需用户明确要求后才恢复其手动入口。Native 并发组包含 run_id，各次推送独立调度，不以新任务替换旧的等待任务；实际并行数量仍受 GitHub Runner 配额限制。
 4. 完整任务会清理该次临时 GitHub runner 的预装 Android SDK、hostedtoolcache、dotnet、PowerShell 四个目录，以获得空间；不会在本地或 self-hosted runner 上运行该清理脚本。若空间门槛仍不满足，任务停止，不自动购买或选择付费 runner。
 5. Native 成功并通过静态验收后，默认上传只包含 `boot.img`、`static-validation.json` 和 `SHA256SUMS` 的明文 Actions Artifact，保留三天；同时用 `delivery-recipient.pem` 的公钥将这三个成品文件打包为 AES-256-GCM / RSA-OAEP 的 CMS 密文，保留加密 Artifact 三天。私钥只在交付方本地，不进入仓库或 Runner；只有明确勾选 `publish` 才额外创建实验性 prerelease。上传失败保留真实失败状态；加密 Artifact 上传失败不会阻止尝试上传已通过编译与静态验收的明文成品，取消运行时不再上传明文。完整日志仍不上传。
 

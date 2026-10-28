@@ -816,3 +816,13 @@ be48ec2运行40473795328的静态检查、608项同步/身份校验和预检通�
 本地既有标准库123项测试：120通过、3项环境限制跳过；4个Shell文件、两个工作流的21个内联Shell块通过bash -n，两个YAML解析和actionlint 1.7.7（-shellcheck=''）通过，git diff --check通过。直接执行修改后的Summary Shell块，合成覆盖成功上传、上传失败及compile失败三种状态：链接只在提供URL时出现，上传结果与NOT_TESTED边界保持。未下载或扫描真实镜像，未读取私钥或私有源码输入。
 
 用户已明确批准将这四个文件以[gpt-work]提交到main，并允许后续Native构建默认公开明文镜像；最新决定为两类Artifact均保留三天。本次只提交工作流与说明，由现有push入口执行静态CI，不手动触发完整构建或创建Release，不生成或补传历史成品；真实明文上传仍待后续手动完整构建验收。
+
+## 2026-10-28 — 每次 main push 自动执行 Native 完整构建
+
+用户明确要求每次提交均触发构建，并沿用本次不监测进度的指令。以main 0fff0b4400c6eba0822a794f5a3fa8eb3ca70d12为基线：删除Native push路径过滤，build条件接受main上的push或workflow_dispatch，保留runner-image前置静态检查与公开同步smoke；PR仍不进入完整构建。提交信息不需特殊标记即可触发，但维护提交继续使用[gpt-work]前缀。
+
+原共享并发组只有单个pending槽，即使cancel-in-progress=false仍会被新任务替换。Native组加入run_id，使每个push的运行独立调度，不主动取消前一运行或替换中间等待任务；未改Runner规格、配额或申请付费资源。Docker仍暂停，未修改其工作流。按GitHub事件语义，一次push包含多个commit只构建最新提交，本地未推送commit不触发；README与AGENTS明确此边界，不声称逐本地commit触发。
+
+明文及加密Artifact仍均保留三天；push没有publish=true输入，不创建Release。source.lock、私有输入白名单、编译参数、现有测试、静态镜像验收及失败日志禁传保持。本次提交即满足自动构建触发条件，不另行dispatch，不监测或重试；真实运行状态与成品上传未在本轮查询。
+
+本地既有标准库123项测试：120通过、3项环境限制跳过；scripts/tests Shell文件及两个工作流内联Shell通过bash -n，YAML解析、actionlint 1.7.7与git diff --check通过。核对main push无路径过滤、PR保留静态边界、build依赖runner-image、并发组含run_id且不取消运行，两类Artifact仍均三天。未额外下载、扫描或核验镜像；静态检查不能证明真实构建或设备测试成功。

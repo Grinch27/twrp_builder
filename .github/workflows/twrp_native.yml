@@ -14,7 +14,6 @@ name: TWRP Selene (Native)
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/twrp_native.yml', 'scripts/**', 'tests/**', 'source.lock.json', 'delivery-recipient.pem']
   pull_request:
     paths: ['.github/workflows/twrp_native.yml', 'scripts/**', 'tests/**', 'source.lock.json', 'delivery-recipient.pem']
   workflow_dispatch:
@@ -44,7 +43,7 @@ env:
   GIT_TERMINAL_PROMPT: '0'
 
 concurrency:
-  group: twrp-selene-${{ github.ref }}
+  group: twrp-selene-${{ github.ref }}-${{ github.run_id }}
   cancel-in-progress: false
 
 jobs:
@@ -88,7 +87,7 @@ jobs:
     name: selene - bootimage - native Ubuntu
     if: >-
       github.ref == 'refs/heads/main' &&
-      github.event_name == 'workflow_dispatch'
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: runner-image
     runs-on: ${{ needs.runner-image.outputs.RUNNER_IMAGE }}
     timeout-minutes: 350

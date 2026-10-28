@@ -555,11 +555,19 @@ Read README.md, AUDIT.md and source.lock.json before changes. Use Chinese for us
 
 ## Native 明文成品交付（2026-10-28）
 
-- 为满足用户直接使用镜像的需求，Native 手动构建在编译及既有静态验收成功后，默认上传仅含 `boot.img`、`static-validation.json`、`SHA256SUMS` 的明文 Artifact，保留三天；同时保留原加密 Artifact 三天。不得上传工作目录、原始日志、私钥或私有源文件附件。
+- 为满足用户直接使用镜像的需求，Native 自动或手动构建在编译及既有静态验收成功后，默认上传仅含 `boot.img`、`static-validation.json`、`SHA256SUMS` 的明文 Artifact，保留三天；同时保留原加密 Artifact 三天。不得上传工作目录、原始日志、私钥或私有源文件附件。
 - Native 的 `publish=false` 仅禁止创建预发布 Release，不再禁止明文成品 Artifact；`publish=true` 仅额外创建预发布 Release。本节替代以上针对 Native 的旧加密独占交付及明文 `publish` 门槛，其他隐私限制保持。
 - 明文镜像会包含编译所用设备配置与固件，具备仓库读取权限、已登录 GitHub 的用户可以下载。不得把 Actions Artifact 视为私人交付通道。
 - 明文上传必须要求本轮 compile 成功且运行未取消；不得因先前加密 Artifact 上传失败而跳过明文上传，也不得掩盖任何上传失败。Summary 报告实际明文上传结果及可用下载地址。
-- Docker 路线仍暂停，原有 `publish=true` 明文／Release 门槛不变；本次不修改 Docker 工作流，不自动触发完整构建，不追溯修改历史 Artifact。
+- Docker 路线仍暂停，原有 `publish=true` 明文／Release 门槛不变；不修改 Docker 工作流，不追溯修改历史 Artifact；Native 自动触发规则见下一节。
+
+## Native 自动完整构建（2026-10-28）
+
+- 按用户最新明确要求，每次向 `main` 推送提交均自动启动 Native 流程；无路径或提交前缀过滤。先通过原有 runner-image 静态检查和公开同步 smoke，再执行完整构建及既有静态验收。保留 main 的手动入口；PR 仍只做静态检查，不读取私有输入。
+- GitHub 按 push 事件触发：本地未推送的 commit 不触发，一次 push 包含多个 commit 时只构建最新提交。各次运行使用含 run_id 的独立并发组，避免旧的单 pending 槽取消中间推送；并行与排队仍受 GitHub 配额约束，不申请付费 Runner。
+- 本节替代以上 Native 仅手动完整构建及 push 仅静态检查的旧约定；自动构建沿用现有十项私有输入和临时 GitHub-hosted Runner 准备流程，不扩展源码、日志、凭据或设备操作边界。
+- 保持明文与加密 Artifact 均三天；自动 push 不创建 Release，仍须手动 publish=true。Docker 保持暂停及原手动门槛。
+- 本次按用户要求不监测构建进度，不轮询、不自动重试或重复 dispatch；后续另获查询请求时再读取真实结果。
 
 <!--
 本轮讨论状态（非已批准的新增规范）：
