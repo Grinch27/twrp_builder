@@ -858,3 +858,15 @@ be48ec2运行40473795328的静态检查、608项同步/身份校验和预检通�
 步骤记录UTC开始/结束、耗时、源URL、目标目录、前后磁盘、真实aria2退出码和本地文件表观长度，并写入Job Summary；不把失败时可能稀疏的文件长度当作已下载字节，不自行推算速度/百分比。下载失败保留其原退出码且不改名，只有成功才进入原提取与发布路径；元数据展示失败不替换下载退出码。INFO日志只在临时Runner，不上传日志Artifact、不加入Release，不涉及Native编译日志或私钥，不新增产物扫描。
 
 三个YAML解析、内联Shell语法、actionlint 1.7.7与差异检查通过；直接执行实际下载Shell的五个合成场景：成功、下载失败、无输出文件、Summary写入失败和元数据读取失败。均保持下载原退出码与条件改名，未真实联网下载或安装软件。随后用户提出32连接；读取官方aria2/aria2的OptionHandlerFactory.cc，确认max-connection-per-server校验上限仍为16，而split无此上限。用户最终明确维持16连接，继续Ubuntu官方二进制包，不引入源码补丁或自编译客户端；将详细参数及日志改动一并提交。提交仅匹配Stock工作流自身路径，不额外dispatch或监测运行。
+
+## 2026-10-28 — Stock 跨运行接力与五分钟验收配置
+
+用户要求落地5小时30分钟前保存断点及自动接续，先用5分钟测试，正式时长待成功后再由用户确定。以main 03260c6713fc628a85fb4dfead3a0e05570fcbe5为基线，保留其删除显式YAML timeout-minutes的变更；通过脚本的300秒软截止主动停止，不恢复旧60分钟步骤限时。
+
+下载、接续调度、解包发布拆为独立Job，普通Job仍使用runner-image输出。下载保留16连接、详细参数和5秒INFO遥测；截止发送INT并等待正常退出，只有计划性退出7且数据/控制文件俱在才暂停，其他退出保持失败。GNU sparse PAX tar只包含固定文件名的数据、aria2控制及最小元数据，1天Artifact不额外压缩；事件日志仍只留Runner。完成归档通过同类1天Artifact交给独立提取发布Job，正式Release规则不变。
+
+新恢复输入为resume_run_id、resume_artifact_id、relay_chain；跨运行下载用actions:read，只有调度Job用actions:write。先核对同仓库main Stock运行和精确Artifact归属/有效性，再验证断点文件允许列表、常规文件、URL/版本/链/轮次及长度，拒绝链接、路径、重名和覆盖。上传成功后GITHUB_TOKEN workflow_dispatch接续同一main，按链并发组串行。最多12轮或控制状态不再变化时，保留最新断点并以调度失败停止；取消/真实下载错误不接力。下载初始空间从7GiB提高至12GiB以覆盖打包/恢复副本，未增加付费资源、摘要或镜像内容扫描。
+
+已核对actions/upload-artifact、actions/download-artifact的默认分支、main/master及实际入口，均按仓库约定引用@main。保留只由自身workflow文件变更触发的路径条件，首次提交依赖已有push自动入口，不额外手动dispatch重复下载。用户本次授权查询新的Stock接力测试链以验收，未扩展到Native或无关历史运行。此条记录随配置提交，真实Actions暂停/上传/接续结果以后续实测记录为准；尚未将时长改为19800秒。
+
+本地验证：150项标准库测试运行完成，147项通过、3项为既有环境限制跳过。新增15项接力测试全部运行，其中真实aria2 1.36.0以4MiB随机数据和仅本机HTTP Range服务验证INT退出7、稀疏打包、迁移目录后非零Range续传、完整字节一致及完成后控制文件删除；无真实ROM下载。三份YAML、33个内联Shell块、脚本Shell语法、actionlint 1.7.7及git diff --check通过。真实小米源的300秒接力验收尚待本提交自动运行。

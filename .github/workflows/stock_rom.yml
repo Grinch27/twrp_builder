@@ -1,9 +1,9 @@
-# Requirements: download the fixed official selene Fastboot ROM and publish payloads.
-# Ambiguity: stock images are not device backups; real archive layout is not assumed.
-# Research: GitHub Release asset limits and safe tarfile stream extraction.
-# Optimization: 16 connections, live INFO events and five-second progress summaries.
-# Risks: public firmware distribution, large download/disk usage and partial uploads.
-# Validation: synthetic extraction tests; draft Release is published after uploads.
+# Requirements: download the fixed official ROM with bounded cross-run continuation.
+# Ambiguity: a paused checkpoint is not a completed ROM or a published Release.
+# Research: aria2 SIGINT, sparse tar, one-day Artifacts and workflow_dispatch.
+# Optimization: 16 connections, five-second progress and sparse checkpoint storage.
+# Risks: job limits, partial uploads, disk copies and automatic continuation loops.
+# Validation: synthetic extraction/relay tests and an initial five-minute Actions test.
 name: Selene Stock ROM Images
 
 # https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax
@@ -14,10 +14,26 @@ on:
   pull_request:
     paths: ['.github/workflows/stock_rom.yml']
   workflow_dispatch:
+    inputs:
+      resume_run_id:
+        description: Previous stock run containing the checkpoint (blank for a new chain)
+        type: string
+        default: ''
+      resume_artifact_id:
+        description: Exact checkpoint Artifact ID from that run
+        type: string
+        default: ''
+      relay_chain:
+        description: Original run ID for the resumed chain
+        type: string
+        default: ''
 
-run-name: Selene stock ROM - ${{ github.event_name }} - ${{ github.ref_name }}
+run-name: Selene stock ROM - ${{ github.event_name }} - chain ${{ inputs.relay_chain || github.run_id }}
 permissions:
   contents: read
+concurrency:
+  group: stock-rom-${{ inputs.relay_chain || github.run_id }}
+  cancel-in-progress: false
 defaults:
   run:
     shell: bash
@@ -25,6 +41,9 @@ env:
   ROM_URL: https://bigota.d.miui.com/V14.0.4.0.TKUCNXM/selene_images_V14.0.4.0.TKUCNXM_20231228.0000.00_13.0_cn_cfe62df805.tgz
   ROM_VERSION: V14.0.4.0.TKUCNXM
   GH_PROMPT_DISABLED: '1'
+  # Five-minute acceptance test; 19800 seconds is NOT enabled yet.
+  RELAY_SECONDS: '300'
+  MAX_RELAY_ROUNDS: '12'
 
 jobs:
   runner-image:
@@ -40,23 +59,48 @@ jobs:
         uses: actions/checkout@main
         with:
           persist-credentials: false
-      - name: Test extraction boundaries with synthetic inputs
-        run: /usr/bin/python3 -m unittest discover -s tests -p test_stock_rom.py -v
+      - name: Test extraction and relay boundaries with synthetic inputs
+        run: /usr/bin/python3 -m unittest discover -s tests -p 'test_stock_rom*.py' -v
 
-  extract:
-    name: Extract official selene stock images and publish Release
+  download:
+    name: Download or checkpoint official ROM (five-minute test)
     if: >-
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: runner-image
     runs-on: ${{ needs.runner-image.outputs.RUNNER_IMAGE }}
     permissions:
-      contents: write
+      contents: read
+      actions: read
+    env:
+      RESUME_RUN_ID: ${{ inputs.resume_run_id || '' }}
+      RESUME_ARTIFACT_ID: ${{ inputs.resume_artifact_id || '' }}
+      RELAY_CHAIN: ${{ inputs.relay_chain || '' }}
+    outputs:
+      state: ${{ steps.download.outputs.state }}
+      chain: ${{ steps.download.outputs.chain }}
+      round: ${{ steps.download.outputs.round }}
+      can_continue: ${{ steps.download.outputs.can_continue }}
+      artifact_id: ${{ steps.checkpoint.outputs.artifact-id }}
     steps:
+      - name: Start job clock and prepare isolated directory
+        run: |
+          set -euo pipefail
+          umask 077
+          printf 'RELAY_JOB_STARTED=%s\n' "$(date +%s)" >> "${GITHUB_ENV}"
+          ROM_WORK="$(mktemp -d "${RUNNER_TEMP}/selene-stock.XXXXXXXX")"
+          printf 'ROM_WORK=%s\nTMPDIR=%s\n' "${ROM_WORK}" "${ROM_WORK}" >> "${GITHUB_ENV}"
       - name: Checkout extractor
         uses: actions/checkout@main
         with:
           persist-credentials: false
+      - name: Validate checkpoint provenance and download space
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          command -v gh
+          /usr/bin/python3 scripts/stock_rom_relay.py prepare
       - name: Install job-scoped run_sudo
         uses: Grinch27/github-actions/.github/actions/run-sudo@main
       - name: Install aria2 binary package when needed
@@ -69,77 +113,109 @@ jobs:
             run_sudo apt-get update
             run_sudo apt-get -y --no-install-recommends install aria2
           fi
-      - name: Prepare isolated temporary directory and check download space
+      - name: Verify real aria2 interruption and resume with a tiny loopback fixture
+        if: env.RESUME_RUN_ID == ''
+        run: |
+          PYTHONPATH=tests /usr/bin/python3 -m unittest \
+            test_stock_rom_relay.RelayTests.test_real_aria2_range_resume_across_checkpoint -v
+      - name: Download the exact previous checkpoint
+        if: env.RESUME_RUN_ID != ''
+        uses: actions/download-artifact@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.RESUME_RUN_ID }}
+          artifact-ids: ${{ env.RESUME_ARTIFACT_ID }}
+          merge-multiple: true
+          path: ${{ env.ROM_WORK }}/incoming
+      - name: Resume with aria2 and package stopped or complete data
+        id: download
+        run: /usr/bin/python3 scripts/stock_rom_relay.py download
+      - name: Upload checkpoint or completed archive for one day
+        id: checkpoint
+        uses: actions/upload-artifact@main
+        with:
+          name: stock-rom-relay-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.download.outputs.checkpoint_path }}
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
+      - name: Record checkpoint availability
+        env:
+          ARTIFACT_URL: ${{ steps.checkpoint.outputs.artifact-url }}
+        run: |
+          printf '[One-day ROM checkpoint](%s)\n' "${ARTIFACT_URL}" >> "${GITHUB_STEP_SUMMARY}"
+
+  continue-download:
+    name: Start the next round after checkpoint upload succeeds
+    if: needs.download.outputs.state == 'paused'
+    needs: [runner-image, download]
+    runs-on: ${{ needs.runner-image.outputs.RUNNER_IMAGE }}
+    permissions:
+      contents: read
+      actions: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ARTIFACT_ID: ${{ needs.download.outputs.artifact_id }}
+      RELAY_CHAIN: ${{ needs.download.outputs.chain }}
+      RELAY_ROUND: ${{ needs.download.outputs.round }}
+      CAN_CONTINUE: ${{ needs.download.outputs.can_continue }}
+    steps:
+      - name: Dispatch the same main workflow with exact checkpoint IDs
+        run: |
+          set -euo pipefail
+          if [[ "${CAN_CONTINUE}" != true ]]; then
+            printf 'Relay stopped: no saved progress, or the %s-round automatic limit was reached. Checkpoint is retained.\n' "${MAX_RELAY_ROUNDS}"
+            exit 1
+          fi
+          request_file="$(mktemp "${RUNNER_TEMP}/stock-dispatch.XXXXXXXX.json")"
+          export RELAY_REQUEST_FILE="${request_file}"
+          /usr/bin/python3 - <<'PYTHON'
+          import json, os
+          from pathlib import Path
+          request = {'ref': 'main', 'inputs': {
+              'resume_run_id': os.environ['GITHUB_RUN_ID'],
+              'resume_artifact_id': os.environ['ARTIFACT_ID'],
+              'relay_chain': os.environ['RELAY_CHAIN'],
+          }}
+          Path(os.environ['RELAY_REQUEST_FILE']).write_text(json.dumps(request))
+          PYTHON
+          gh api --method POST \
+            -H 'X-GitHub-Api-Version: 2026-03-10' \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/stock_rom.yml/dispatches" \
+            --input "${request_file}"
+          printf '\nNext round requested: chain %s, parent round %s, source run %s, Artifact %s.\n' \
+            "${RELAY_CHAIN}" "${RELAY_ROUND}" "${GITHUB_RUN_ID}" "${ARTIFACT_ID}" >> "${GITHUB_STEP_SUMMARY}"
+
+  extract:
+    name: Extract completed official ROM and publish Release
+    if: needs.download.outputs.state == 'complete'
+    needs: [runner-image, download]
+    runs-on: ${{ needs.runner-image.outputs.RUNNER_IMAGE }}
+    permissions:
+      contents: write
+    env:
+      RESUME_RUN_ID: ${{ github.run_id }}
+      RELAY_CHAIN: ${{ needs.download.outputs.chain }}
+    steps:
+      - name: Prepare isolated extraction directory
         run: |
           set -euo pipefail
           umask 077
-          command -v aria2c
-          command -v gh
-          ROM_WORK="$(mktemp -d "${RUNNER_TEMP}/selene-stock.XXXXXXXX")"
-          export ROM_WORK
+          ROM_WORK="$(mktemp -d "${RUNNER_TEMP}/selene-extract.XXXXXXXX")"
           printf 'ROM_WORK=%s\nTMPDIR=%s\n' "${ROM_WORK}" "${ROM_WORK}" >> "${GITHUB_ENV}"
-          /usr/bin/python3 - <<'PY'
-          import os, shutil
-          if shutil.disk_usage(os.environ['ROM_WORK']).free < 7 * 1024 ** 3:
-              raise SystemExit('Insufficient download space; at least 7 GiB required')
-          PY
-      - name: Download official Fastboot archive with aria2 (16 connections)
-        run: |
-          set -euo pipefail
-          umask 077
-          aria2_args=(
-            --no-conf=true --no-netrc=true --enable-rpc=false
-            --max-concurrent-downloads=1 --max-connection-per-server=16 --split=16
-            --min-split-size=1M --continue=true --auto-save-interval=5
-            --file-allocation=none --auto-file-renaming=false --allow-overwrite=false
-            --connect-timeout=30 --timeout=60 --max-tries=3 --retry-wait=5
-            --max-download-limit=0 --max-overall-download-limit=0
-            --follow-torrent=false --follow-metalink=false
-            --console-log-level=info --log-level=info
-            --summary-interval=5 --show-console-readout=true
-            --truncate-console-readout=false --human-readable=true
-            --download-result=full --enable-color=false
-            --log="${ROM_WORK}/aria2-download.log"
-            --dir="${ROM_WORK}" --out=rom.tgz.partial
-          )
-          aria2_started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          printf 'Download started (UTC): %s\nSource URL: %s\nOutput directory: %s\n' \
-            "${aria2_started_at}" "${ROM_URL}" "${ROM_WORK}"
-          printf 'Progress: completed/total (%%), CN=connections, DL=speed, ETA=time remaining.\n'
-          printf 'Effective command: aria2c'
-          printf ' %q' "${aria2_args[@]}" "${ROM_URL}"
-          printf '\nDisk space before download:\n'
-          df -h "${ROM_WORK}" || true
-          aria2_started_seconds=${SECONDS}
-          if aria2c "${aria2_args[@]}" "${ROM_URL}"; then
-            aria2_exit_code=0
-          else
-            aria2_exit_code=$?
-          fi
-          aria2_elapsed_seconds=$((SECONDS - aria2_started_seconds))
-          aria2_finished_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          aria2_file_bytes=unknown
-          if [[ -f "${ROM_WORK}/rom.tgz.partial" ]]; then
-            aria2_file_bytes="$(stat -c %s "${ROM_WORK}/rom.tgz.partial" 2>/dev/null || printf unknown)"
-          fi
-          printf 'Download finished (UTC): %s\naria2 exit code: %s\nElapsed seconds: %s\nLocal apparent file bytes: %s\nEvent log: %s/aria2-download.log\n' \
-            "${aria2_finished_at}" "${aria2_exit_code}" "${aria2_elapsed_seconds}" \
-            "${aria2_file_bytes}" "${ROM_WORK}"
-          printf 'Disk space after download:\n'
-          df -h "${ROM_WORK}" || true
-          {
-            printf '### aria2 official ROM download\n\n| Field | Value |\n| --- | --- |\n'
-            printf '| Source | %s |\n| Connections / splits | 16 / 16 |\n' "${ROM_URL}"
-            printf '| Started UTC | %s |\n| Finished UTC | %s |\n' "${aria2_started_at}" "${aria2_finished_at}"
-            printf '| aria2 exit code | %s |\n| Elapsed seconds | %s |\n| Local apparent file bytes | %s |\n' \
-              "${aria2_exit_code}" "${aria2_elapsed_seconds}" "${aria2_file_bytes}"
-            printf '\nProgress, speed, actual CN, ETA and INFO events are in the download step log.\n'
-            printf 'On failure, apparent file length is not the completed byte count.\n'
-          } >> "${GITHUB_STEP_SUMMARY}" || true
-          if (( aria2_exit_code != 0 )); then
-            exit "${aria2_exit_code}"
-          fi
-          mv "${ROM_WORK}/rom.tgz.partial" "${ROM_WORK}/rom.tgz"
+      - name: Checkout extractor
+        uses: actions/checkout@main
+        with:
+          persist-credentials: false
+      - name: Download this run's completed ROM archive
+        uses: actions/download-artifact@main
+        with:
+          artifact-ids: ${{ needs.download.outputs.artifact_id }}
+          merge-multiple: true
+          path: ${{ env.ROM_WORK }}/incoming
+      - name: Restore only a completed ROM checkpoint
+        run: /usr/bin/python3 scripts/stock_rom_relay.py restore-complete
       - name: List archive and extract all stock image payloads
         run: /usr/bin/python3 scripts/stock_rom.py "${ROM_WORK}/rom.tgz" "${ROM_WORK}/output"
       - name: Upload to a new draft and publish the complete Release
