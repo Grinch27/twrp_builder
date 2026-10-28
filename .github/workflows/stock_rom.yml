@@ -1,7 +1,7 @@
 # Requirements: download the fixed official selene Fastboot ROM and publish payloads.
 # Ambiguity: stock images are not device backups; real archive layout is not assumed.
 # Research: GitHub Release asset limits and safe tarfile stream extraction.
-# Optimization: aria2 with 16 connections; no Android sync or recompression.
+# Optimization: 16 connections, live INFO events and five-second progress summaries.
 # Risks: public firmware distribution, large download/disk usage and partial uploads.
 # Validation: synthetic extraction tests; draft Release is published after uploads.
 name: Selene Stock ROM Images
@@ -89,12 +89,59 @@ jobs:
         timeout-minutes: 60
         run: |
           set -euo pipefail
-          aria2c --no-conf=true --max-connection-per-server=16 --split=16 \
-            --continue=true --file-allocation=none \
-            --auto-file-renaming=false --allow-overwrite=false \
-            --connect-timeout=30 --timeout=60 --max-tries=3 --retry-wait=5 \
-            --summary-interval=60 --show-console-readout=false --enable-color=false \
-            --dir="${ROM_WORK}" --out=rom.tgz.partial "${ROM_URL}"
+          umask 077
+          aria2_args=(
+            --no-conf=true --no-netrc=true --enable-rpc=false
+            --max-concurrent-downloads=1 --max-connection-per-server=16 --split=16
+            --min-split-size=1M --continue=true --auto-save-interval=5
+            --file-allocation=none --auto-file-renaming=false --allow-overwrite=false
+            --connect-timeout=30 --timeout=60 --max-tries=3 --retry-wait=5
+            --max-download-limit=0 --max-overall-download-limit=0
+            --follow-torrent=false --follow-metalink=false
+            --console-log-level=info --log-level=info
+            --summary-interval=5 --show-console-readout=true
+            --truncate-console-readout=false --human-readable=true
+            --download-result=full --enable-color=false
+            --log="${ROM_WORK}/aria2-download.log"
+            --dir="${ROM_WORK}" --out=rom.tgz.partial
+          )
+          aria2_started_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          printf 'Download started (UTC): %s\nSource URL: %s\nOutput directory: %s\n' \
+            "${aria2_started_at}" "${ROM_URL}" "${ROM_WORK}"
+          printf 'Progress: completed/total (%%), CN=connections, DL=speed, ETA=time remaining.\n'
+          printf 'Effective command: aria2c'
+          printf ' %q' "${aria2_args[@]}" "${ROM_URL}"
+          printf '\nDisk space before download:\n'
+          df -h "${ROM_WORK}" || true
+          aria2_started_seconds=${SECONDS}
+          if aria2c "${aria2_args[@]}" "${ROM_URL}"; then
+            aria2_exit_code=0
+          else
+            aria2_exit_code=$?
+          fi
+          aria2_elapsed_seconds=$((SECONDS - aria2_started_seconds))
+          aria2_finished_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          aria2_file_bytes=unknown
+          if [[ -f "${ROM_WORK}/rom.tgz.partial" ]]; then
+            aria2_file_bytes="$(stat -c %s "${ROM_WORK}/rom.tgz.partial" 2>/dev/null || printf unknown)"
+          fi
+          printf 'Download finished (UTC): %s\naria2 exit code: %s\nElapsed seconds: %s\nLocal apparent file bytes: %s\nEvent log: %s/aria2-download.log\n' \
+            "${aria2_finished_at}" "${aria2_exit_code}" "${aria2_elapsed_seconds}" \
+            "${aria2_file_bytes}" "${ROM_WORK}"
+          printf 'Disk space after download:\n'
+          df -h "${ROM_WORK}" || true
+          {
+            printf '### aria2 official ROM download\n\n| Field | Value |\n| --- | --- |\n'
+            printf '| Source | %s |\n| Connections / splits | 16 / 16 |\n' "${ROM_URL}"
+            printf '| Started UTC | %s |\n| Finished UTC | %s |\n' "${aria2_started_at}" "${aria2_finished_at}"
+            printf '| aria2 exit code | %s |\n| Elapsed seconds | %s |\n| Local apparent file bytes | %s |\n' \
+              "${aria2_exit_code}" "${aria2_elapsed_seconds}" "${aria2_file_bytes}"
+            printf '\nProgress, speed, actual CN, ETA and INFO events are in the download step log.\n'
+            printf 'On failure, apparent file length is not the completed byte count.\n'
+          } >> "${GITHUB_STEP_SUMMARY}" || true
+          if (( aria2_exit_code != 0 )); then
+            exit "${aria2_exit_code}"
+          fi
           mv "${ROM_WORK}/rom.tgz.partial" "${ROM_WORK}/rom.tgz"
       - name: List archive and extract all stock image payloads
         timeout-minutes: 35
