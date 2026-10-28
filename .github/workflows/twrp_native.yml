@@ -14,8 +14,9 @@ name: TWRP Selene (Native)
 on:
   push:
     branches: [main]
+    paths: ['.github/workflows/twrp_native.yml']
   pull_request:
-    paths: ['.github/workflows/**', 'scripts/**', 'tests/**', 'source.lock.json', 'delivery-recipient.pem']
+    paths: ['.github/workflows/twrp_native.yml']
   workflow_dispatch:
     inputs:
       publish:

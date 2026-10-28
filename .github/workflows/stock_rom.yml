@@ -10,9 +10,9 @@ name: Selene Stock ROM Images
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/stock_rom.yml', 'scripts/stock_rom.py', 'tests/test_stock_rom.py']
+    paths: ['.github/workflows/stock_rom.yml']
   pull_request:
-    paths: ['.github/workflows/stock_rom.yml', 'scripts/stock_rom.py', 'tests/test_stock_rom.py']
+    paths: ['.github/workflows/stock_rom.yml']
   workflow_dispatch:
 
 run-name: Selene stock ROM - ${{ github.event_name }} - ${{ github.ref_name }}

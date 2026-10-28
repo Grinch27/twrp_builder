@@ -563,7 +563,7 @@ Read README.md, AUDIT.md and source.lock.json before changes. Use Chinese for us
 
 ## Native 自动完整构建（2026-10-28）
 
-- 按用户最新明确要求，每次向 `main` 推送提交均自动启动 Native 流程；无路径或提交前缀过滤。先通过原有 runner-image 静态检查和公开同步 smoke，再执行完整构建及既有静态验收。保留 main 的手动入口；PR 仍只做静态检查，不读取私有输入。
+- 按用户最新明确要求，仅当向 `main` 推送的变更包含 `.github/workflows/twrp_native.yml` 自身时自动启动 Native 流程；PR 路径也只匹配该文件，不由文档、脚本、测试、源码锁或其他工作流改动触发。先通过原有 runner-image 静态检查和公开同步 smoke，再执行完整构建及既有静态验收。保留 main 的手动入口；PR 仍只做静态检查，不读取私有输入。
 - GitHub 按 push 事件触发：本地未推送的 commit 不触发，一次 push 包含多个 commit 时只构建最新提交。各次运行使用含 run_id 的独立并发组，避免旧的单 pending 槽取消中间推送；并行与排队仍受 GitHub 配额约束，不申请付费 Runner。
 - 本节替代以上 Native 仅手动完整构建及 push 仅静态检查的旧约定；自动构建沿用现有十项私有输入和临时 GitHub-hosted Runner 准备流程，不扩展源码、日志、凭据或设备操作边界。
 - 保持明文与加密 Artifact 均三天；自动 push 不创建 Release，仍须手动 publish=true。Docker 保持暂停及原手动门槛。
@@ -575,7 +575,7 @@ Read README.md, AUDIT.md and source.lock.json before changes. Use Chinese for us
 - 保留 images/ 常规载荷及配套元数据；不得执行包内刷机程序、脚本或工具，不得生成不存在的 recovery。异常路径、链接、重名、未覆盖的镜像候选或缺少 boot 时失败。
 - 原字节直出；大文件分片严格低于 GitHub Release 单附件限制并提供合并说明，不做额外 SHA256、签名证书、DEX 或版本标记扫描。
 - 独立 stock 工作流允许明文 Release，不需要 CMS 私钥；先上传至唯一新草稿，全部成功后才发布，不覆盖旧产物、不设为 Latest、不自动删除 Release。Native 的三天 Artifact 保留期不等于 Release 到期时间。
-- main 上相关 stock 工作流／脚本／测试的修改可自动执行此公开下载及发布，保留手动入口；PR 只运行公开合成测试。现有 Native 每次 main push 的完整构建规则不变，本次不监测或轮询运行。
+- main push 仅在 `.github/workflows/stock_rom.yml` 自身修改时自动执行此公开下载及发布，保留手动入口；PR 路径也仅匹配本工作流自身，并只运行公开合成测试。两个工作流文件同时修改则各触发一次；依赖脚本／测试修改需手动验证，本次不监测或轮询运行。
 
 <!--
 本轮讨论状态（非已批准的新增规范）：

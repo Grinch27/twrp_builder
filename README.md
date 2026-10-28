@@ -25,7 +25,7 @@ flowchart TD
 | 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j"$(($(nproc) + 1))"`，`NINJA_ARGS=-v` |
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度为可用 CPU 数加一。原生路线使用 Runner 可用内存并新增 12 GiB Swap，Docker 路线另限 14 GiB |
 | 磁盘检查 | 清理后至少 62 GiB，其中新增 Swap 占 12 GiB；同步前保留至少 50 GiB，编译前至少 18 GiB；不足立即失败 |
-| 自动触发 | Native 对 main 的每次 push 先运行静态检查和公开同步测试，通过后自动完整编译；不限制文件路径或提交前缀。PR 仅静态检查；保留 main 的 workflow_dispatch。Docker 仍仅保留手动入口 |
+| 自动触发 | Native 仅在 main push 修改 `.github/workflows/twrp_native.yml` 时完整构建；Stock 仅在 main push 修改 `.github/workflows/stock_rom.yml` 时解包发布。两者 PR 也仅匹配各自工作流文件，且只做静态检查。手动入口保留，Docker 仍仅手动 |
 | 唯一手动输入 | Native 的 `publish=false` 仅控制是否另建预发布 Release；成功构建默认上传含 `boot.img` 的明文 Artifact，并保留加密 Artifact |
 
 源码预编译 JDK、Clang 等从锁定上游重新同步；不克隆整个 7.44 GiB Git 归档，不回放旧 `out`、Soong 测试禁用、稀疏片段或 `ALLOW_MISSING_DEPENDENCIES`。归档内 18 个 Release 大文件不作为这条干净路线的下载入口。
@@ -38,7 +38,7 @@ flowchart TD
 
 原生入口按 AGENTS.md 使用统一的 `runner-image` 输出，以及经核对的 `checkout@main`、`upload-artifact@main` 和共享 `run-sudo@main`。主机依赖优先安装 Ubuntu 二进制包；旧工具需要的 ABI 5 使用 Ubuntu 官方 Jammy `libtinfo5`、`libncurses5` 的 `6.3-2ubuntu0.3` amd64 安装包，逐个核验 SHA-256、包名、版本、架构与安装状态，不自行编译 ncurses，不修改全局 Java/Python。JDK、Clang 仍来自锁定源码。此路线尚须完整编译与静态验收，不能据静态检查认定稳定。
 
-每次自动构建对应一次向 `main` 的 push，构建该事件的最新提交；本地未推送的 commit 不触发，一次 push 包含多个 commit 时只产生一轮构建。需要逐 commit 构建时应分别推送。PR 不读取私有输入，也不进行完整编译。
+自动运行按各工作流自身文件的路径过滤：只修改 README、AGENTS、脚本、测试、源码锁或其他工作流，不会触发该工作流。一个 main push 同时修改两个工作流文件时，各触发一次；一次 push 包含多个 commit 时，匹配的工作流仍只运行一次，使用该事件的最新提交。本地未推送的 commit 不触发。修改依赖文件后若需验证，可使用手动入口；PR 不读取私有输入，也不进行完整编译。
 
 ## 成功产物
 
@@ -60,7 +60,7 @@ openssl cms -decrypt -binary -inform DER -in sealed-output.cms -inkey /path/to/r
 tar -xf twrp-selene.tar
 ```
 
-包内为 `boot.img`、`static-validation.json` 和原有 `SHA256SUMS`。私钥由交付方保存，不进入仓库或 Runner；失败日志 Artifact 仍保持关闭。后续完整构建由 main 的 push 自动触发，也可使用 Native 手动入口。
+包内为 `boot.img`、`static-validation.json` 和原有 `SHA256SUMS`。私钥由交付方保存，不进入仓库或 Runner；失败日志 Artifact 仍保持关闭。后续完整构建仅在 main push 修改 Native 工作流自身时自动触发，也可使用 Native 手动入口。
 
 ## 首次运行
 
@@ -104,7 +104,7 @@ tar -xf twrp-selene.tar
 
 ## 官方 ROM 分区镜像解包与 Release
 
-独立入口为 **Actions → Selene Stock ROM Images**（`.github/workflows/stock_rom.yml`）。当该工作流、`scripts/stock_rom.py` 或对应测试变更并推送到 main 时自动运行，也支持 main 手动运行；PR 只运行合成测试。它与 TWRP 编译独立，不读取私有归档、私钥或 `TWRP_SOURCE_TOKEN`，不操作手机。
+独立入口为 **Actions → Selene Stock ROM Images**（`.github/workflows/stock_rom.yml`）。仅当 `.github/workflows/stock_rom.yml` 自身变更并推送到 main 时自动运行，也支持 main 手动运行；PR 只运行合成测试。它与 TWRP 编译独立，不读取私有归档、私钥或 `TWRP_SOURCE_TOKEN`，不操作手机。
 
 下载地址固定为小米官方完整 Fastboot 包：
 
@@ -118,7 +118,7 @@ Actions 先下载压缩包并列出目录，再完整保留唯一 `images/` 目�
 
 Release 附件没有 Actions Artifact 的三天自动过期规则，本流程不自动删除 Release。原厂镜像不是当前 `boot_a`／`boot_b` 的实机备份，不能证明当前槽位内容或刷回安全。包内实际文件、大小和 recovery 是否存在，以该次 Release 清单为准。只检查下载与提取所需空间，不清理主机预装目录，不申请付费 Runner。
 
-本仓库的现有规则仍使每次 main push 同时触发 Native 完整构建；添加这个入口不会暂停该规则。当前会话沿用“不监测”的要求，提交后不查询或轮询任务进度。
+Native 与 Stock 只由各自工作流文件变更触发；修改 Stock 工作流不会触发 Native，反之亦然。当前会话沿用“不监测”的要求，提交后不查询或轮询任务进度。
 
 ## 验收和限制
 

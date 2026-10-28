@@ -836,3 +836,11 @@ be48ec2运行40473795328的静态检查、608项同步/身份校验和预检通�
 唯一stock标签含ROM版本、run_id与attempt，先上传新草稿再发布，不覆盖历史Release或设为Latest。Release包含实际载荷、归档目录及来源/大小/分片清单，生成合并说明；不使用CMS或私钥，用户已明确授权该公开原厂包的Release交付。三天TTL仍仅适用于Native Artifacts，不自动删除stock Release。本次Native只将既有actionlint覆盖扩展到所有工作流，并为工作流PR保留静态检查；所有原编译、源码锁和交付参数不变。
 
 本地135项标准库测试：132通过、3项为既有环境限制跳过。新增12项使用微型合成压缩包，覆盖全部载荷与bin/配套元数据、分片字节往返、脚本排除、缺失/空boot、危险路径与链接、重名/多根、目录外未覆盖候选、分片/清单命名冲突、空间不足、拒绝覆盖、截断与附件数量上限；无网络、手机或凭据。全部Shell、三个工作流的26个内联Shell块通过bash -n，YAML解析、actionlint 1.7.7及git diff --check通过。真实包内载荷数量、目录布局、提取、上传与Release状态尚未验证；提交会同时触发现有Native完整构建和新的stock入口，沿用当前不监测要求，不轮询或重复触发。
+
+## 2026-10-28 — 各工作流仅由自身文件改动自动触发
+
+用户将自动触发范围收窄为工作流自身。以main 9817a0620cb5f7838064b84f977b5a407d19638b为基线，Native的push及pull_request paths均只列.github/workflows/twrp_native.yml，Stock的两种事件paths均只列.github/workflows/stock_rom.yml；main分支限制、手动入口、各job前置检查与PR不进入完整任务的条件不变。README、AGENTS、脚本、测试或source.lock的单独修改不自动运行这两个入口；Docker继续暂停且仅手动，不因本次缩小触发范围而启用。
+
+路径按push事件的变更集匹配：同时修改两个工作流时各运行一次，同一次push的多个commit不会逐个建立运行。本次提交包含两个工作流，因而两个入口均满足触发条件，不额外dispatch、不查询进度。原产物三天保留、Stock Release发布方式、权限、源码锁、并发与镜像验收保持。
+
+三个YAML解析、actionlint 1.7.7、全部内联Shell语法及git diff --check通过。9组实际paths匹配用例覆盖只改Native、只改Stock、同时修改、README、AGENTS、脚本、测试、源码锁及Docker文件；逐项确认手动输入与所有非触发配置完全保持。脚本与测试源码未改，不新增产物扫描；不以路径配置和静态验证声称实际构建、解包或发布成功。
