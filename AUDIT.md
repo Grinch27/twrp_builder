@@ -870,3 +870,9 @@ be48ec2运行40473795328的静态检查、608项同步/身份校验和预检通�
 已核对actions/upload-artifact、actions/download-artifact的默认分支、main/master及实际入口，均按仓库约定引用@main。保留只由自身workflow文件变更触发的路径条件，首次提交依赖已有push自动入口，不额外手动dispatch重复下载。用户本次授权查询新的Stock接力测试链以验收，未扩展到Native或无关历史运行。此条记录随配置提交，真实Actions暂停/上传/接续结果以后续实测记录为准；尚未将时长改为19800秒。
 
 本地验证：150项标准库测试运行完成，147项通过、3项为既有环境限制跳过。新增15项接力测试全部运行，其中真实aria2 1.36.0以4MiB随机数据和仅本机HTTP Range服务验证INT退出7、稀疏打包、迁移目录后非零Range续传、完整字节一致及完成后控制文件删除；无真实ROM下载。三份YAML、33个内联Shell块、脚本Shell语法、actionlint 1.7.7及git diff --check通过。真实小米源的300秒接力验收尚待本提交自动运行。
+
+## 2026-10-28 — 五分钟验收首轮的临时盘测试隔离修正
+
+4257f95的自动运行40657794629在runner-image合成测试阶段失败，未进入真实ROM下载。该Runner为Ubuntu26.04/Python3.14，/tmp是约8GiB的tmpfs；来源校验单测错误地依赖了宿主实际空闲量，触发真实下载所需12GiB门槛。同轮真实aria2 1.37.0的INT、断点包迁移及Range续传微型测试已经通过。
+
+将来源校验单测的容量显式模拟为充足，另增低容量拒绝测试，runner-image合成数据指定runner.temp；真实下载目录的12GiB空间门槛保持。28项Stock相关测试在本地全部运行通过（含真实aria2），actionlint及差异检查通过。修正后由本工作流文件变更的push启动新验收，不重跑旧SHA、不额外dispatch重复下载。

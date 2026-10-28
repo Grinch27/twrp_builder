@@ -60,6 +60,8 @@ jobs:
         with:
           persist-credentials: false
       - name: Test extraction and relay boundaries with synthetic inputs
+        env:
+          TMPDIR: ${{ runner.temp }}
         run: /usr/bin/python3 -m unittest discover -s tests -p 'test_stock_rom*.py' -v
 
   download:

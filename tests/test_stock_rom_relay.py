@@ -129,7 +129,8 @@ class RelayTests(unittest.TestCase):
                 relay.restore(archive, destination, self.resume_env(), 'paused')
             self.assertEqual(list(destination.iterdir()), [])
 
-    def test_input_pair_and_provenance_reject_fork_or_wrong_artifact(self):
+    @mock.patch.object(relay.shutil, 'disk_usage', return_value=mock.Mock(free=20 * relay.RESERVE))
+    def test_input_pair_and_provenance_reject_fork_or_wrong_artifact(self, disk_usage):
         with self.assertRaises(ValueError):
             relay.validate_inputs(dict(self.env, RESUME_RUN_ID='100'))
         run = {'id': 100, 'head_branch': 'main', 'event': 'push', 'run_attempt': 1,
@@ -144,6 +145,13 @@ class RelayTests(unittest.TestCase):
         with mock.patch.object(relay, 'github_json', side_effect=[run, dict(artifact, expired=True)]):
             with self.assertRaises(ValueError):
                 relay.prepare(self.resume_env())
+
+    def test_real_download_space_gate_rejects_low_capacity(self):
+        with mock.patch.object(relay.shutil, 'disk_usage', return_value=mock.Mock(free=8 * relay.RESERVE)), \
+                mock.patch.object(relay, 'github_json') as github:
+            with self.assertRaisesRegex(ValueError, '12 GiB'):
+                relay.prepare(self.env)
+        github.assert_not_called()
 
     def test_deadline_sends_int_and_waits_for_clean_exit(self):
         process = mock.MagicMock()
