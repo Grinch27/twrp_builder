@@ -15,6 +15,10 @@ on:
     paths: ['.github/workflows/stock_rom.yml']
   workflow_dispatch:
     inputs:
+      rom_release_tag:
+        description: Restore a complete original ROM from this stock Release tag (optional)
+        type: string
+        default: ''
       resume_run_id:
         description: Previous stock run containing the checkpoint (blank for a new chain)
         type: string
@@ -73,9 +77,11 @@ jobs:
     needs: runner-image
     runs-on: ${{ needs.runner-image.outputs.RUNNER_IMAGE }}
     permissions:
-      contents: read
+      # Recovery can read a saved draft Release belonging to this repository.
+      contents: write
       actions: read
     env:
+      ROM_RELEASE_TAG: ${{ inputs.rom_release_tag || '' }}
       RESUME_RUN_ID: ${{ inputs.resume_run_id || '' }}
       RESUME_ARTIFACT_ID: ${{ inputs.resume_artifact_id || '' }}
       RELAY_CHAIN: ${{ inputs.relay_chain || '' }}
@@ -131,6 +137,11 @@ jobs:
           artifact-ids: ${{ env.RESUME_ARTIFACT_ID }}
           merge-multiple: true
           path: ${{ env.ROM_WORK }}/incoming
+      - name: Restore a saved original ROM from Release when requested
+        if: env.ROM_RELEASE_TAG != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: /usr/bin/python3 scripts/stock_rom.py "${ROM_WORK}/rom.tgz" --restore-release "${ROM_RELEASE_TAG}"
       - name: Resume with aria2 and package stopped or complete data
         id: download
         run: /usr/bin/python3 scripts/stock_rom_relay.py download
@@ -219,9 +230,9 @@ jobs:
           path: ${{ env.ROM_WORK }}/incoming
       - name: Restore only a completed ROM checkpoint
         run: /usr/bin/python3 scripts/stock_rom_relay.py restore-complete
-      - name: List archive and extract all stock image payloads
-        run: /usr/bin/python3 scripts/stock_rom.py "${ROM_WORK}/rom.tgz" "${ROM_WORK}/output"
-      - name: Upload to a new draft and publish the complete Release
+      - name: Prepare original ROM backup before inspecting payload directories
+        run: /usr/bin/python3 scripts/stock_rom.py "${ROM_WORK}/rom.tgz" "${ROM_WORK}/original" --prepare-original
+      - name: Save original ROM to a new draft Release before extraction
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -231,8 +242,24 @@ jobs:
           tag="selene-stock-${ROM_VERSION}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           gh release create "${tag}" --target "${BUILDER_COMMIT}" \
             --draft --latest=false --title "selene stock ${ROM_VERSION} ${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}" \
-            --notes-file "${ROM_WORK}/output/release-notes.md" \
-            "${ROM_WORK}/output/assets/"*
-          gh release edit "${tag}" --draft=false --latest=false
+            --notes-file "${ROM_WORK}/original/release-notes.md"
+          printf 'STOCK_RELEASE_TAG=%s\n' "${tag}" >> "${GITHUB_ENV}"
+          gh release upload "${tag}" "${ROM_WORK}/original/assets/"*.tgz*
+          gh release upload "${tag}" "${ROM_WORK}/original/assets/original-rom-manifest.json"
+          printf 'Original ROM saved in draft `%s`. Resume with workflow input `rom_release_tag=%s` if extraction fails.\n' \
+            "${tag}" "${tag}" >> "${GITHUB_STEP_SUMMARY}"
+          rm -- "${ROM_WORK}/original/assets/"*.tgz*
+      - name: List archive and extract all stock image payloads
+        run: /usr/bin/python3 scripts/stock_rom.py "${ROM_WORK}/rom.tgz" "${ROM_WORK}/output" --payload-only
+      - name: Add payloads to the saved draft and publish the complete Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          BUILDER_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          tag="${STOCK_RELEASE_TAG}"
+          gh release upload "${tag}" "${ROM_WORK}/output/assets/"*
+          gh release edit "${tag}" --notes-file "${ROM_WORK}/output/release-notes.md" --draft=false --latest=false
           printf '[Download official stock payloads](https://github.com/%s/releases/tag/%s)\n\nStock ROM extraction only; not a device backup or proof of flash safety.\n' \
             "${GH_REPO}" "${tag}" >> "${GITHUB_STEP_SUMMARY}"

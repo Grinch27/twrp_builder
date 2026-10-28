@@ -38,6 +38,8 @@ def validate_inputs(env):
     run_id = env.get('RESUME_RUN_ID', '')
     artifact_id = env.get('RESUME_ARTIFACT_ID', '')
     chain = env.get('RELAY_CHAIN', '')
+    if env.get('ROM_RELEASE_TAG') and (run_id or artifact_id or chain):
+        raise ValueError('Choose a Release source or an aria2 checkpoint, not both')
     if run_id or artifact_id:
         if not all(positive_id(value) for value in (run_id, artifact_id, chain)):
             raise ValueError('Resume requires positive run, artifact and chain IDs')
@@ -195,6 +197,12 @@ def disk_info(work):
 def download(env):
     """Resume or start one bounded round and produce a paused/complete artifact."""
     work = Path(env['ROM_WORK'])
+    if env.get('ROM_RELEASE_TAG'):
+        validate_inputs(env)
+        if (not (work / 'rom.tgz').is_file() or (work / PARTIAL).exists()
+                or (work / CONTROL).exists()):
+            raise ValueError('Release recovery did not produce a complete ROM')
+        return save_checkpoint(env, work, 'complete', env['GITHUB_RUN_ID'], 1, True)
     previous = None
     previous_control = None
     if validate_inputs(env):
@@ -248,6 +256,10 @@ def download(env):
         progressed = previous_control is None or previous_control != (work / CONTROL).read_bytes()
     else:
         return code if code > 0 else 128 - code
+    return save_checkpoint(env, work, state, chain, round_number, progressed)
+
+
+def save_checkpoint(env, work, state, chain, round_number, progressed):
     metadata = {
         'schema': 1, 'state': state, 'url': env['ROM_URL'],
         'rom_version': env['ROM_VERSION'], 'chain': chain, 'round': round_number,

@@ -13,7 +13,9 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
+import subprocess
 import tarfile
+import tempfile
 
 
 ROM_URL = (
@@ -23,7 +25,7 @@ ROM_URL = (
 ROM_VERSION = 'V14.0.4.0.TKUCNXM'
 PART_BYTES = 1_900_000_000
 RESERVE_BYTES = 1024 ** 3
-METADATA_NAMES = ('archive-inventory.json', 'stock-rom-manifest.json')
+METADATA_NAMES = ('archive-inventory.json', 'stock-rom-manifest.json', 'original-rom-manifest.json')
 SCRIPT_SUFFIXES = {'.sh', '.bat', '.cmd', '.ps1', '.exe'}
 IMAGE_SUFFIXES = {'.img', '.bin', '.elf', '.mbn'}
 SAFE_NAME = re.compile(r'[A-Za-z0-9](?:[A-Za-z0-9._-]{0,178}[A-Za-z0-9_-])?\Z')
@@ -54,6 +56,11 @@ def inspect_archive(archive):
                 'type': 'file' if member.isfile() else 'directory' if member.isdir() else 'other',
             })
             if member.isdir():
+                continue
+            if parts == (f'selene_images_{ROM_VERSION}_13.0', 'MTK_AllInOne_DA_mt6768.bin'):
+                if not member.isfile() or member.issparse() or member.size <= 0:
+                    raise ValueError('Non-regular or empty download-agent companion')
+                inventory[-1]['role'] = 'download-agent-companion'
                 continue
             index = parts.index('images') if 'images' in parts else -1
             if index in (0, 1) and len(parts) == index + 1:
@@ -125,19 +132,115 @@ def copy_exact(source, destination, size):
             remaining -= len(chunk)
 
 
-def extract_rom(archive, output, part_bytes=PART_BYTES):
+def original_plan(archive, part_bytes):
+    return plan_assets([{'name': ROM_URL.rsplit('/', 1)[-1],
+                         'bytes': archive.stat().st_size}], part_bytes)[0]
+
+
+def write_original(archive, assets, staging, original):
+    """Copy raw bytes without inspecting ROM contents; write the manifest last."""
+    with archive.open('rb') as source:
+        for part in original['assets']:
+            partial = staging / part['name']
+            copy_exact(source, partial, part['bytes'])
+            partial.rename(assets / part['name'])
+        if source.read(1):
+            raise ValueError('Original ROM changed while preparing Release assets')
+    metadata = {'schema': 1, 'source_url': ROM_URL, 'rom_version': ROM_VERSION,
+                'original_rom': original}
+    with (assets / METADATA_NAMES[2]).open('x') as target:
+        json.dump(metadata, target, indent=2)
+        target.write('\n')
+
+
+def prepare_original_rom(archive, output, part_bytes=PART_BYTES):
+    """Prepare a durable raw-ROM backup before any images/ directory checks."""
+    archive, output = Path(archive), Path(output)
+    if output.exists():
+        raise FileExistsError(output)
+    original = original_plan(archive, part_bytes)
+    if original['bytes'] <= 0:
+        raise ValueError('Original ROM is empty')
+    if shutil.disk_usage(output.parent).free < original['bytes'] + RESERVE_BYTES:
+        raise OSError('Insufficient space for original ROM Release parts')
+    assets, staging = output / 'assets', output / 'partial'
+    assets.mkdir(parents=True, mode=0o700)
+    staging.mkdir(mode=0o700)
+    write_original(archive, assets, staging, original)
+    command = (f"cat -- {' '.join(p['name'] for p in original['assets'])} > {original['name']}"
+               if len(original['assets']) > 1 else f"# Original archive: {original['name']}")
+    (output / 'release-notes.md').write_text(
+        f'# selene stock ROM {ROM_VERSION}\n\nOfficial source: {ROM_URL}\n\n'
+        'Original ROM backup saved before payload extraction. Payload preparation is pending.\n\n'
+        f"Original bytes: {original['bytes']}\n\n```bash\n{command}\n```\n")
+    return original
+
+
+def restore_original_release(tag, archive):
+    """Restore only the exact fixed-ROM parts declared by a saved Release manifest."""
+    archive = Path(archive)
+    if not re.fullmatch(re.escape(f'selene-stock-{ROM_VERSION}-') + r'[1-9][0-9]*-[1-9][0-9]*', tag):
+        raise ValueError('Unexpected stock Release tag')
+    if archive.exists():
+        raise FileExistsError(archive)
+    repo = os.environ['GITHUB_REPOSITORY']
+    prefix = ['gh', 'release']
+    remote = json.loads(subprocess.check_output(
+        prefix + ['view', tag, '--repo', repo, '--json', 'assets'], text=True))['assets']
+    manifests = [a for a in remote if a['name'] == METADATA_NAMES[2]]
+    if len(manifests) != 1 or not 0 < manifests[0]['size'] <= 16384:
+        raise ValueError('Release has no complete original-ROM manifest')
+    with tempfile.TemporaryDirectory(prefix='stock-release.', dir=archive.parent) as temporary:
+        staging = Path(temporary)
+        subprocess.run(prefix + ['download', tag, '--repo', repo, '--pattern',
+                                METADATA_NAMES[2], '--dir', str(staging)], check=True)
+        manifest_path = staging / METADATA_NAMES[2]
+        if manifest_path.stat().st_size > 16384:
+            raise ValueError('Oversized original-ROM manifest')
+        metadata = json.loads(manifest_path.read_text())
+        original = metadata.get('original_rom', {})
+        size = original.get('bytes')
+        if (metadata.get('schema') != 1 or metadata.get('source_url') != ROM_URL
+                or metadata.get('rom_version') != ROM_VERSION
+                or type(size) is not int or not 0 < size <= 8 * 1024 ** 3):
+            raise ValueError('Release manifest does not identify the fixed ROM')
+        expected = plan_assets([{'name': ROM_URL.rsplit('/', 1)[-1], 'bytes': size}], PART_BYTES)[0]
+        if original != expected:
+            raise ValueError('Unexpected original-ROM part names or sizes')
+        for part in original['assets']:
+            matches = [a for a in remote if a['name'] == part['name']]
+            if len(matches) != 1 or matches[0]['size'] != part['bytes']:
+                raise ValueError('Release original-ROM part is missing or incomplete')
+        if shutil.disk_usage(archive.parent).free < 2 * size + RESERVE_BYTES:
+            raise OSError('Insufficient space to restore Release parts and ROM')
+        for part in original['assets']:
+            subprocess.run(prefix + ['download', tag, '--repo', repo, '--pattern',
+                                    part['name'], '--dir', str(staging)], check=True)
+            if (staging / part['name']).stat().st_size != part['bytes']:
+                raise ValueError('Downloaded Release part has an unexpected length')
+        partial = archive.with_name(archive.name + '.restoring')
+        with partial.open('xb') as target:
+            for part in original['assets']:
+                with (staging / part['name']).open('rb') as source:
+                    shutil.copyfileobj(source, target, length=1024 * 1024)
+        partial.rename(archive)
+    print(f'Restored complete original ROM from Release {tag}; bytes={size}', flush=True)
+
+
+def extract_rom(archive, output, part_bytes=PART_BYTES, include_original=True):
     """List, extract and document payloads; an error prevents Release publication."""
     archive, output = Path(archive), Path(output)
     if output.exists():
         raise FileExistsError(output)
     inventory, payloads = inspect_archive(archive)
-    original_name = ROM_URL.rsplit('/', 1)[-1]
-    original = plan_assets([{'name': original_name, 'bytes': archive.stat().st_size}], part_bytes)[0]
+    original = original_plan(archive, part_bytes)
+    original_name = original['name']
     planned = plan_assets(payloads, part_bytes,
                           reserved_names=[part['name'] for part in original['assets']])
     for entry in inventory:
         print(f"ARCHIVE {entry['type']} {entry['bytes']} {entry['path']}", flush=True)
-    required = sum(item['bytes'] for item in planned) + original['bytes'] + RESERVE_BYTES
+    required = (sum(item['bytes'] for item in planned) + RESERVE_BYTES
+                + (original['bytes'] if include_original else 0))
     if shutil.disk_usage(output.parent).free < required:
         raise OSError(f'Insufficient extraction disk space; need {required} free bytes')
     assets = output / 'assets'
@@ -166,19 +269,14 @@ def extract_rom(archive, output, part_bytes=PART_BYTES):
             completed.add(member.name)
     if len(completed) != len(planned):
         raise ValueError('Not all planned payloads were extracted')
-    with archive.open('rb') as source:
-        for part in original['assets']:
-            partial = staging / part['name']
-            copy_exact(source, partial, part['bytes'])
-            partial.rename(assets / part['name'])
-        if source.read(1):
-            raise ValueError('Original ROM changed while preparing Release assets')
+    if include_original:
+        write_original(archive, assets, staging, original)
     manifest = {
         'source_url': ROM_URL, 'rom_version': ROM_VERSION, 'device': 'selene',
         'is_device_backup': False, 'device_slot_correspondence': 'NOT_VERIFIED',
         'part_bytes': part_bytes, 'original_rom': original, 'payloads': planned,
     }
-    for name, data in zip(METADATA_NAMES, (inventory, manifest)):
+    for name, data in zip(METADATA_NAMES[:2], (inventory, manifest)):
         with (assets / name).open('x', encoding='utf-8') as target:
             json.dump(data, target, ensure_ascii=False, indent=2)
             target.write('\n')
@@ -217,9 +315,20 @@ def main():
     os.umask(0o077)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('archive', type=Path)
-    parser.add_argument('output', type=Path)
+    parser.add_argument('output', type=Path, nargs='?')
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--prepare-original', action='store_true')
+    mode.add_argument('--payload-only', action='store_true')
+    mode.add_argument('--restore-release')
     args = parser.parse_args()
-    extract_rom(args.archive, args.output)
+    if args.restore_release:
+        restore_original_release(args.restore_release, args.archive)
+    elif args.output is None:
+        parser.error('output is required when preparing Release assets')
+    elif args.prepare_original:
+        prepare_original_rom(args.archive, args.output)
+    else:
+        extract_rom(args.archive, args.output, include_original=not args.payload_only)
 
 
 if __name__ == '__main__':

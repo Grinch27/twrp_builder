@@ -178,6 +178,17 @@ class RelayTests(unittest.TestCase):
         self.assertFalse((self.root / relay.CHECKPOINT).exists())
         self.assertFalse((self.root / 'rom.tgz').exists())
 
+    def test_release_restore_skips_aria2_and_hands_off_complete_archive(self):
+        (self.root / 'rom.tgz').write_bytes(b'saved original ROM')
+        with mock.patch.object(relay, 'wait_download') as download:
+            self.assertEqual(relay.download(dict(self.env, ROM_RELEASE_TAG='saved-release')), 0)
+        download.assert_not_called()
+        self.assertIn('state=complete', (self.root / 'outputs').read_text())
+
+    def test_release_source_and_partial_checkpoint_cannot_be_mixed(self):
+        with self.assertRaisesRegex(ValueError, 'not both'):
+            relay.validate_inputs(dict(self.resume_env(), ROM_RELEASE_TAG='saved-release'))
+
     def test_metadata_or_summary_display_failure_preserves_download_exit(self):
         with mock.patch.object(relay, 'wait_download', return_value=(6, False)), \
                 mock.patch.object(Path, 'stat', side_effect=OSError('unavailable')), \

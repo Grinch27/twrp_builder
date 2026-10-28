@@ -10,7 +10,9 @@ import contextlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
+import shutil
 import tarfile
 import tempfile
 import unittest
@@ -78,6 +80,70 @@ class StockRomTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'boot.img'):
             self.extract([('rom/images/super.img', b'data')])
         self.assertFalse((self.root / 'output').exists())
+
+    def test_raw_backup_survives_subsequent_payload_inspection_failure(self):
+        archive = self.archive([('rom/no-images.txt', b'no boot')])
+        saved = self.root / 'saved'
+        original = stock_rom.prepare_original_rom(archive, saved, part_bytes=64)
+        with self.assertRaisesRegex(ValueError, 'boot.img'):
+            stock_rom.extract_rom(archive, self.root / 'output', include_original=False)
+        self.assertEqual(b''.join((saved / 'assets' / p['name']).read_bytes()
+                                 for p in original['assets']), archive.read_bytes())
+        self.assertTrue((saved / 'assets/original-rom-manifest.json').is_file())
+
+    def test_payload_only_does_not_copy_the_already_saved_original(self):
+        archive = self.archive([('rom/images/boot.img', b'boot')])
+        manifest = stock_rom.extract_rom(archive, self.root / 'output', include_original=False)
+        self.assertTrue(manifest['original_rom']['assets'])
+        self.assertFalse(any((self.root / 'output/assets' / p['name']).exists()
+                             for p in manifest['original_rom']['assets']))
+
+    def test_known_da_is_in_inventory_but_not_treated_as_partition(self):
+        root = f'selene_images_{stock_rom.ROM_VERSION}_13.0'
+        manifest = self.extract([(f'{root}/images/boot.img', b'boot'),
+                                 (f'{root}/MTK_AllInOne_DA_mt6768.bin', b'da')])
+        self.assertEqual([p['name'] for p in manifest['payloads']], ['boot.img'])
+        inventory = json.loads((self.root / 'output/assets/archive-inventory.json').read_text())
+        self.assertEqual(inventory[-1]['role'], 'download-agent-companion')
+
+    def test_da_exception_does_not_allow_links_or_other_outside_bins(self):
+        root = f'selene_images_{stock_rom.ROM_VERSION}_13.0'
+        for name in (f'{root}/other.bin', f'{root}/MTK_AllInOne_DA_mt6768.bin'):
+            info = tarfile.TarInfo(name)
+            info.type = tarfile.SYMTYPE
+            info.linkname = '/etc/passwd'
+            with self.subTest(name=name), self.assertRaises(ValueError):
+                self.extract([(f'{root}/images/boot.img', b'boot'), (info, b'')])
+
+    def test_release_restores_exact_rom_and_rejects_missing_or_foreign_parts(self):
+        archive = self.archive([('rom/images/boot.img', b'boot')])
+        saved = self.root / 'saved'
+        stock_rom.prepare_original_rom(archive, saved, part_bytes=64)
+        assets = saved / 'assets'
+        entries = [{'name': p.name, 'size': p.stat().st_size} for p in assets.iterdir()]
+        tag = f'selene-stock-{stock_rom.ROM_VERSION}-123-1'
+
+        def download(command, **kwargs):
+            name = command[command.index('--pattern') + 1]
+            destination = Path(command[command.index('--dir') + 1])
+            shutil.copyfile(assets / name, destination / name)
+
+        with mock.patch.dict(os.environ, GITHUB_REPOSITORY='owner/repo'), \
+                mock.patch.object(stock_rom, 'PART_BYTES', 64), \
+                mock.patch.object(stock_rom.subprocess, 'run', side_effect=download), \
+                mock.patch.object(stock_rom.subprocess, 'check_output', return_value=json.dumps({'assets': entries})):
+            restored = self.root / 'restored.tgz'
+            stock_rom.restore_original_release(tag, restored)
+            self.assertEqual(restored.read_bytes(), archive.read_bytes())
+            with mock.patch.object(stock_rom.subprocess, 'check_output',
+                                   return_value=json.dumps({'assets': entries[:-1]})):
+                with self.assertRaises(ValueError):
+                    stock_rom.restore_original_release(tag, self.root / 'missing.tgz')
+            metadata = json.loads((assets / 'original-rom-manifest.json').read_text())
+            metadata['source_url'] = 'https://example.test/other.tgz'
+            (assets / 'original-rom-manifest.json').write_text(json.dumps(metadata))
+            with self.assertRaisesRegex(ValueError, 'fixed ROM'):
+                stock_rom.restore_original_release(tag, self.root / 'foreign.tgz')
 
     def test_original_rom_parts_reassemble_to_exact_downloaded_archive(self):
         manifest = self.extract([('rom/images/boot.img', b'boot')], part_bytes=64)
