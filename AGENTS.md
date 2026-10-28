@@ -553,6 +553,14 @@ Read README.md, AUDIT.md and source.lock.json before changes. Use Chinese for us
 - 保持全部原生构建检查、失败退出、加密 Artifact 和 `publish=false` 边界；不得为了直接在 `main` 测试而跳过验证、启用缺依赖绕过、开启 Docker 或公开私有输入及镜像。
 - 删除已有工作分支前，核对它不是默认分支、不存在依赖它的开放 PR 或工作流，并记录未合并提交的 SHA 以便追溯。不得擅自删除其他分支、强推或重写 `main`。
 
+## Native 明文成品交付（2026-10-28）
+
+- 为满足用户直接使用镜像的需求，Native 手动构建在编译及既有静态验收成功后，默认上传仅含 `boot.img`、`static-validation.json`、`SHA256SUMS` 的明文 Artifact，保留三天；同时保留原加密 Artifact 三天。不得上传工作目录、原始日志、私钥或私有源文件附件。
+- Native 的 `publish=false` 仅禁止创建预发布 Release，不再禁止明文成品 Artifact；`publish=true` 仅额外创建预发布 Release。本节替代以上针对 Native 的旧加密独占交付及明文 `publish` 门槛，其他隐私限制保持。
+- 明文镜像会包含编译所用设备配置与固件，具备仓库读取权限、已登录 GitHub 的用户可以下载。不得把 Actions Artifact 视为私人交付通道。
+- 明文上传必须要求本轮 compile 成功且运行未取消；不得因先前加密 Artifact 上传失败而跳过明文上传，也不得掩盖任何上传失败。Summary 报告实际明文上传结果及可用下载地址。
+- Docker 路线仍暂停，原有 `publish=true` 明文／Release 门槛不变；本次不修改 Docker 工作流，不自动触发完整构建，不追溯修改历史 Artifact。
+
 <!--
 本轮讨论状态（非已批准的新增规范）：
 

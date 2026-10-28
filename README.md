@@ -26,7 +26,7 @@ flowchart TD
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度为可用 CPU 数加一。原生路线使用 Runner 可用内存并新增 12 GiB Swap，Docker 路线另限 14 GiB |
 | 磁盘检查 | 清理后至少 62 GiB，其中新增 Swap 占 12 GiB；同步前保留至少 50 GiB，编译前至少 18 GiB；不足立即失败 |
 | 自动触发 | 仅原生入口通过 push / PR 运行静态检查和公开同步测试；完整编译接受 main 的 workflow_dispatch。持续修复已完成，完整编译恢复仅 main 的手动入口；提交前缀不再触发完整编译。Docker 入口仅保留 workflow_dispatch |
-| 唯一手动输入 | `publish=false`；设为 true 明确允许公开镜像、静态报告和校验和 |
+| 唯一手动输入 | Native 的 `publish=false` 仅控制是否另建预发布 Release；成功构建默认上传含 `boot.img` 的明文 Artifact，并保留加密 Artifact |
 
 源码预编译 JDK、Clang 等从锁定上游重新同步；不克隆整个 7.44 GiB Git 归档，不回放旧 `out`、Soong 测试禁用、稀疏片段或 `ALLOW_MISSING_DEPENDENCIES`。归档内 18 个 Release 大文件不作为这条干净路线的下载入口。
 
@@ -39,6 +39,15 @@ flowchart TD
 原生入口按 AGENTS.md 使用统一的 `runner-image` 输出，以及经核对的 `checkout@main`、`upload-artifact@main` 和共享 `run-sudo@main`。主机依赖优先安装 Ubuntu 二进制包；旧工具需要的 ABI 5 使用 Ubuntu 官方 Jammy `libtinfo5`、`libncurses5` 的 `6.3-2ubuntu0.3` amd64 安装包，逐个核验 SHA-256、包名、版本、架构与安装状态，不自行编译 ncurses，不修改全局 Java/Python。JDK、Clang 仍来自锁定源码。此路线尚须完整编译与静态验收，不能据静态检查认定稳定。
 
 ## 成功产物
+
+后续 Native 手动构建在编译和既有静态验收成功后，提供以下两个 Artifact：
+
+| Artifact 名称 | 内容与使用方式 | 保留时间 |
+| --- | --- | --- |
+| `twrp-selene-native-<run_id>-<attempt>` | 明文 `boot.img`、`static-validation.json`、`SHA256SUMS`；下载 ZIP 后直接解压使用，不需要私钥 | 3 天 |
+| `twrp-selene-native-sealed-<run_id>-<attempt>` | `sealed-output.cms`；保留原加密交付方式，需对应私钥解密 | 3 天 |
+
+Job Summary 会记录明文 Artifact 的实际上传结果，并在有下载地址时显示链接。`publish=false` 也交付明文镜像；`publish=true` 仅额外创建公开预发布 Release。明文 Artifact 可由具备仓库读取权限、已登录 GitHub 的用户下载。该变更不追溯补充以下历史运行的 Artifact。
 
 成功基线：`a01a8089fab3cea8876908b85f68b483ae3e0452`，615 项锁定源码，`twrp_selene-eng / bootimage`。Native 编译、既有静态验收和加密上传全部通过；编译耗时约 59 分钟。该结果不代表已验证设备启动、触控、FBE 或备份恢复。
 
@@ -56,9 +65,9 @@ tar -xf twrp-selene.tar
 1. 在 `Grinch27/twrp_builder` 的 **Settings → Secrets and variables → Actions** 添加 `TWRP_SOURCE_TOKEN`。使用仅选择 `Grinch27/twrp_selene`、权限仅 **Contents: read** 的 fine-grained token。不要把令牌写入源码、工作流输入或聊天。
    独立的新交付会话还应将 `delivery-recipient.pem` 替换为自己持有本地私钥的 RSA 收件证书；仓库证书属于当前交付会话，不能假定后续会话持有对应私钥。私钥必须保存在仓库和 Runner 之外。
 2. 明确授权 GitHub 托管 runner 处理这十个私有输入后，再配置该 secret 并手动启动。普通 `GITHUB_TOKEN` 只属于 builder 仓库，不能用它读取另一个私有仓库。
-3. 打开 **Actions → TWRP Selene (Native) → Run workflow**，选 `main` 并保持 `publish=false`。当前只推进原生路线；Docker 研究暂缓，需用户明确要求后才恢复其手动入口。两条路线仍保留共享并发组。
+3. 打开 **Actions → TWRP Selene (Native) → Run workflow**，选 `main`；只需明文与加密 Artifact 时保持 `publish=false`，需要额外预发布 Release 时才勾选。Native 成功构建会公开交付明文镜像，其中包含编译所用设备配置与固件。当前只推进原生路线；Docker 研究暂缓，其原有 `publish` 边界不变，需用户明确要求后才恢复其手动入口。两条路线仍保留共享并发组。
 4. 完整任务会清理该次临时 GitHub runner 的预装 Android SDK、hostedtoolcache、dotnet、PowerShell 四个目录，以获得空间；不会在本地或 self-hosted runner 上运行该清理脚本。若空间门槛仍不满足，任务停止，不自动购买或选择付费 runner。
-5. 成功并通过静态验收后，总是用 `delivery-recipient.pem` 的公钥将三个成品文件打包为 AES-256-GCM / RSA-OAEP 的 CMS 密文，保留加密 Actions Artifact 七天。私钥只在交付方本地，不进入仓库或 Runner；`publish=false` 不公开镜像明文。只有明确勾选 `publish` 才另行上传明文 Artifact 和实验性 prerelease。完整日志仍不上传。
+5. Native 成功并通过静态验收后，默认上传只包含 `boot.img`、`static-validation.json` 和 `SHA256SUMS` 的明文 Actions Artifact，保留三天；同时用 `delivery-recipient.pem` 的公钥将这三个成品文件打包为 AES-256-GCM / RSA-OAEP 的 CMS 密文，保留加密 Artifact 三天。私钥只在交付方本地，不进入仓库或 Runner；只有明确勾选 `publish` 才额外创建实验性 prerelease。上传失败保留真实失败状态；加密 Artifact 上传失败不会阻止尝试上传已通过编译与静态验收的明文成品，取消运行时不再上传明文。完整日志仍不上传。
 
 原生路线增加 `Clean native build session (maximum 3 minutes)`：始终尝试清理本轮记录的独立构建进程组，TERM 后清理残留子进程，175 秒内部限时加 5 秒强制退出，步骤 `timeout-minutes: 3`、`continue-on-error: true`；超时跳过清理，保留原编译结果。只读取 `/proc/*/stat`，不输出进程环境、命令行或原始日志。**这不等于给 Runner 内建的 `Complete job` 设置 3 分钟超时：GitHub 没有暴露该阶段的单独限时或跳过接口。** 整次 Job 的 350 分钟上限保持原值；若要求内建阶段超时后强制终止，只能另用独立监控取消整次运行，届时运行结果为 cancelled，不能保留为成功。
 
@@ -87,7 +96,7 @@ tar -xf twrp-selene.tar
 
 运行阶段及经过公开 Git blob 再次校验的诊断，可在 `build-progress` 分支的 `runs/<run_id>.json` 读取。`catalogs/<run_id>.json` 列出锁定公开 Git blob 中的模块名字面量；另以 `public_prebuilts_project_only_names` 单列仅在 `prebuilts/` 项目中出现的名字，便于进一步查证来源。这是项目路径分类，不是模块类型判断，也不是缺项清单；它不保证命名空间解析、生成模块或整个图有效。有效 manifest 会重新组合比对，工作树和私有覆盖文件不参与索引。该分支不存私有源码、manifest 原文、原始日志或镜像；进度失败不影响真实构建退出状态。GitHub token 只用于宿主进度上传，不传入编译容器或原生编译子进程。
 
-**隐私范围：** 私有源 token 仅在宿主机检查和下载步骤存在，不传入编译容器或原生编译子进程。原生启动器按白名单传递环境，保持 HOME 原值，将编译输出写入独占的 0600 日志，取消时终止构建进程组并保留真实失败状态；它不提供容器级文件系统或内存隔离。只下载 manifest、四个已审查设备覆盖文件和五个 stock 输入，合计 11,178,084 bytes。私有源码、manifest 原文、fstab 原文、编译日志和历史证据不进入公开仓库或 Artifact。公开镜像会包含所用配置/固件，因此也必须通过 `publish` 明确批准。
+**隐私范围：** 私有源 token 仅在宿主机检查和下载步骤存在，不传入编译容器或原生编译子进程。原生启动器按白名单传递环境，保持 HOME 原值，将编译输出写入独占的 0600 日志，取消时终止构建进程组并保留真实失败状态；它不提供容器级文件系统或内存隔离。只下载 manifest、四个已审查设备覆盖文件和五个 stock 输入，合计 11,178,084 bytes。私有源码、manifest 原文、fstab 原文、编译日志和历史证据不作为独立文件上传至公开仓库或 Artifact。Native 明文成品会包含编译所用配置与固件；`publish=false` 只关闭 Release，不隐藏或加密该明文 Artifact。暂停的 Docker 路线仍维持原有显式 `publish=true` 才公开明文的边界。
 
 失败时公开日志仅报告阶段、退出码和受限摘要。同步摘要只含错误类别、HTTP 状态和已知公开上游标识；编译摘要只含固定错误类别，以及经锁定上游 Git blob 核验的公开文件位置和依赖字面量，排除私有覆盖文件。不上传原始日志。公开最小测试使用合成 manifest 初始化，并只同步一个公开 bionic 项目，不读取私有输入。需要保留完整私有诊断时，应先设计私有 runner/私有存储出口；不能通过直接 `cat` 或上传整个工作区绕过边界。本项目不创建服务凭据、付费资源、定时任务或手机操作入口。
 

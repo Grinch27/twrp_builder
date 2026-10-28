@@ -3,8 +3,8 @@ name: TWRP Selene (Native)
 # Requirements: one native workflow; 615 locked projects and unchanged boot validation.
 # Ambiguity: only a real successful bootimage build establishes a native baseline.
 # Research: reviewed shared actions; official Ubuntu legacy ABI binary packages.
-# Optimization: live safe telemetry, visible host setup and encrypted delivery.
-# Risks: changing runner image/actions, old prebuilts and limited runner resources.
+# Optimization: live safe telemetry and ready-to-use plus encrypted image delivery.
+# Risks: plaintext images include device configuration and firmware; runner limits.
 # Validation: public smoke, exact checkout identities, real exit, payload and AVB.
 # GitHub Actions workflow syntax reference:
 # https://docs.github.com/zh/actions/reference/workflows-and-actions/workflow-syntax
@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
     inputs:
       publish:
-        description: '允许公开 boot.img、静态报告及校验和，并创建预发布 Release'
+        description: '另建公开预发布 Release；成功构建默认上传含 boot.img 的明文 Artifact'
         type: boolean
         default: false
         required: true
@@ -169,10 +169,11 @@ jobs:
           name: twrp-selene-native-sealed-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ env.BUILD_ROOT }}/output/sealed-output.cms
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 3
           compression-level: 0
-      - name: Upload explicitly approved public output
-        if: inputs.publish && steps.compile.outcome == 'success'
+      - name: Upload ready-to-use boot image and validation report
+        id: plain_output
+        if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
         uses: actions/upload-artifact@main
         with:
           name: twrp-selene-native-${{ github.run_id }}-${{ github.run_attempt }}
@@ -181,7 +182,7 @@ jobs:
             ${{ env.BUILD_ROOT }}/output/static-validation.json
             ${{ env.BUILD_ROOT }}/output/SHA256SUMS
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 3
           compression-level: 0
       - name: Publish an explicitly approved prerelease
         if: inputs.publish && steps.compile.outcome == 'success'
@@ -208,10 +209,17 @@ jobs:
         if: always()
         env:
           COMPILE_OUTCOME: ${{ steps.compile.outcome }}
-          PUBLISH_OUTPUTS: ${{ inputs.publish }}
+          PLAINTEXT_OUTCOME: ${{ steps.plain_output.outcome }}
+          PLAINTEXT_URL: ${{ steps.plain_output.outputs.artifact-url }}
+          PUBLISH_RELEASE: ${{ inputs.publish }}
         run: |
-          printf 'Build step: %s\n\nPublic outputs enabled: %s\n\nDevice boot/FBE/backup/restore: NOT_TESTED.\n' \
-            "${COMPILE_OUTCOME}" "${PUBLISH_OUTPUTS}" >> "${GITHUB_STEP_SUMMARY}"
+          {
+            printf 'Build step: %s\n\nPlaintext Artifact: %s\n\nPrerelease requested: %s\n\nDevice boot/FBE/backup/restore: NOT_TESTED.\n' \
+              "${COMPILE_OUTCOME}" "${PLAINTEXT_OUTCOME}" "${PUBLISH_RELEASE}"
+            if [[ -n "${PLAINTEXT_URL}" ]]; then
+              printf '\n[Download ready-to-use boot.img (ZIP)](%s)\n' "${PLAINTEXT_URL}"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
       # Complete job itself is Runner-owned and cannot receive this timeout.
       - name: Clean native build session (maximum 3 minutes)
         if: always()

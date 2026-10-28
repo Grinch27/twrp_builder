@@ -804,3 +804,15 @@ be48ec2运行40473795328的静态检查、608项同步/身份校验和预检通�
 实际加密Artifact：twrp-selene-native-sealed-40480759870-1，ID12727671032，67123978 bytes，未过期，保留至2026-11-03T10:37:44Z；上传日志给出下载地址https://github.com/Grinch27/twrp_builder/actions/runs/40480759870/artifacts/12727671032。publish=false，明文Artifact和Release步骤均skipped。对应本轮私钥已保存于用户私人交付材料，仓库仅含公开收件证书。未下载、扫描或额外核验镜像/校验和/证书/DEX；确认依据为真实工作流结果、既有静态验收步骤和实际加密Artifact元数据。设备启动、触控、FBE和备份恢复保持NOT_TESTED，未访问设备或分区。
 
 按此前“成功交付后恢复仅手动构建”的约定，移除Native main push的临时完整构建标记条件；完整构建仅接受main上的workflow_dispatch。保留[gpt-work]提交命名习惯、push/PR静态检查、runner-image依赖、全部uses/权限、publish=false和Docker暂停状态。README与AGENTS记录成功基线及解密方法，不改变源图、镜像生成或加密程序。本次文档/触发条件收尾由既有静态CI验证，不重新构建镜像；本地环境当前不可用，不声称本地运行检查。
+
+## 2026-10-28 — Native 默认提供可直接使用的明文镜像
+
+用户反馈成功运行40480759870的ZIP仅含sealed-output.cms，需要私钥解密后才能获得boot.img，并要求完善最终交付。以main ffea28b1e0427b27747389bdc0e31a37a739c572为基线，候选变更仅涉及Native工作流及README、AGENTS和本审计记录：Native在本轮编译与既有静态验收成功、运行未取消时默认上传明文boot.img、static-validation.json及SHA256SUMS，沿用原Artifact名称，按用户最新决定将明文与CMS加密Artifact均保留三天。publish=false只禁止预发布Release，publish=true才额外创建Release。
+
+明文步骤使用显式!cancelled()与compile成功条件，避免GitHub默认success()在先前加密Artifact上传失败后跳过明文成品；上传失败仍使任务失败，不使用continue-on-error。Summary分别显示compile结果、明文上传结果、Release请求开关，并仅在上传Action返回下载地址时写入明文链接。未新增产物扫描或手工校验。
+
+这是公开交付边界变更：明文镜像含编译所用配置与固件，可由具备仓库读取权限的已登录用户下载；README和AGENTS的最新Native专项规则同步说明该含义。Docker工作流、原615项source.lock、输入allowlist、构建参数、镜像静态验收、失败日志禁传、私钥留在Runner外及仅main手动完整构建均保持。历史成功运行仍只有原加密Artifact，本候选不补传或改动历史产物。
+
+本地既有标准库123项测试：120通过、3项环境限制跳过；4个Shell文件、两个工作流的21个内联Shell块通过bash -n，两个YAML解析和actionlint 1.7.7（-shellcheck=''）通过，git diff --check通过。直接执行修改后的Summary Shell块，合成覆盖成功上传、上传失败及compile失败三种状态：链接只在提供URL时出现，上传结果与NOT_TESTED边界保持。未下载或扫描真实镜像，未读取私钥或私有源码输入。
+
+用户已明确批准将这四个文件以[gpt-work]提交到main，并允许后续Native构建默认公开明文镜像；最新决定为两类Artifact均保留三天。本次只提交工作流与说明，由现有push入口执行静态CI，不手动触发完整构建或创建Release，不生成或补传历史成品；真实明文上传仍待后续手动完整构建验收。
