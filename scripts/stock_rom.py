@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# Requirements: list the official selene archive and retain all images/ payloads.
+# Requirements: publish the original official ROM and all images/ payloads.
 # Ambiguity: package contents and correspondence with either device slot are unknown.
 # Research: tarfile streams and GitHub's per-asset limit; never run OEM scripts.
-# Optimization: write large payloads directly to bounded parts, without a second copy.
+# Optimization: stream payloads and the original ROM directly into bounded parts.
 # Risks: archive paths/links, partial transfers, disk exhaustion and public firmware.
 # Validation: synthetic archives and exact copy sizes; no extra hashes or image scans.
 """Prepare official stock firmware payloads for a separate public Release."""
@@ -84,11 +84,11 @@ def inspect_archive(archive):
     return inventory, payloads
 
 
-def plan_assets(payloads, part_bytes):
+def plan_assets(payloads, part_bytes, reserved_names=()):
     """Plan unique Release filenames before writing any payload bytes."""
     if not 0 < part_bytes <= PART_BYTES:
         raise ValueError('Invalid part size')
-    used = {name.casefold() for name in METADATA_NAMES}
+    used = {name.casefold() for name in (*METADATA_NAMES, *reserved_names)}
     planned = []
     for payload in payloads:
         item = dict(payload)
@@ -131,10 +131,13 @@ def extract_rom(archive, output, part_bytes=PART_BYTES):
     if output.exists():
         raise FileExistsError(output)
     inventory, payloads = inspect_archive(archive)
-    planned = plan_assets(payloads, part_bytes)
+    original_name = ROM_URL.rsplit('/', 1)[-1]
+    original = plan_assets([{'name': original_name, 'bytes': archive.stat().st_size}], part_bytes)[0]
+    planned = plan_assets(payloads, part_bytes,
+                          reserved_names=[part['name'] for part in original['assets']])
     for entry in inventory:
         print(f"ARCHIVE {entry['type']} {entry['bytes']} {entry['path']}", flush=True)
-    required = sum(item['bytes'] for item in planned) + RESERVE_BYTES
+    required = sum(item['bytes'] for item in planned) + original['bytes'] + RESERVE_BYTES
     if shutil.disk_usage(output.parent).free < required:
         raise OSError(f'Insufficient extraction disk space; need {required} free bytes')
     assets = output / 'assets'
@@ -163,10 +166,17 @@ def extract_rom(archive, output, part_bytes=PART_BYTES):
             completed.add(member.name)
     if len(completed) != len(planned):
         raise ValueError('Not all planned payloads were extracted')
+    with archive.open('rb') as source:
+        for part in original['assets']:
+            partial = staging / part['name']
+            copy_exact(source, partial, part['bytes'])
+            partial.rename(assets / part['name'])
+        if source.read(1):
+            raise ValueError('Original ROM changed while preparing Release assets')
     manifest = {
         'source_url': ROM_URL, 'rom_version': ROM_VERSION, 'device': 'selene',
         'is_device_backup': False, 'device_slot_correspondence': 'NOT_VERIFIED',
-        'part_bytes': part_bytes, 'payloads': planned,
+        'part_bytes': part_bytes, 'original_rom': original, 'payloads': planned,
     }
     for name, data in zip(METADATA_NAMES, (inventory, manifest)):
         with (assets / name).open('x', encoding='utf-8') as target:
@@ -180,6 +190,13 @@ def extract_rom(archive, output, part_bytes=PART_BYTES):
         'Device correspondence and restore/flash safety are NOT_VERIFIED.',
         'Android sparse images remain in their original format; do not run simg2img.',
         'Release assets do not have the three-day Actions Artifact expiry.', '',
+        '## Original ROM archive', '',
+        f"`{original_name}`: {original['bytes']} bytes; original downloaded bytes, without repacking.",
+        'Download all original-ROM parts into a new empty directory and reassemble in this order:',
+        '', '```bash',
+        (f"cat -- {' '.join(part['name'] for part in original['assets'])} > {original_name}"
+         if len(original['assets']) > 1 else f'# Original archive: {original_name}'),
+        '```', '',
         '## Payloads', '',
     ]
     for item in planned:

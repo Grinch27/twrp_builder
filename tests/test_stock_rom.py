@@ -79,6 +79,37 @@ class StockRomTests(unittest.TestCase):
             self.extract([('rom/images/super.img', b'data')])
         self.assertFalse((self.root / 'output').exists())
 
+    def test_original_rom_parts_reassemble_to_exact_downloaded_archive(self):
+        manifest = self.extract([('rom/images/boot.img', b'boot')], part_bytes=64)
+        original = manifest['original_rom']
+        self.assertEqual(original['name'], stock_rom.ROM_URL.rsplit('/', 1)[-1])
+        restored = b''.join((self.root / 'output/assets' / part['name']).read_bytes()
+                            for part in original['assets'])
+        self.assertEqual(restored, (self.root / 'rom.tgz').read_bytes())
+        self.assertTrue(all(part['bytes'] <= 64 for part in original['assets']))
+        self.assertIn('cat -- ' + ' '.join(p['name'] for p in original['assets']),
+                      (self.root / 'output/release-notes.md').read_text())
+
+    def test_small_original_rom_is_published_without_splitting(self):
+        manifest = self.extract([('rom/images/boot.img', b'boot')])
+        original = manifest['original_rom']
+        self.assertEqual(len(original['assets']), 1)
+        self.assertEqual((self.root / 'output/assets' / original['name']).read_bytes(),
+                         (self.root / 'rom.tgz').read_bytes())
+
+    def test_original_rom_asset_name_cannot_collide_with_a_payload(self):
+        name = stock_rom.ROM_URL.rsplit('/', 1)[-1]
+        with self.assertRaisesRegex(ValueError, 'Conflicting'):
+            self.extract([('rom/images/boot.img', b'boot'), (f'rom/images/{name}', b'x')])
+
+    def test_space_budget_includes_original_rom_release_copy(self):
+        archive = self.archive([('rom/images/boot.img', b'boot')])
+        free = stock_rom.RESERVE_BYTES + 4 + archive.stat().st_size - 1
+        with mock.patch.object(stock_rom.shutil, 'disk_usage', return_value=mock.Mock(free=free)):
+            with self.assertRaisesRegex(OSError, 'Insufficient'):
+                stock_rom.extract_rom(archive, self.root / 'output')
+        self.assertFalse((self.root / 'output').exists())
+
     def test_unsafe_paths_are_rejected_before_output(self):
         for name in ('/images/boot.img', '../images/boot.img',
                      'rom/images/../boot.img', 'rom/images/a\\boot.img',

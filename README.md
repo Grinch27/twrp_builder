@@ -134,6 +134,10 @@ Actions 使用 aria2 下载压缩包，`--max-connection-per-server=16 --split=1
 
 各载荷按原字节交付，不转换 Android sparse 镜像，不重新压缩、不新增 SHA256／签名／证书／DEX 扫描。超过 1,900,000,000 bytes 的文件直接写为 `.part0001` 等分片，避免超过 Release 单文件 2 GiB 上限，也避免存放一份大镜像后再复制分片。Release 的说明中包含对应 `cat` 合并命令；只能在下载全部分片并合并后使用，不能直接刷写分片。
 
+最终 Release 同时包含**下载的原始 Fastboot ROM**和提取后的分区载荷。原始 ROM 不重新压缩、不改写内容，沿用官方 URL 中的文件名；超过1,900,000,000 bytes时按顺序分为 `.part0001`、`.part0002` 等。当前约5.4GB原包需要3份。`stock-rom-manifest.json` 的 `original_rom` 字段记录原文件名、总长度及各分片名称/长度，Release说明提供明确顺序的 `cat -- ... > 原始文件名.tgz` 合并命令。必须下载全部分片后再合并。原包分片与分区分片统一计算附件数量并检查命名冲突，空间预算额外包含整份原包的发布副本；任一步失败均不发布草稿。
+
+本功能由采用新提交的运行生效。已启动运行使用其启动时的提交，不会因更新main而替换正在执行的提取脚本；后续自动接力从最新main取得更新。本次脚本/文档提交不额外触发重复下载。
+
 公开明文 Release 标签为 `selene-stock-V14.0.4.0.TKUCNXM-<run_id>-<attempt>`，附件包含实际载荷、`archive-inventory.json` 和 `stock-rom-manifest.json`。先创建新草稿并上传，全部上传成功后才发布；失败保留真实失败及未发布草稿，不覆盖旧 Release、不设为 Latest。此独立入口已按用户要求允许发布，不使用 Native 的 `publish` 开关或 CMS 加密。
 
 Release 附件没有 Actions Artifact 的三天自动过期规则，本流程不自动删除 Release。原厂镜像不是当前 `boot_a`／`boot_b` 的实机备份，不能证明当前槽位内容或刷回安全。包内实际文件、大小和 recovery 是否存在，以该次 Release 清单为准。只检查下载与提取所需空间，不清理主机预装目录，不申请付费 Runner。
