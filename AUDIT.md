@@ -844,3 +844,9 @@ be48ec2运行40473795328的静态检查、608项同步/身份校验和预检通�
 路径按push事件的变更集匹配：同时修改两个工作流时各运行一次，同一次push的多个commit不会逐个建立运行。本次提交包含两个工作流，因而两个入口均满足触发条件，不额外dispatch、不查询进度。原产物三天保留、Stock Release发布方式、权限、源码锁、并发与镜像验收保持。
 
 三个YAML解析、actionlint 1.7.7、全部内联Shell语法及git diff --check通过。9组实际paths匹配用例覆盖只改Native、只改Stock、同时修改、README、AGENTS、脚本、测试、源码锁及Docker文件；逐项确认手动输入与所有非触发配置完全保持。脚本与测试源码未改，不新增产物扫描；不以路径配置和静态验证声称实际构建、解包或发布成功。
+
+## 2026-10-28 — Stock ROM 使用 aria2 16连接下载
+
+按用户要求，仅将stock_rom.yml下载器从curl替换为aria2，显式设置max-connection-per-server=16及split=16。通过既有run-sudo@main在缺少aria2c时安装Ubuntu现成aria2二进制包，不自行编译；不改全局HOME或Java/Python。关闭读取外部aria2配置，沿用固定官方HTTPS地址、独立目录与60分钟步骤限时；使用三次尝试、30秒连接/60秒读超时、断点续传、不预分配大文件，并禁用自动改名与覆盖。只有aria2正常返回后才把rom.tgz.partial改为rom.tgz；提取和Release步骤继续依赖前置成功。
+
+自身工作流路径过滤、提取脚本、分片、Release发布、私有输入边界和Native均保持，不新增摘要、证书或镜像扫描。真实连接数与速度取决于源服务器对范围请求及连接的支持，不宣称固定性能提升。三个YAML解析、内联Shell语法、actionlint 1.7.7及git diff --check通过。使用不访问网络的合成aria2函数直接执行修改后的下载Shell，成功/失败两例分别验证16连接与16分片参数、固定URL传递、成功改名及失败不生成正式归档；未在本地安装aria2或下载真实ROM，真实多连接传输仍待Actions运行。提交只匹配Stock自身路径，不查询工作流运行进度。

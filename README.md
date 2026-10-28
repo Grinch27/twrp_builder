@@ -110,7 +110,7 @@ tar -xf twrp-selene.tar
 
 https://bigota.d.miui.com/V14.0.4.0.TKUCNXM/selene_images_V14.0.4.0.TKUCNXM_20231228.0000.00_13.0_cn_cfe62df805.tgz
 
-Actions 先下载压缩包并列出目录，再完整保留唯一 `images/` 目录中的常规数据文件，包括 `.img`、`.bin` 和配套元数据；不执行任何包内文件，不提取刷机脚本。不按 `.img` 后缀单独过滤，以免漏掉 preloader 等二进制载荷。发现链接、危险路径、重名、异常目录、目录外的镜像候选或缺少 `boot.img` 时失败，不以不完整提取冒充成功。未发现独立 recovery 时不会生成或伪造 `recovery.img`。
+Actions 使用 aria2 下载压缩包，`--max-connection-per-server=16 --split=16`，支持断点续传，缺少 aria2 时安装 Ubuntu 二进制包。下载成功后才将临时文件改为正式归档并列出目录，再完整保留唯一 `images/` 目录中的常规数据文件，包括 `.img`、`.bin` 和配套元数据；不执行任何包内文件，不提取刷机脚本。不按 `.img` 后缀单独过滤，以免漏掉 preloader 等二进制载荷。发现链接、危险路径、重名、异常目录、目录外的镜像候选或缺少 `boot.img` 时失败，不以不完整提取冒充成功。未发现独立 recovery 时不会生成或伪造 `recovery.img`。
 
 各载荷按原字节交付，不转换 Android sparse 镜像，不重新压缩、不新增 SHA256／签名／证书／DEX 扫描。超过 1,900,000,000 bytes 的文件直接写为 `.part0001` 等分片，避免超过 Release 单文件 2 GiB 上限，也避免存放一份大镜像后再复制分片。Release 的说明中包含对应 `cat` 合并命令；只能在下载全部分片并合并后使用，不能直接刷写分片。
 
