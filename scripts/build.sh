@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Requirements: fresh work, archive manifest plus reviewed public dependency projects.
 # Ambiguity: the expanded source graph still needs a successful real bootimage build.
-# Research: inspect each failure and apply verified fixes under retry authorization.
+# Research: Native startup markers locate an unconfirmed recovery initialization wait.
 # Optimization: CPU count plus one, verbose Ninja and bounded phase clocks.
 # Risks: source availability, old prebuilts, capacity; preserve the failure logs.
 # Validation: exact checkout identities, real phase/exit records, AVB and payloads.
@@ -120,12 +120,24 @@ trace_public_command task_profiles_patch_check
 git -C system/core apply --check "${SELF}/patches/native-task-profiles.patch"
 trace_public_command selene_module_patch_check
 git -C device/xiaomi/selene apply --check "${SELF}/patches/selene-module-names.patch"
+if [[ "${SELENE_STARTUP_DIAGNOSTICS:-0}" == 1 ]]; then
+  trace_public_command recovery_startup_patch_check
+  git -C bootable/recovery apply --check "${SELF}/patches/recovery-startup-diagnostics.patch"
+  trace_public_command vold_startup_patch_check
+  git -C system/vold apply --check "${SELF}/patches/vold-keystore-diagnostics.patch"
+fi
 trace_public_command recovery_patch_apply
 git -C bootable/recovery apply "${SELF}/patches/recovery-required-modules.patch"
 trace_public_command task_profiles_patch_apply
 git -C system/core apply "${SELF}/patches/native-task-profiles.patch"
 trace_public_command selene_module_patch_apply
 git -C device/xiaomi/selene apply "${SELF}/patches/selene-module-names.patch"
+if [[ "${SELENE_STARTUP_DIAGNOSTICS:-0}" == 1 ]]; then
+  trace_public_command recovery_startup_patch_apply
+  git -C bootable/recovery apply "${SELF}/patches/recovery-startup-diagnostics.patch"
+  trace_public_command vold_startup_patch_apply
+  git -C system/vold apply "${SELF}/patches/vold-keystore-diagnostics.patch"
+fi
 trace_public_command disk_preflight
 [[ "$(df --output=avail -B1 "${WORK}" | tail -n 1)" -ge 19327352832 ]]
 trace_public_command jdk_preflight

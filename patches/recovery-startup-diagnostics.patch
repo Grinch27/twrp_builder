@@ -1,0 +1,94 @@
+diff --git a/data.cpp b/data.cpp
+--- a/data.cpp
++++ b/data.cpp
+@@ -535,6 +535,7 @@
+ 
+ 	str += dev_id;
+ 	LOGINFO("Backup folder set to '%s'\n", str.c_str());
++	LOGINFO("SELENE_STARTUP backup_variables enter\n");
+ 	SetValue(TW_BACKUPS_FOLDER_VAR, str, 0);
+ 	if (partition != NULL) {
+ 		SetValue("tw_storage_display_name", partition->Storage_Name);
+@@ -562,6 +563,7 @@
+ 			gui_err("unable_locate_storage=Unable to locate storage device.");
+ 		}
+ 	}
++	LOGINFO("SELENE_STARTUP backup_variables exit\n");
+ }
+ 
+ void DataManager::SetDefaultValues()
+diff --git a/twrp.cpp b/twrp.cpp
+--- a/twrp.cpp
++++ b/twrp.cpp
+@@ -411,10 +411,16 @@
+ 	printf("Starting the UI...\n");
+ 	gui_init();
+ 
+-	if (!startup.Get_Fastboot_Mode()) PartitionManager.Setup_Fstab_Partitions(true);
++	if (!startup.Get_Fastboot_Mode()) {
++		LOGINFO("SELENE_STARTUP fstab_setup enter\n");
++		PartitionManager.Setup_Fstab_Partitions(true);
++		LOGINFO("SELENE_STARTUP fstab_setup exit\n");
++	}
+ 
+ 	// Load up all the resources
++	LOGINFO("SELENE_STARTUP gui_resources enter\n");
+ 	gui_loadResources();
++	LOGINFO("SELENE_STARTUP gui_resources exit\n");
+ 
+ 	std::string value;
+ 	static char charging = ' ';
+diff --git a/partitionmanager.cpp b/partitionmanager.cpp
+--- a/partitionmanager.cpp
++++ b/partitionmanager.cpp
+@@ -536,15 +536,21 @@
+ 			Setup_Android_Secure_Location(settings_partition);
+ 		}
+ 		if (settings_partition) {
++			LOGINFO("SELENE_STARTUP settings_storage enter\n");
+ 			Setup_Settings_Storage_Partition(settings_partition);
++			LOGINFO("SELENE_STARTUP settings_storage exit\n");
+ 		}
+ 
+ 	#ifdef TW_INCLUDE_CRYPTO
++		LOGINFO("SELENE_STARTUP decrypt_data enter\n");
+ 		DataManager::SetValue(TW_IS_ENCRYPTED, 1);
+ 		Decrypt_Data();
++		LOGINFO("SELENE_STARTUP decrypt_data exit\n");
+ 	#endif
+ 
++		LOGINFO("SELENE_STARTUP system_details enter\n");
+ 		Update_System_Details();
++		LOGINFO("SELENE_STARTUP system_details exit\n");
+ 		if (Get_Super_Status())
+ 			Setup_Super_Partition();
+ 		UnMount_Main_Partitions();
+@@ -587,16 +593,26 @@
+ 	#ifdef TW_INCLUDE_CRYPTO
+ 	TWPartition* Decrypt_Data = Find_Partition_By_Path("/data");
+ 	if (Decrypt_Data && Decrypt_Data->Is_Encrypted && !Decrypt_Data->Is_Decrypted) {
++		LOGINFO("SELENE_STARTUP crypto_state enter\n");
+ 		Set_Crypto_State();
++		LOGINFO("SELENE_STARTUP crypto_state exit\n");
+ 		TWPartition* Key_Directory_Partition = Find_Partition_By_Path(Decrypt_Data->Key_Directory);
+-		if (Key_Directory_Partition != nullptr)
++		if (Key_Directory_Partition != nullptr) {
++			LOGINFO("SELENE_STARTUP metadata_partition enter\n");
+ 			if (!Key_Directory_Partition->Is_Mounted())
+ 				Mount_By_Path(Decrypt_Data->Key_Directory, false);
++			LOGINFO("SELENE_STARTUP metadata_partition exit\n");
++		}
+ 		if (!Decrypt_Data->Key_Directory.empty()) {
++			LOGINFO("SELENE_STARTUP crypto_type enter\n");
+ 			Set_Crypto_Type("file");
++			LOGINFO("SELENE_STARTUP crypto_type exit\n");
+ #ifdef TW_INCLUDE_FBE_METADATA_DECRYPT
+ #ifdef USE_FSCRYPT
+-			if (android::vold::fscrypt_mount_metadata_encrypted(Decrypt_Data->Actual_Block_Device, Decrypt_Data->Mount_Point, false, false, Decrypt_Data->Current_File_System, TWFunc::Path_Exists(additional_fstab) ? additional_fstab : "")) {
++			LOGINFO("SELENE_STARTUP metadata_decrypt enter\n");
++			const bool metadata_decrypted = android::vold::fscrypt_mount_metadata_encrypted(Decrypt_Data->Actual_Block_Device, Decrypt_Data->Mount_Point, false, false, Decrypt_Data->Current_File_System, TWFunc::Path_Exists(additional_fstab) ? additional_fstab : "");
++			LOGINFO("SELENE_STARTUP metadata_decrypt exit result=%d\n", metadata_decrypted);
++			if (metadata_decrypted) {
+ 				std::string crypto_blkdev = android::base::GetProperty("ro.crypto.fs_crypto_blkdev", "error");
+ 				Decrypt_Data->Decrypted_Block_Device = crypto_blkdev;
+ 				LOGINFO("Successfully decrypted metadata encrypted data partition with new block device: '%s'\n", crypto_blkdev.c_str());

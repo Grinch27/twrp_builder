@@ -2,7 +2,7 @@
 
 当前集中使用 GitHub Actions 的 Ubuntu 原生路线，为 Xiaomi selene 构建 TWRP 12.1 `bootimage`。目标固件保持 China MIUI `V14.0.4.0.TKUCNXM`。
 
-本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**已完成一次完整原生构建、静态验收与加密交付：[成功运行 40480759870](https://github.com/Grinch27/twrp_builder/actions/runs/40480759870)。设备实机功能尚未验证。** 检查结果见 [AUDIT.md](AUDIT.md)。
+本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**已完成一次完整原生构建、静态验收与加密交付：[成功运行 40480759870](https://github.com/Grinch27/twrp_builder/actions/runs/40480759870)。2026-10-30 实机测试确认 Recovery ADB 可用、主菜单卡 Logo，基础验收失败，触控受阻未测；同版本原厂 boot 回刷后正常 Android 启动已确认。** 当前准备 Native 阶段诊断，参见 [源码复用与诊断方案](docs/SELENE_STARTUP_DIAGNOSTICS.md)；历史构建证据见 [AUDIT.md](AUDIT.md)。
 
 ## 构建方式
 

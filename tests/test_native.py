@@ -46,7 +46,7 @@ class NativeTests(unittest.TestCase):
         result = build_environment(parent, Path('/builder'), Path('/work'))
         self.assertEqual(result, {'PATH': '/usr/bin:/bin', 'HOME': '/unchanged', 'LANG': 'C.UTF-8',
                                  'BUILDER_SELF': '/builder', 'BUILD_ROOT': '/work',
-                                 'GIT_TERMINAL_PROMPT': '0'})
+                                 'GIT_TERMINAL_PROMPT': '0', 'SELENE_STARTUP_DIAGNOSTICS': '1'})
 
     def test_child_gets_only_valid_public_builder_commit_metadata(self):
         result = build_environment({'GITHUB_SHA': 'a' * 40, 'GH_TOKEN': 'secret'},

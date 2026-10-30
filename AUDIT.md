@@ -913,3 +913,16 @@ be48ec2运行40473795328的静态检查、608项同步/身份校验和预检通�
 
 对照GitHub CLI官方gh api手册核对--paginate --slurp，对照GitHub Actions环境文件文档核对后续步骤环境传播。测试覆盖两个DA、空文件/链接/错误根目录拒绝、分页草稿选择、无备份及API错误、自动选择恢复原字节。标准库165项测试161通过、4项环境跳过（其中aria2本机未安装，其余三项为既有环境限制）；YAML及内联Shell语法、差异检查通过。未在本机下载真实ROM、扫描摘要或接触设备。工作流自身修改由main push自动启动一次，预期使用上述现有草稿，真实恢复/提取/发布仍待Actions验收，不重复dispatch、不重跑旧SHA。
 实测验收：修正提交78cea4a74c89987e09bff632b0ef9fc65a201378的自动运行40760937942成功。下载Job123072456778在2026-10-29北京时间04:13:04明确记录从旧草稿selene-stock-V14.0.4.0.TKUCNXM-40665155688-1恢复5385341113字节，aria2安装及下载器测试均跳过，完成交接Artifact12847368660上传。提取发布Job123074112820成功枚举并提取25项载荷，super.img原字节7657346904分为5片；全部上传后于北京时间04:36:22发布新Release selene-stock-V14.0.4.0.TKUCNXM-40760937942-1（ID427151830）。读取Release元数据确认draft=false、35个uploaded附件，包含原包3片、全部分区/配套文件及3份清单；未覆写旧草稿、未回退小米源、未创建额外接力任务。此为真实Release恢复、原包备份、提取、上传和发布的端到端成功，不代表实机验证。
+
+
+## 2026-10-30 — 实机失败接续、现成配置比较与 Native 诊断提案
+
+实机测试镜像来自 Native 40620660730。Recovery ADB 可用，主菜单停在 Logo；触控受阻未测。随后经各自单次批准回刷同版本原厂 boot，正常 Android 启动和桌面观察通过；所有旧设备批准已消费。该事实更新此前“实机 NOT_TESTED”的项目现状，但不替代各历史运行自身的验收范围。原始设备日志、标识及执行记录不进入公开仓库。
+
+只读分析确认：两次 Recovery 日志相隔约129秒完全相同；单线程自愿上下文切换增加258，采样为带超时的私有 futex。匹配 Recovery/vold/Binder 源码存在主界面前的自动元数据解密与 keystore2 条件等待链，尚无用户态栈、服务状态或 logcat 证明具体根因。不能断言 DataManager 死锁、TEE 故障或 userdata 损坏。
+
+已比较 PBRP android-12.1-S、Telegram a12-s/retakes/retakes_nodecrypt 与当前受审覆盖，并读取 OrangeFox 的公开 TEE/存储宏修订。确认当前锁定核心也按非空判断 RECOVERY_SDCARD_ON_DATA，赋值 false 仍会启用；PBRP 的 metadata 路径和 FBE 优化选项不能在缺实机对应证据时直接移植。当前基线已含4.1 Keymaster及 listener 触发，不重复移植旧4.0服务。本轮保留全部源码锁、内核、设备覆盖与加密功能。具体来源和取舍见 docs/SELENE_STARTUP_DIAGNOSTICS.md。
+
+提案新增 Recovery/vold 两份固定阶段日志补丁。Native 启动器固定启用，Docker 未新增启用变量；五份补丁统一先 precheck 后应用，失败保持真实退出。运行时新增标记直接写 Recovery日志/stderr，只含固定阶段与布尔返回，不新增线程、服务启停、超时、数据写入命令或外发渠道。Native build Job 名称标记诊断用途；其 YAML 获批推送到 main 后将按现有自身路径规则自动构建一次，不额外dispatch。
+
+本地标准库170项测试执行完成：166通过、4项环境跳过（两个/proc命名空间限制、Go工具链缺失、aria2缺失），新增5项均通过。五份补丁对匹配公开源码的全部precheck及组合应用通过，五个受改C++文件与提案源码一致；主机C++17替身编译及成功、空服务、RPC错误、阻塞等待、密钥读取成功/失败共6种行为通过，只证明标记顺序及保留返回分支。三份YAML解析、36个内联Shell及全部独立Shell语法通过，Native触发/权限/交付配置除Job名称外保持；普通源码/文档git diff --check通过；新增patch文本的上下文前缀单独处理，实际新增C++行由git apply --check --whitespace=error-all通过。actionlint本机未安装，未执行。真实Android诊断构建、新镜像启动、触控、FBE及备份恢复均未在本轮执行；2026-10-30用户已明确批准清单10文件提交main并自动启动一次Native诊断构建，publish=false，保留加密功能；不额外dispatch或自动重试。任何新设备状态改变仍分别设Gate。

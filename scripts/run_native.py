@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Requirements: native build with private logs, live numeric heartbeats and timing.
+# Requirements: native build with private logs, numeric heartbeats and fixed startup markers.
 # Ambiguity: native execution has no Docker memory limit or filesystem isolation.
 # Research: preserve host HOME unchanged; omit CI credentials from the build child.
 # Optimization: bounded log samples; upload progress only at phase transitions.
@@ -26,7 +26,8 @@ ENVIRONMENT = {'PATH', 'HOME', 'USER', 'LOGNAME', 'SHELL', 'LANG', 'LC_ALL', 'TZ
 def build_environment(parent, builder, work):
     # Values such as HOME are inherited unchanged; no host configuration is changed.
     result = {key: value for key, value in parent.items() if key in ENVIRONMENT}
-    result.update(BUILDER_SELF=str(builder), BUILD_ROOT=str(work), GIT_TERMINAL_PROMPT='0')
+    result.update(BUILDER_SELF=str(builder), BUILD_ROOT=str(work), GIT_TERMINAL_PROMPT='0',
+                  SELENE_STARTUP_DIAGNOSTICS='1')
     # Public builder identity enables pinned patch proof; credentials remain excluded.
     commit = parent.get('GITHUB_SHA', '')
     if re.fullmatch(r'[0-9a-f]{40}', commit):
@@ -53,6 +54,10 @@ PUBLIC_COMMANDS = {
     "task_profiles_patch_apply": "git -C system/core apply patches/native-task-profiles.patch",
     "selene_module_patch_check": "git -C device/xiaomi/selene apply --check patches/selene-module-names.patch",
     "selene_module_patch_apply": "git -C device/xiaomi/selene apply patches/selene-module-names.patch",
+    "recovery_startup_patch_check": "git -C bootable/recovery apply --check patches/recovery-startup-diagnostics.patch",
+    "recovery_startup_patch_apply": "git -C bootable/recovery apply patches/recovery-startup-diagnostics.patch",
+    "vold_startup_patch_check": "git -C system/vold apply --check patches/vold-keystore-diagnostics.patch",
+    "vold_startup_patch_apply": "git -C system/vold apply patches/vold-keystore-diagnostics.patch",
     "disk_preflight": "df --output=avail -B1 <work> (minimum 18 GiB)",
     "jdk_preflight": "test -s prebuilts/jdk/jdk11/linux-x86/lib/modules",
     "monitor_preflight": "test -s prebuilts/tools/common/m2/repository/.../monitor-1.0.2-alpha1.aar",

@@ -2,7 +2,7 @@ name: TWRP Selene (Native)
 
 # Requirements: one native workflow; 615 locked projects and unchanged boot validation.
 # Ambiguity: only a real successful bootimage build establishes a native baseline.
-# Research: reviewed shared actions; official Ubuntu legacy ABI binary packages.
+# Research: Native startup markers distinguish storage, metadata and keystore2 waits.
 # Optimization: live safe telemetry and ready-to-use plus encrypted image delivery.
 # Risks: plaintext images include device configuration and firmware; runner limits.
 # Validation: public smoke, exact checkout identities, real exit, payload and AVB.
@@ -85,7 +85,7 @@ jobs:
         run: bash tests/repo_init_smoke.sh native
 
   build:
-    name: selene - bootimage - native Ubuntu
+    name: selene - bootimage - native startup diagnostics
     if: >-
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
