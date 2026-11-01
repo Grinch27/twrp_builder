@@ -2,7 +2,7 @@ name: TWRP Selene (Native)
 
 # Requirements: native file-path triggers, 615 locked projects, unchanged boot validation.
 # Ambiguity: only a real successful bootimage build establishes a native baseline.
-# Research: Native logd and keystore2 registration markers distinguish startup waits.
+# Research: the V14 stock TEE client matches the isee shared-memory protocol.
 # Optimization: live safe telemetry and ready-to-use plaintext image delivery.
 # Risks: plaintext firmware, runner limits; diff fetch failure triggers a safe full build.
 # Validation: test-only skips compile; changed build inputs compile; real boot checks.
@@ -17,6 +17,7 @@ on:
     paths:
       - '.github/workflows/twrp_native.yml'
       - 'patches/**'
+      - 'public-prebuilts/selene-stock-v14/libTEECommon.so'
       - 'scripts/**'
       - 'tests/**'
       - 'source.lock.json'
@@ -24,6 +25,7 @@ on:
     paths:
       - '.github/workflows/twrp_native.yml'
       - 'patches/**'
+      - 'public-prebuilts/selene-stock-v14/libTEECommon.so'
       - 'scripts/**'
       - 'tests/**'
       - 'source.lock.json'
@@ -98,7 +100,7 @@ jobs:
           build_required=false
           while IFS= read -r -d '' path; do
             case "${path}" in
-              .github/workflows/twrp_native.yml|patches/*|source.lock.json)
+              .github/workflows/twrp_native.yml|patches/*|source.lock.json|public-prebuilts/selene-stock-v14/libTEECommon.so)
                 build_required=true
                 break
                 ;;

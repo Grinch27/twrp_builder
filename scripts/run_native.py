@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-# Requirements: native build with private logs, numeric heartbeats and fixed startup markers.
+# Requirements: Native build with private logs, startup markers and the stock TEE client.
 # Ambiguity: native execution has no Docker memory limit or filesystem isolation.
 # Research: preserve host HOME unchanged; omit CI credentials from the build child.
 # Optimization: bounded log samples; upload progress only at phase transitions.
 # Risks: leaked output, inherited credentials, stale work and orphaned build groups.
-# Validation: numeric-only metrics, no source leakage, real exit and group cleanup.
+# Validation: fixed Native inputs, safe metrics, real exit and group cleanup.
 """Run a native build while keeping compiler output out of public Actions logs."""
 
 import argparse
@@ -27,7 +27,8 @@ def build_environment(parent, builder, work):
     # Values such as HOME are inherited unchanged; no host configuration is changed.
     result = {key: value for key, value in parent.items() if key in ENVIRONMENT}
     result.update(BUILDER_SELF=str(builder), BUILD_ROOT=str(work), GIT_TERMINAL_PROMPT='0',
-                  SELENE_STARTUP_DIAGNOSTICS='1', BUILDER_PLAINTEXT_ONLY='1')
+                  SELENE_STARTUP_DIAGNOSTICS='1', BUILDER_PLAINTEXT_ONLY='1',
+                  SELENE_STOCK_TEE_CLIENT='1')
     # Public builder identity enables pinned patch proof; credentials remain excluded.
     commit = parent.get('GITHUB_SHA', '')
     if re.fullmatch(r'[0-9a-f]{40}', commit):
@@ -47,6 +48,7 @@ PUBLIC_COMMANDS = {
     "checkout_verify": "python3 scripts/source_inputs.py checkout --manifest <private input> --source <checkout>",
     "overlay_copy": "cp -a <private reviewed overlay> <checkout>",
     "stock_prebuilts_copy": "cp -a <private reviewed prebuilts> <local work>",
+    "stock_tee_common_copy": "install -m 0644 public-prebuilts/selene-stock-v14/libTEECommon.so <device ramdisk>/vendor/lib64/libTEECommon.so",
     "testdata_restore": "timeout 6m python3 scripts/restore_public_testdata.py --source <checkout>",
     "recovery_patch_check": "git -C bootable/recovery apply --check patches/recovery-required-modules.patch",
     "recovery_patch_apply": "git -C bootable/recovery apply patches/recovery-required-modules.patch",

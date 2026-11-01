@@ -941,3 +941,17 @@ be48ec2运行40473795328的静态检查、608项同步/身份校验和预检通�
 本地验证：标准库174项完成，170通过、4项环境跳过（两个 /proc 命名空间限制、Go 缺失、aria2 缺失）。更新已有公开 Make fixture 为原文中的完整日志片段，并新增36种实际 Make 条件组合，验证 Native、旧开关和 logcat 外层条件下的模块/ramdisk依赖；实际公开源码上的同36组合也通过。六补丁在匹配公开源码上全部预检查、组合应用及实际新增行空白检查通过；四个 security 文件与插入日志提案一致。三份 YAML、36个内联 Shell、全部独立 Shell 语法通过；工作流语义比较确认仅 build 名称及 CMS 上传步骤改变，其余触发、权限、publish 默认 false、明文列表和保留期保持。普通代码/文档差异与 patch 上下文单独处理后的空白检查通过。未下载或扫描镜像、摘要、证书或版本标记；rustc、actionlint、ShellCheck 本机缺失，未执行；没有完整 Android 编译或新实机验收。
 
 当前12文件见 docs/SELENE_STARTUP_DIAGNOSTICS.md。2026-11-01用户明确要求“commit到main”，批准以 [gpt-work] enable Native keystore diagnostics and plaintext delivery 提交 main，并由该次 push 自动启动一次 Native 构建，publish=false，不额外 dispatch 或自动重试。提交前重读远端 main 仍为上述基线，使用真实远端父提交及树，禁止推送本地合成审阅历史或强推；真实构建结果尚待该次运行。原始设备记录、私有输入、日志及标识没有复制到公开树；源码锁和输入 allowlist 保持。所有后续手机写入、重启、切槽及调试干预分别设 Gate。
+
+## 2026-11-01 — Native 原厂 TEE 共享内存客户端最小修复
+
+用户在离线根因分析后明确要求“进行修复commit到main”。以当前 main `5d5357cc87dc1bc95b322f71e9382076112cec74` 为父提交，只实施首轮 P0 单库替换及必要的供给、打包验收和构建触发修正。此前 Native `41286275650` 对应 `ffb5d4af6cd494dd710dd08d3e7c41f3de2239d3`，成功编译不代表实机启动通过。完整私有诊断报告和原始日志不复制到公开仓库。
+
+旧库与原厂库均为23,696字节，但旧 `TEEC_AllocateSharedMemory` 使用 `0xC010A401`；实际 V14 isee 驱动不接受该请求，旧库把负返回统一改写为 `0xFFFF000C`，HAL 的后续失败路径仍继续使用空缓冲区。静态控制流支持“客户端协议不匹配 → 分配失败 → HAL 空指针 → keystore2 注册等待 → Recovery 等待”的主阻塞链；当时实机的原始 errno 和崩溃 PC 未采到，不能宣称运行时修复已证实。原厂函数使用 mmap 后的 `0x8010A40D` ID 查询。两库动态依赖、导入/导出集合一致，现有依赖闭包满足强导入；运行时语义仍需新候选验证。
+
+复用已取得的固定 V14 公开 Release，在 `public-prebuilts/selene-stock-v14/libTEECommon.so` 纳入 `vendor_a:/lib64/libTEECommon.so` 原字节，来源及静态地址见同目录 README；未重下 super 或原始 ROM。Native 启动器固定 `SELENE_STOCK_TEE_CLIENT=1`，在 checkout 验证与既有 overlay 后覆盖隔离构建目录中的这个文件。最终 boot 校验通过 `--tee-common` 检查实际 ramdisk 的常规文件与该输入逐字节一致，并在本地报告中记 `stock_tee_common_match=true`；拒绝旧的同大小文件、缺失及符号链接，不新增摘要、证书、DEX 或版本标记扫描。二进制精确路径加入 push/PR 过滤及 Native 编译分类，来源 README 单独变更不触发编译。
+
+本地标准库184项测试完成，180通过、4项既有环境限制跳过（两个 /proc 命名空间限制、Go 工具链缺失、aria2 缺失）。新增8项覆盖客户端覆盖/默认不启用/输入缺失失败、最终 ramdisk 匹配/同大小错误/链接/无效参考，以及实际工作流 Shell 分类；现有 Native 环境测试确认调用方不能关闭固定修复。另使用已分析的实际 `41286275650` 客户端，确认新校验拒绝它并接受原厂输入。三份 YAML、37个内联 Shell 与全部独立 Shell 的语法、actionlint 1.7.7、git diff --check 通过。上述检查没有执行完整 Android 编译，未连接手机。
+
+源锁和十项私有输入白名单保持；不替换 TA、teei_daemon、Keymaster HAL、VINTF、内核/DTB、fstab 或安全存储，不更改 FBE 开关、原有 AVB/镜像验收或验证策略。该共享库也影响 Gatekeeper 等 TEEC 消费者，新候选仍须逐层验证 Keymaster/Gatekeeper、keystore2、Recovery 菜单及原有凭据的完整 FBE 解密。TA/daemon 差异和 persist/RPMB 就绪仍是后续不确定性，不清除或重建安全存储。
+
+本次仅提交 main，由现有规则自动进入 Native 验收，publish=false，仅成功交付 boot.img 三天；不额外 dispatch、不监测或轮询、不重试，不修改暂停的 Docker 或 Stock 工作流、不强推。新构建和实机结果尚未取得，不将本地静态通过写成启动、解密或刷写安全证明。

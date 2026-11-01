@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-# Requirements: a new selene boot image, with the reviewed stock kernel and DTB.
+# Requirements: selene boot with stock kernel/DTB and the Native stock TEE client.
 # Ambiguity: static validation cannot prove device startup or FBE compatibility.
 # Research: device tests need separate approval and current backup evidence.
 # Optimization: read the bounded boot image once; never extract ramdisk paths.
 # Risks: malformed offsets, decompression expansion, wrong stock inputs.
-# Validation: header v2, 64 MiB limit, payload identities, TWRP/fstab/firmware.
+# Validation: boot-v2, payload identities, TWRP/fstab/firmware and optional TEE input.
 """Validate a selene recovery-as-boot image without accessing a device."""
 
 import argparse
@@ -69,7 +69,17 @@ def ramdisk_files(data):
     return cpio_entries(expanded)
 
 
-def verify(data, kernel, dtb, fstab):
+def verify_tee_common(files, reference):
+    """Reject the old same-sized client and missing or linked ramdisk copies."""
+    if (len(reference) != 23696 or reference[:6] != b'\x7fELF\x02\x01'
+            or struct.unpack_from('<HH', reference, 16) != (3, 183)):
+        raise ValueError("stock TEE client must be the reviewed AArch64 shared library")
+    entry = files.get('vendor/lib64/libTEECommon.so')
+    if not entry or not stat.S_ISREG(entry[0]) or entry[1] != reference:
+        raise ValueError("ramdisk TEE client differs from reviewed stock input")
+
+
+def verify(data, kernel, dtb, fstab, tee_common=None):
     if not 1660 <= len(data) <= MAX_IMAGE or data[:8] != b"ANDROID!":
         raise ValueError("invalid boot image magic or size")
     values = struct.unpack_from("<10I", data, 8)
@@ -112,7 +122,9 @@ def verify(data, kernel, dtb, fstab):
     firmware = files.get("vendor/firmware/novatek_ts_fw.bin")
     if not firmware or not stat.S_ISREG(firmware[0]) or not firmware[1]:
         raise ValueError("Novatek touch firmware missing")
-    return {
+    if tee_common is not None:
+        verify_tee_common(files, tee_common)
+    result = {
         "static_validation": "PASS", "image_bytes": len(data),
         "image_sha256": hashlib.sha256(data).hexdigest(), "header_version": version,
         "page_bytes": page, "os_patch_year_month": "2023-12",
@@ -122,18 +134,24 @@ def verify(data, kernel, dtb, fstab):
         "device_boot": "NOT_TESTED", "touch": "NOT_TESTED", "fbe_decryption": "NOT_TESTED",
         "backup_restore": "NOT_TESTED", "safe_to_flash": "NOT_ESTABLISHED",
     }
+    if tee_common is not None:
+        result['stock_tee_common_match'] = True
+    return result
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--image", type=Path, required=True)
     parser.add_argument("--stock", type=Path, required=True)
+    parser.add_argument("--tee-common", type=Path,
+                        help="require this reviewed stock TEE client in the final ramdisk")
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
     if args.image.is_symlink() or not args.image.is_file() or args.image.stat().st_size > MAX_IMAGE:
         raise ValueError("missing, oversized or linked boot image")
     result = verify(args.image.read_bytes(), (args.stock / "kernel").read_bytes(),
-                    (args.stock / "dtb/selene.dtb").read_bytes(), (args.stock / "fstab.mt6768").read_bytes())
+                    (args.stock / "dtb/selene.dtb").read_bytes(), (args.stock / "fstab.mt6768").read_bytes(),
+                    args.tee_common.read_bytes() if args.tee_common is not None else None)
     with args.report.open("x", encoding="utf-8") as stream:
         json.dump(result, stream, indent=2)
         stream.write("\n")

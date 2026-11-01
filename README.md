@@ -2,7 +2,7 @@
 
 当前集中使用 GitHub Actions 的 Ubuntu 原生路线，为 Xiaomi selene 构建 TWRP 12.1 `bootimage`。目标固件保持 China MIUI `V14.0.4.0.TKUCNXM`。
 
-本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**Native 诊断构建 [41026784027](https://github.com/Grinch27/twrp_builder/actions/runs/41026784027) 已成功；2026-10-31 实机仍卡 Logo，ADB 可用，触控受阻未测。相隔60秒的两组标记都停在 `keystore2_wait enter`，根因未确认；回刷同版本原厂 boot 后正常 Android 启动和桌面观察通过。** 本轮先修补 Native 的 logd 打包与 keystore2 注册前日志，并按用户要求只交付明文成品；手机 FBE／数据解密功能保留。具体变更与待批准清单见 [诊断修正方案](docs/SELENE_STARTUP_DIAGNOSTICS.md)，历史证据见 [AUDIT.md](AUDIT.md)。
+本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**Native 诊断构建 [41286275650](https://github.com/Grinch27/twrp_builder/actions/runs/41286275650) 已成功，实机仍卡 Logo。离线分析定位到旧 `libTEECommon.so` 的共享内存 ioctl 与同版本原厂 isee 驱动不匹配；错误被转换成 `0xFFFF000C`，HAL 随后继续使用空缓冲区。** 首轮修复仅替换为同版本原厂客户端，并校验最终 boot ramdisk 的实际库；新候选的启动与完整 FBE 解密仍待实测。来源、静态机制和验收边界见 [原厂 TEE 客户端说明](public-prebuilts/selene-stock-v14/README.md)。保留现有诊断标记、FBE 功能及仅明文 `boot.img` 交付规则，历史记录见 [AUDIT.md](AUDIT.md)。
 
 ## 构建方式
 
@@ -25,7 +25,7 @@ flowchart TD
 | 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j"$(($(nproc) + 1))"`，`NINJA_ARGS=-v` |
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度为可用 CPU 数加一。原生路线使用 Runner 可用内存并新增 12 GiB Swap，Docker 路线另限 14 GiB |
 | 磁盘检查 | 清理后至少 62 GiB，其中新增 Swap 占 12 GiB；同步前保留至少 50 GiB，编译前至少 18 GiB；不足立即失败 |
-| 自动触发 | Native 的 main push / PR 路径包括工作流、`patches/**`、`scripts/**`、`tests/**`、`source.lock.json`。push 先执行公开检查；涉及 Native 构建输入时才完整编译，纯测试或 Stock/Docker 专属脚本变更仅检查。Stock 仍只由自身工作流文件触发；PR 仅静态检查，Native 手动入口保留，Docker 仍仅手动 |
+| 自动触发 | Native 的 main push / PR 路径包括工作流、`patches/**`、`scripts/**`、`tests/**`、`source.lock.json` 及 `public-prebuilts/selene-stock-v14/libTEECommon.so`。push 先执行公开检查；涉及 Native 构建输入时才完整编译，纯测试或 Stock/Docker 专属脚本变更仅检查。Stock 仍只由自身工作流文件触发；PR 仅静态检查，Native 手动入口保留，Docker 仍仅手动 |
 | 唯一手动输入 | Native 的 `publish=false` 仅控制是否另建预发布 Release；成功构建仅上传含 `boot.img` 的明文 Artifact，不生成或上传 CMS |
 
 源码预编译 JDK、Clang 等从锁定上游重新同步；不克隆整个 7.44 GiB Git 归档，不回放旧 `out`、Soong 测试禁用、稀疏片段或 `ALLOW_MISSING_DEPENDENCIES`。归档内 18 个 Release 大文件不作为这条干净路线的下载入口。
@@ -38,7 +38,7 @@ flowchart TD
 
 原生入口按 AGENTS.md 使用统一的 `runner-image` 输出，以及经核对的 `checkout@main`、`upload-artifact@main` 和共享 `run-sudo@main`。主机依赖优先安装 Ubuntu 二进制包；旧工具需要的 ABI 5 使用 Ubuntu 官方 Jammy `libtinfo5`、`libncurses5` 的 `6.3-2ubuntu0.3` amd64 安装包，逐个核验 SHA-256、包名、版本、架构与安装状态，不自行编译 ncurses，不修改全局 Java/Python。JDK、Clang 仍来自锁定源码。此路线尚须完整编译与静态验收，不能据静态检查认定稳定。
 
-Native 按上述源文件路径触发；`main` 上补丁、Native 构建脚本、源码锁或工作流自身变更会完整构建，纯测试或 Stock/Docker 专属脚本变更仅执行公开检查；无法核对 push 变更差异时保守进行完整构建。README、AGENTS 或其他无关工作流文件单独变更不会触发 Native。Stock 仍只由自身工作流文件触发。一次 push 同时匹配多个工作流时分别运行；一次 push 含多个 commit 时以事件的最终 SHA 为准。PR 不读取私有输入，也不进行完整编译。
+Native 按上述源文件路径触发；`main` 上补丁、Native 构建脚本、源码锁、原厂 TEE 客户端二进制或工作流自身变更会完整构建，纯测试或 Stock/Docker 专属脚本变更仅执行公开检查；无法核对 push 变更差异时保守进行完整构建。README（包括客户端来源说明）、AGENTS 或其他无关工作流文件单独变更不会触发 Native。Stock 仍只由自身工作流文件触发。一次 push 同时匹配多个工作流时分别运行；一次 push 含多个 commit 时以事件的最终 SHA 为准。PR 不读取私有输入，也不进行完整编译。
 
 ## 成功产物
 

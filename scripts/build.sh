@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Requirements: fresh work, archive manifest plus reviewed public dependency projects.
 # Ambiguity: the expanded source graph still needs a successful real bootimage build.
-# Research: Native logd and keystore2 markers locate an unconfirmed startup wait.
+# Research: the V14 isee driver needs the stock mmap-based TEE client protocol.
 # Optimization: CPU count plus one, verbose Ninja and bounded phase clocks.
 # Risks: source availability, old prebuilts, capacity; preserve the failure logs.
-# Validation: exact checkout identities, real phase/exit records, AVB and payloads.
+# Validation: checkout identities, real exits, AVB and the final Native TEE payload.
 set -eo pipefail
 umask 077
 SELF="${BUILDER_SELF:-/builder/self}"
@@ -108,6 +108,15 @@ cp -a "${WORK}/inputs/overlay/." "${WORK}/android/"
 trace_public_command stock_prebuilts_copy
 cp -a "${WORK}/inputs/prebuilts" "${WORK}/prebuilts"
 
+tee_common_args=()
+if [[ "${SELENE_STOCK_TEE_CLIENT:-0}" == 1 ]]; then
+  # Apply after the reviewed overlay; the final ramdisk is checked against this input.
+  trace_public_command stock_tee_common_copy
+  install -m 0644 "${SELF}/public-prebuilts/selene-stock-v14/libTEECommon.so" \
+    device/xiaomi/selene/recovery/root/vendor/lib64/libTEECommon.so
+  tee_common_args=(--tee-common "${SELF}/public-prebuilts/selene-stock-v14/libTEECommon.so")
+fi
+
 set_stage public_resources
 trace_public_command testdata_restore
 timeout --signal=TERM --kill-after=30s 6m \
@@ -182,7 +191,7 @@ python3 external/avb/avbtool.py verify_image --image "${image}" \
 trace_public_command boot_static_verify
 python3 "${SELF}/scripts/verify_boot.py" --image "${image}" \
   --stock "${WORK}/prebuilts/selene-stock-v14" \
-  --report "${WORK}/output/static-validation.json"
+  --report "${WORK}/output/static-validation.json" "${tee_common_args[@]}"
 trace_public_command boot_copy
 cp "${image}" "${WORK}/output/boot.img"
 cd "${WORK}/output"

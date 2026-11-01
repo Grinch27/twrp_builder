@@ -59,12 +59,13 @@ class NativeTests(unittest.TestCase):
         parent = {'PATH': '/usr/bin:/bin', 'HOME': '/unchanged', 'LANG': 'C.UTF-8',
                   'GH_TOKEN': 'secret', 'GITHUB_TOKEN': 'secret', 'TWRP_SOURCE_TOKEN': 'secret',
                   'ACTIONS_RUNTIME_TOKEN': 'secret', 'GITHUB_ENV': '/private',
-                  'UNRELATED_SECRET': 'secret', 'JAVA_HOME': '/host-java', 'LD_PRELOAD': '/private'}
+                  'UNRELATED_SECRET': 'secret', 'JAVA_HOME': '/host-java', 'LD_PRELOAD': '/private',
+                  'SELENE_STOCK_TEE_CLIENT': '0'}
         result = build_environment(parent, Path('/builder'), Path('/work'))
         self.assertEqual(result, {'PATH': '/usr/bin:/bin', 'HOME': '/unchanged', 'LANG': 'C.UTF-8',
                                  'BUILDER_SELF': '/builder', 'BUILD_ROOT': '/work',
                                  'GIT_TERMINAL_PROMPT': '0', 'SELENE_STARTUP_DIAGNOSTICS': '1',
-                                 'BUILDER_PLAINTEXT_ONLY': '1'})
+                                 'BUILDER_PLAINTEXT_ONLY': '1', 'SELENE_STOCK_TEE_CLIENT': '1'})
 
     def test_child_gets_only_valid_public_builder_commit_metadata(self):
         result = build_environment({'GITHUB_SHA': 'a' * 40, 'GH_TOKEN': 'secret'},

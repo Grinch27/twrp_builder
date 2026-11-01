@@ -3,7 +3,7 @@
 # Research: real TWRP image and device tests remain outstanding.
 # Optimization: tiny synthetic payloads and no subprocess decompression.
 # Risks: malformed headers, bad stock identity and unsafe cpio paths.
-# Validation: positive fixture plus independently corrupted failure cases.
+# Validation: boot fixtures and rejection of missing, linked or stale TEE clients.
 import gzip
 from pathlib import Path
 import stat
@@ -18,6 +18,8 @@ import verify_boot as boot
 KERNEL = b'kernel-fixture'
 DTB = b'dtb-fixture'
 FSTAB = b'fstab-fixture\n'
+TEE_COMMON = (Path(__file__).resolve().parents[1] /
+              'public-prebuilts/selene-stock-v14/libTEECommon.so').read_bytes()
 
 
 def cpio(items):
@@ -32,13 +34,15 @@ def cpio(items):
     return bytes(result)
 
 
-def image(items=None):
+def image(items=None, tee_common=None):
     if items is None:
         items = [('init', b'/system/bin/init', stat.S_IFLNK | 0o777),
                  ('system/bin/recovery', b'\x7fELFfixture', stat.S_IFREG | 0o755),
                  ('system/etc/recovery.fstab', FSTAB, stat.S_IFREG | 0o644),
                  ('first_stage_ramdisk/fstab.mt6768', FSTAB, stat.S_IFREG | 0o644),
                  ('vendor/firmware/novatek_ts_fw.bin', b'touch-fw', stat.S_IFREG | 0o644)]
+    if tee_common is not None:
+        items = [*items, ('vendor/lib64/libTEECommon.so', tee_common, stat.S_IFREG | 0o644)]
     ramdisk = gzip.compress(cpio(items))
     header = bytearray(2048)
     header[:8] = b'ANDROID!'
@@ -61,6 +65,31 @@ class BootTests(unittest.TestCase):
         self.assertEqual(report['device_boot'], 'NOT_TESTED')
         self.assertEqual(report['fbe_decryption'], 'NOT_TESTED')
         self.assertEqual(report['safe_to_flash'], 'NOT_ESTABLISHED')
+
+    def test_native_image_contains_the_reviewed_stock_tee_client(self):
+        report = boot.verify(image(tee_common=TEE_COMMON), KERNEL, DTB, FSTAB, TEE_COMMON)
+        self.assertTrue(report['stock_tee_common_match'])
+        self.assertEqual(report['fbe_decryption'], 'NOT_TESTED')
+        self.assertEqual(report['safe_to_flash'], 'NOT_ESTABLISHED')
+
+    def test_missing_or_same_sized_wrong_tee_client_is_rejected(self):
+        stale = TEE_COMMON[:-1] + bytes([TEE_COMMON[-1] ^ 1])
+        for data in (image(), image(tee_common=stale)):
+            with self.subTest(size=len(data)), self.assertRaisesRegex(ValueError, 'TEE client'):
+                boot.verify(data, KERNEL, DTB, FSTAB, TEE_COMMON)
+
+    def test_linked_tee_client_is_rejected(self):
+        files = {'vendor/lib64/libTEECommon.so': (stat.S_IFLNK | 0o777, TEE_COMMON)}
+        with self.assertRaisesRegex(ValueError, 'TEE client'):
+            boot.verify_tee_common(files, TEE_COMMON)
+
+    def test_invalid_tee_reference_is_rejected_even_if_ramdisk_matches(self):
+        wrong_arch = bytearray(TEE_COMMON)
+        struct.pack_into('<H', wrong_arch, 18, 62)
+        for reference in (b'', TEE_COMMON[:-1], bytes(wrong_arch)):
+            files = {'vendor/lib64/libTEECommon.so': (stat.S_IFREG | 0o644, reference)}
+            with self.subTest(size=len(reference)), self.assertRaisesRegex(ValueError, 'TEE client'):
+                boot.verify_tee_common(files, reference)
 
     def test_wrong_kernel_and_dtb(self):
         for kernel, dtb in [(b'wrong', DTB), (KERNEL, b'wrong')]:

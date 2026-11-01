@@ -565,12 +565,13 @@ Read README.md, AUDIT.md and source.lock.json before changes. Use Chinese for us
 
 ## Native 自动完整构建（2026-10-28）
 
-- 2026-11-01 起，`main` push 修改 Native 工作流、`patches/**`、`scripts/**`、`tests/**` 或 `source.lock.json` 时启动流程；先运行 runner-image 静态检查及公开同步 smoke。只有工作流自身、Native 构建相关脚本、补丁或源码锁发生变更才运行完整 Native 编译；纯测试文件以及 Stock/Docker 专属脚本变更不编译。无法可靠计算 push 差异时保守运行完整编译。PR 仍只做公开静态检查，不读取私有输入；`workflow_dispatch` 保留完整编译入口，不扩展到 Docker 或 Stock 工作流。
+- 2026-11-01 起，`main` push 修改 Native 工作流、`patches/**`、`scripts/**`、`tests/**`、`source.lock.json` 或 `public-prebuilts/selene-stock-v14/libTEECommon.so` 时启动流程；先运行 runner-image 静态检查及公开同步 smoke。只有工作流自身、Native 构建相关脚本、补丁、源码锁或这个原厂客户端二进制发生变更才运行完整 Native 编译；纯测试文件、客户端说明文档以及 Stock/Docker 专属脚本变更不编译。无法可靠计算 push 差异时保守运行完整编译。PR 仍只做公开静态检查，不读取私有输入；`workflow_dispatch` 保留完整编译入口，不扩展到 Docker 或 Stock 工作流。
 - GitHub 按 push 事件触发：本地未推送的 commit 不触发，一次 push 包含多个 commit 时只构建最新提交。各次运行使用含 run_id 的独立并发组，避免旧的单 pending 槽取消中间推送；并行与排队仍受 GitHub 配额约束，不申请付费 Runner。
 - 本节替代以上 Native 仅手动完整构建及 push 仅静态检查的旧约定；自动构建沿用现有十项私有输入和临时 GitHub-hosted Runner 准备流程，不扩展源码、日志、凭据或设备操作边界。
 - Native 只保留单文件明文 `boot.img` Artifact 三天，不生成密文 Artifact；自动 push 不创建 Release，仍须手动 `publish=true`。Docker 保持暂停及原手动门槛。
 - 2026-11-01 更新监控规则：每次 Native Run/attempt 启动或重试后至少等待 50 分钟才查询运行进度、Job、步骤或日志；之后按需最多每 60 秒查询一次。排队/运行中/尚未到检查时点的任务静默结束本轮，不空等、不抢占并发、不重复启动。此条替代原 Part II 中的“20 分钟”门槛；不改变工作流内部 telemetry 心跳、构建超时或 Stock 下载检查节奏。
 - 本次按用户要求不监测构建进度，不轮询、不自动重试或重复 dispatch；后续另获查询请求时再读取真实结果。
+- Native 固定启用 `SELENE_STOCK_TEE_CLIENT=1`：在 checkout 验证和既有 overlay 后覆盖上述公开原厂客户端，并以 `verify_boot.py --tee-common` 比较最终 boot ramdisk 的实际库。来源见同目录 README；不扩大十项私有输入，不替换 TA/daemon/HAL，不关闭 FBE 或安全验证。Docker 默认不启用此覆盖；静态通过不能证明新候选已启动或完整解密成功。
 
 ## 官方原厂镜像解包与发布（2026-10-28）
 
