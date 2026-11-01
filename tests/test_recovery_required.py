@@ -1,9 +1,9 @@
 # Requirements: preserve valid relink inputs and require real module owners.
 # Ambiguity: fixture Make evaluation does not prove the full Android build.
-# Research: pinned Recovery CLI stem and init/ziptool recovery symlink owners.
+# Research: pinned Recovery CLI owners and logd init RC module registration.
 # Optimization: tiny public Make fixtures; no Android downloads or binaries.
 # Risks: applying a patch to different source or changing runtime file lists.
-# Validation: Git precheck failure is atomic; GNU Make resolves exact owners.
+# Validation: atomic Git precheck, GNU Make dependency and logd gate coverage.
 from pathlib import Path
 import os
 import subprocess
@@ -121,6 +121,22 @@ LOCAL_REQUIRED_MODULES += plat_service_contexts \
 """
 
 
+ETC_SOURCE = r"""ifeq ($(TWRP_INCLUDE_LOGCAT), true)
+    ifeq ($(TARGET_USES_LOGD), true)
+
+        include $(CLEAR_VARS)
+        LOCAL_MODULE := init.recovery.logd.rc
+        LOCAL_MODULE_TAGS := optional
+        LOCAL_MODULE_CLASS := EXECUTABLES
+
+        LOCAL_MODULE_PATH := $(TARGET_ROOT_OUT)
+        LOCAL_SRC_FILES := $(LOCAL_MODULE)
+        include $(BUILD_PREBUILT)
+    endif
+endif
+"""
+
+
 class RecoveryRequiredModulesTests(unittest.TestCase):
     def test_device_required_name_uses_module_without_altering_library_path(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -148,10 +164,12 @@ class RecoveryRequiredModulesTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.tree = Path(self.temp.name)
         (self.tree / 'prebuilt').mkdir()
+        (self.tree / 'etc').mkdir()
         (self.tree / 'minuitwrp').mkdir()
         (self.tree / 'minuitwrp/libminuitwrp_defaults.go').write_text(MINUI_SOURCE)
         (self.tree / 'Android.mk').write_text(ROOT_SOURCE)
         (self.tree / 'prebuilt/Android.mk').write_text(PREBUILT_SOURCE)
+        (self.tree / 'etc/Android.mk').write_text('# fixture\n' * 195 + ETC_SOURCE)
         subprocess.run(['git', '-C', str(self.tree), 'init', '--quiet'], check=True)
 
     def git_apply(self, check=False):
@@ -198,6 +216,29 @@ class RecoveryRequiredModulesTests(unittest.TestCase):
                                             if path == 'Android.mk' else
                                             {'/lib/libsysutils.so', '/lib/libnl.so'})
                                 self.assertTrue(required <= values)
+
+    def test_logd_init_rc_registration_matches_required_module_conditions(self):
+        self.assertEqual(self.git_apply(check=True).returncode, 0)
+        self.assertEqual(self.git_apply().returncode, 0)
+        (self.tree / 'logd.mk').write_text(
+            'CLEAR_VARS := /dev/null\n'
+            'BUILD_PREBUILT := /dev/null\n'
+            'LOCAL_MODULE :=\n'
+            'include etc/Android.mk\n'
+            '$(info REGISTERED=$(LOCAL_MODULE))\n'
+            'all:\n\t@:\n')
+        for native in ['', '0', '1']:
+            for legacy in ['', 'false', 'true']:
+                for include in ['false', 'true']:
+                    with self.subTest(native=native, legacy=legacy, include=include):
+                        output = subprocess.check_output([
+                            'make', '--no-print-directory', '-s', '-f', 'logd.mk',
+                            'SELENE_STARTUP_DIAGNOSTICS=' + native,
+                            'TARGET_USES_LOGD=' + legacy, 'TWRP_INCLUDE_LOGCAT=' + include,
+                        ], cwd=self.tree, text=True, timeout=5)
+                        expected = include == 'true' and (native == '1' or legacy == 'true')
+                        module = 'init.recovery.logd.rc' if expected else ''
+                        self.assertEqual(output.strip(), 'REGISTERED=' + module)
 
     @unittest.skipUnless(shutil.which('go'), 'Go toolchain is unavailable in this executor')
     def test_minui_does_not_require_qcom_kernel_headers_for_mediatek(self):
@@ -320,7 +361,8 @@ func main() {
     def test_different_source_is_rejected_before_any_file_is_changed(self):
         root = self.tree / 'Android.mk'
         root.write_text(ROOT_SOURCE.replace('teamwin', 'different_source'))
-        before = {p: p.read_bytes() for p in (root, self.tree / 'prebuilt/Android.mk')}
+        before = {p: p.read_bytes() for p in (root, self.tree / 'prebuilt/Android.mk',
+                                             self.tree / 'etc/Android.mk')}
         self.assertNotEqual(self.git_apply(check=True).returncode, 0)
         for path, data in before.items():
             self.assertEqual(path.read_bytes(), data)
