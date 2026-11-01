@@ -1,11 +1,11 @@
 name: TWRP Selene (Native)
 
-# Requirements: one native workflow; 615 locked projects and unchanged boot validation.
+# Requirements: native file-path triggers, 615 locked projects, unchanged boot validation.
 # Ambiguity: only a real successful bootimage build establishes a native baseline.
 # Research: Native logd and keystore2 registration markers distinguish startup waits.
 # Optimization: live safe telemetry and ready-to-use plaintext image delivery.
-# Risks: plaintext images include device configuration and firmware; runner limits.
-# Validation: public smoke, exact checkout identities, real exit, payload and AVB.
+# Risks: plaintext firmware, runner limits; diff fetch failure triggers a safe full build.
+# Validation: test-only skips compile; changed build inputs compile; real boot checks.
 # GitHub Actions workflow syntax reference:
 # https://docs.github.com/zh/actions/reference/workflows-and-actions/workflow-syntax
 # https://docs.github.com/zh/actions/reference/workflows-and-actions/metadata-syntax#runs-for-composite-actions
@@ -14,9 +14,19 @@ name: TWRP Selene (Native)
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/twrp_native.yml']
+    paths:
+      - '.github/workflows/twrp_native.yml'
+      - 'patches/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'source.lock.json'
   pull_request:
-    paths: ['.github/workflows/twrp_native.yml']
+    paths:
+      - '.github/workflows/twrp_native.yml'
+      - 'patches/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'source.lock.json'
   workflow_dispatch:
     inputs:
       publish:
@@ -55,6 +65,7 @@ jobs:
       contents: read
     outputs:
       RUNNER_IMAGE: ${{ steps.resolve-runner-image.outputs.RUNNER_IMAGE }}
+      BUILD_REQUIRED: ${{ steps.native-changes.outputs.build_required }}
     steps:
       - name: Resolve runner-image
         id: resolve-runner-image
@@ -63,6 +74,47 @@ jobs:
         uses: actions/checkout@main
         with:
           persist-credentials: false
+      - name: Detect Native build-affecting changes
+        id: native-changes
+        if: github.event_name == 'push'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          # When the previous SHA cannot be compared, rebuild instead of silently skipping.
+          if [[ ! "${BEFORE_SHA}" =~ ^[0-9a-f]{40}$ ]] || [[ "${BEFORE_SHA}" == 0000000000000000000000000000000000000000 ]]; then
+            printf 'build_required=true\n' >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          if ! git fetch --no-tags --depth=1 origin "${BEFORE_SHA}"; then
+            printf 'build_required=true\n' >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          changed_files="$(mktemp "${RUNNER_TEMP}/native-diff.XXXXXXXX")"
+          if ! git diff --name-only -z "${BEFORE_SHA}" "${GITHUB_SHA}" > "${changed_files}"; then
+            printf 'build_required=true\n' >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          build_required=false
+          while IFS= read -r -d '' path; do
+            case "${path}" in
+              .github/workflows/twrp_native.yml|patches/*|source.lock.json)
+                build_required=true
+                break
+                ;;
+              scripts/*)
+                case "${path}" in
+                  scripts/container.sh|scripts/seal_output.py|scripts/stock_rom.py|scripts/stock_rom_relay.py)
+                    ;;
+                  *)
+                    build_required=true
+                    break
+                    ;;
+                esac
+                ;;
+            esac
+          done < "${changed_files}"
+          printf 'build_required=%s\n' "${build_required}" >> "${GITHUB_OUTPUT}"
       - name: Validate scripts and boundary tests
         run: |
           set -euo pipefail
@@ -88,7 +140,8 @@ jobs:
     name: selene - bootimage - native keystore2 diagnostics
     if: >-
       github.ref == 'refs/heads/main' &&
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'push' && needs.runner-image.outputs.BUILD_REQUIRED == 'true'))
     needs: runner-image
     runs-on: ${{ needs.runner-image.outputs.RUNNER_IMAGE }}
     timeout-minutes: 350

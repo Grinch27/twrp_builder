@@ -25,7 +25,7 @@ flowchart TD
 | 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j"$(($(nproc) + 1))"`，`NINJA_ARGS=-v` |
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度为可用 CPU 数加一。原生路线使用 Runner 可用内存并新增 12 GiB Swap，Docker 路线另限 14 GiB |
 | 磁盘检查 | 清理后至少 62 GiB，其中新增 Swap 占 12 GiB；同步前保留至少 50 GiB，编译前至少 18 GiB；不足立即失败 |
-| 自动触发 | Native 仅在 main push 修改 `.github/workflows/twrp_native.yml` 时完整构建；Stock 仅在 main push 修改 `.github/workflows/stock_rom.yml` 时解包发布。两者 PR 也仅匹配各自工作流文件，且只做静态检查。手动入口保留，Docker 仍仅手动 |
+| 自动触发 | Native 的 main push / PR 路径包括工作流、`patches/**`、`scripts/**`、`tests/**`、`source.lock.json`。push 先执行公开检查；涉及 Native 构建输入时才完整编译，纯测试或 Stock/Docker 专属脚本变更仅检查。Stock 仍只由自身工作流文件触发；PR 仅静态检查，Native 手动入口保留，Docker 仍仅手动 |
 | 唯一手动输入 | Native 的 `publish=false` 仅控制是否另建预发布 Release；成功构建仅上传含 `boot.img` 的明文 Artifact，不生成或上传 CMS |
 
 源码预编译 JDK、Clang 等从锁定上游重新同步；不克隆整个 7.44 GiB Git 归档，不回放旧 `out`、Soong 测试禁用、稀疏片段或 `ALLOW_MISSING_DEPENDENCIES`。归档内 18 个 Release 大文件不作为这条干净路线的下载入口。
@@ -38,7 +38,7 @@ flowchart TD
 
 原生入口按 AGENTS.md 使用统一的 `runner-image` 输出，以及经核对的 `checkout@main`、`upload-artifact@main` 和共享 `run-sudo@main`。主机依赖优先安装 Ubuntu 二进制包；旧工具需要的 ABI 5 使用 Ubuntu 官方 Jammy `libtinfo5`、`libncurses5` 的 `6.3-2ubuntu0.3` amd64 安装包，逐个核验 SHA-256、包名、版本、架构与安装状态，不自行编译 ncurses，不修改全局 Java/Python。JDK、Clang 仍来自锁定源码。此路线尚须完整编译与静态验收，不能据静态检查认定稳定。
 
-自动运行按各工作流自身文件的路径过滤：只修改 README、AGENTS、脚本、测试、源码锁或其他工作流，不会触发该工作流。一个 main push 同时修改两个工作流文件时，各触发一次；一次 push 包含多个 commit 时，匹配的工作流仍只运行一次，使用该事件的最新提交。本地未推送的 commit 不触发。修改依赖文件后若需验证，可使用手动入口；PR 不读取私有输入，也不进行完整编译。
+Native 按上述源文件路径触发；`main` 上补丁、Native 构建脚本、源码锁或工作流自身变更会完整构建，纯测试或 Stock/Docker 专属脚本变更仅执行公开检查；无法核对 push 变更差异时保守进行完整构建。README、AGENTS 或其他无关工作流文件单独变更不会触发 Native。Stock 仍只由自身工作流文件触发。一次 push 同时匹配多个工作流时分别运行；一次 push 含多个 commit 时以事件的最终 SHA 为准。PR 不读取私有输入，也不进行完整编译。
 
 ## 成功产物
 
@@ -52,7 +52,7 @@ Job Summary 会记录明文 Artifact 的实际上传结果，并在有下载地�
 
 成功基线：`a01a8089fab3cea8876908b85f68b483ae3e0452`，615 项锁定源码，`twrp_selene-eng / bootimage`。Native 编译、既有静态验收和加密上传全部通过；编译耗时约 59 分钟。该结果不代表已验证设备启动、触控、FBE 或备份恢复。
 
-旧运行的交付记录保留在 AUDIT；本轮起 Native 下载明文 Artifact 的 ZIP 后直接解压使用，无需证书或私钥。`seal_output.py` 与收件证书继续供暂停的 Docker 原路线使用，Native 不调用它们。失败日志 Artifact 仍保持关闭。后续完整构建仅在 main push 修改 Native 工作流自身时自动触发，也可使用 Native 手动入口。
+旧运行的交付记录保留在 AUDIT；本轮起 Native 下载明文 Artifact 的 ZIP 后直接解压使用，无需证书或私钥。`seal_output.py` 与收件证书继续供暂停的 Docker 原路线使用，Native 不调用它们。失败日志 Artifact 仍保持关闭。后续完整构建在 main push 修改 Native 构建相关输入时自动触发，也可使用 Native 手动入口。
 
 ## 首次运行
 
@@ -140,7 +140,7 @@ Actions 使用 aria2 下载压缩包，`--max-connection-per-server=16 --split=1
 
 Release 附件没有 Actions Artifact 的三天自动过期规则，本流程不自动删除 Release。原厂镜像不是当前 `boot_a`／`boot_b` 的实机备份，不能证明当前槽位内容或刷回安全。包内实际文件、大小和 recovery 是否存在，以该次 Release 清单为准。只检查下载与提取所需空间，不清理主机预装目录，不申请付费 Runner。
 
-Native 与 Stock 只由各自工作流文件变更触发；修改 Stock 工作流不会触发 Native，反之亦然。本次用户明确要求5分钟接力测试，允许查询这条 Stock 测试链的运行、步骤与必要日志来确认上传、自动触发和真实续传；不扩展至 Native、旧运行或无关产物。
+Native 自动触发范围见上文路径列表；Stock 仍只由自身工作流文件变更触发，修改 Stock 工作流不会触发 Native，反之亦然。本次用户明确要求5分钟接力测试，允许查询这条 Stock 测试链的运行、步骤与必要日志来确认上传、自动触发和真实续传；不扩展至 Native、旧运行或无关产物。
 
 ## 验收和限制
 

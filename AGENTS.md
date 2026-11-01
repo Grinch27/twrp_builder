@@ -565,7 +565,7 @@ Read README.md, AUDIT.md and source.lock.json before changes. Use Chinese for us
 
 ## Native 自动完整构建（2026-10-28）
 
-- 按用户最新明确要求，仅当向 `main` 推送的变更包含 `.github/workflows/twrp_native.yml` 自身时自动启动 Native 流程；PR 路径也只匹配该文件，不由文档、脚本、测试、源码锁或其他工作流改动触发。先通过原有 runner-image 静态检查和公开同步 smoke，再执行完整构建及既有静态验收。保留 main 的手动入口；PR 仍只做静态检查，不读取私有输入。
+- 2026-11-01 起，`main` push 修改 Native 工作流、`patches/**`、`scripts/**`、`tests/**` 或 `source.lock.json` 时启动流程；先运行 runner-image 静态检查及公开同步 smoke。只有工作流自身、Native 构建相关脚本、补丁或源码锁发生变更才运行完整 Native 编译；纯测试文件以及 Stock/Docker 专属脚本变更不编译。无法可靠计算 push 差异时保守运行完整编译。PR 仍只做公开静态检查，不读取私有输入；`workflow_dispatch` 保留完整编译入口，不扩展到 Docker 或 Stock 工作流。
 - GitHub 按 push 事件触发：本地未推送的 commit 不触发，一次 push 包含多个 commit 时只构建最新提交。各次运行使用含 run_id 的独立并发组，避免旧的单 pending 槽取消中间推送；并行与排队仍受 GitHub 配额约束，不申请付费 Runner。
 - 本节替代以上 Native 仅手动完整构建及 push 仅静态检查的旧约定；自动构建沿用现有十项私有输入和临时 GitHub-hosted Runner 准备流程，不扩展源码、日志、凭据或设备操作边界。
 - 保持明文与加密 Artifact 均三天；自动 push 不创建 Release，仍须手动 publish=true。Docker 保持暂停及原手动门槛。
