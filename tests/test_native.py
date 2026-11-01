@@ -1,9 +1,9 @@
 # Requirements: verify native credential separation and actual child failure status.
 # Ambiguity: fixture execution does not prove an Android build or host isolation.
-# Research: exercise a real subprocess with a private log and no network access.
+# Research: exercise a real subprocess and verify plaintext-only release packaging.
 # Optimization: minimal temporary builder and short status polling.
 # Risks: accidental token inheritance or publishing raw compiler diagnostics.
-# Validation: allowlist, preserved HOME, exit propagation and exclusive logs.
+# Validation: allowlist, preserved HOME, exit status, logs, artifact file selection.
 import contextlib
 import io
 import os
@@ -22,6 +22,23 @@ from run_native import build_environment, run_build
 
 
 class NativeTests(unittest.TestCase):
+    def test_public_native_outputs_contain_only_boot_img(self):
+        source = (Path(__file__).resolve().parents[1] /
+                  '.github/workflows/twrp_native.yml').read_text()
+        upload = source.split('      - name: Upload plaintext boot image\n', 1)[1].split(
+            '      - name: Publish an explicitly approved prerelease\n', 1)[0]
+        self.assertIn('path: ${{ env.BUILD_ROOT }}/output/boot.img', upload)
+        self.assertIn('if-no-files-found: error', upload)
+        self.assertNotIn('static-validation.json', upload)
+        self.assertNotIn('SHA256SUMS', upload)
+        self.assertNotIn('sealed', upload)
+        release = source.split('      - name: Publish an explicitly approved prerelease\n', 1)[1].split(
+            '      - name: Record validation boundary\n', 1)[0]
+        self.assertIn('"${BUILD_ROOT}/output/boot.img"', release)
+        self.assertNotIn('static-validation.json', release)
+        self.assertNotIn('SHA256SUMS', release)
+        self.assertNotIn('sealed', release)
+
     def test_compile_child_uses_available_cpus_plus_one_verbose_ninja_and_real_exit(self):
         source = (Path(__file__).resolve().parents[1] / 'scripts/build.sh').read_text()
         child = re.search(r"160m bash -c '(.*?)' >", source, re.S).group(1)

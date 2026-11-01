@@ -215,16 +215,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: /usr/bin/python3 scripts/run_native.py --work "${BUILD_ROOT}"
-      - name: Upload ready-to-use boot image and validation report
+      - name: Upload plaintext boot image
         id: plain_output
         if: ${{ !cancelled() && steps.compile.outcome == 'success' }}
         uses: actions/upload-artifact@main
         with:
           name: twrp-selene-native-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            ${{ env.BUILD_ROOT }}/output/boot.img
-            ${{ env.BUILD_ROOT }}/output/static-validation.json
-            ${{ env.BUILD_ROOT }}/output/SHA256SUMS
+          path: ${{ env.BUILD_ROOT }}/output/boot.img
           if-no-files-found: error
           retention-days: 3
           compression-level: 0
@@ -246,9 +243,7 @@ jobs:
           gh release create "${tag}" --target "${BUILDER_COMMIT}" \
             --title "TWRP selene native ${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}" \
             --prerelease --notes-file "${body}" \
-            "${BUILD_ROOT}/output/boot.img" \
-            "${BUILD_ROOT}/output/static-validation.json" \
-            "${BUILD_ROOT}/output/SHA256SUMS"
+            "${BUILD_ROOT}/output/boot.img"
       - name: Record validation boundary
         if: always()
         env:

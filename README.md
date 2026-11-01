@@ -42,11 +42,11 @@ Native 按上述源文件路径触发；`main` 上补丁、Native 构建脚本�
 
 ## 成功产物
 
-后续 Native 自动或手动构建在编译和既有静态验收成功后，提供以下两个 Artifact：
+后续 Native 自动或手动构建在编译和既有静态验收成功后，仅提供一个 Artifact：
 
 | Artifact 名称 | 内容与使用方式 | 保留时间 |
 | --- | --- | --- |
-| `twrp-selene-native-<run_id>-<attempt>` | 明文 `boot.img`、`static-validation.json`、`SHA256SUMS`；下载 ZIP 后直接解压使用，不需要私钥 | 3 天 |
+| `twrp-selene-native-<run_id>-<attempt>` | 仅含明文 `boot.img`；下载 ZIP 后直接解压使用，不需要私钥 | 3 天 |
 
 Job Summary 会记录明文 Artifact 的实际上传结果，并在有下载地址时显示链接。`publish=false` 也交付明文镜像；`publish=true` 仅额外创建公开预发布 Release。明文 Artifact 可由具备仓库读取权限、已登录 GitHub 的用户下载。该变更不追溯补充以下历史运行的 Artifact。
 
@@ -61,15 +61,15 @@ Job Summary 会记录明文 Artifact 的实际上传结果，并在有下载地�
 2. 明确授权 GitHub 托管 runner 处理这十个私有输入后，再配置该 secret 并手动启动。普通 `GITHUB_TOKEN` 只属于 builder 仓库，不能用它读取另一个私有仓库。
 3. 打开 **Actions → TWRP Selene (Native) → Run workflow**，选 `main`；只需明文 Artifact 时保持 `publish=false`，需要额外预发布 Release 时才勾选。Native 成功构建会公开交付明文镜像，其中包含编译所用设备配置与固件。当前只推进原生路线；Docker 研究暂缓，其原有 `publish` 边界不变，需用户明确要求后才恢复其手动入口。Native 并发组包含 run_id，各次推送独立调度，不以新任务替换旧的等待任务；实际并行数量仍受 GitHub Runner 配额限制。
 4. 完整任务会清理该次临时 GitHub runner 的预装 Android SDK、hostedtoolcache、dotnet、PowerShell 四个目录，以获得空间；不会在本地或 self-hosted runner 上运行该清理脚本。若空间门槛仍不满足，任务停止，不自动购买或选择付费 runner。
-5. Native 成功并通过静态验收后，仅上传包含 `boot.img`、`static-validation.json` 和原有 `SHA256SUMS` 的明文 Actions Artifact，保留三天；不生成或上传 CMS。Native 启动器固定设置 `BUILDER_PLAINTEXT_ONLY=1`，忽略调用方对该值的覆盖；只有明确勾选 `publish` 才额外创建实验性 prerelease。上传失败保留真实失败状态，取消运行时不再上传明文；完整日志仍不上传。取消的是交付封装加密，`TW_INCLUDE_CRYPTO`／FBE 功能继续保留。
+5. Native 成功并通过静态验收后，仅上传明文 `boot.img` 的单文件 Actions Artifact，保留三天；不生成或上传 CMS。`static-validation.json` 和 `SHA256SUMS` 继续可在 Runner 本地供既有流程使用，但不得作为 Artifact 附件。Native 启动器固定设置 `BUILDER_PLAINTEXT_ONLY=1`，忽略调用方覆盖；只有明确勾选 `publish` 才额外创建仅附 `boot.img` 的实验性 prerelease。上传失败保留真实失败状态，取消运行时不再上传明文；原始日志仍不上传。取消的是交付封装加密，`TW_INCLUDE_CRYPTO`／FBE 功能保留。
 
 原生路线增加 `Clean native build session (maximum 3 minutes)`：始终尝试清理本轮记录的独立构建进程组，TERM 后清理残留子进程，175 秒内部限时加 5 秒强制退出，步骤 `timeout-minutes: 3`、`continue-on-error: true`；超时跳过清理，保留原编译结果。只读取 `/proc/*/stat`，不输出进程环境、命令行或原始日志。**这不等于给 Runner 内建的 `Complete job` 设置 3 分钟超时：GitHub 没有暴露该阶段的单独限时或跳过接口。** 整次 Job 的 350 分钟上限保持原值；若要求内建阶段超时后强制终止，只能另用独立监控取消整次运行，届时运行结果为 cancelled，不能保留为成功。
 
-维护时的工作流查询频率：每轮启动后先静默等 20 分钟，再每 60 秒检查一次，直至结束。每次重试重新计时；工作流自身的心跳输出与构建限时不变。
+维护时的 Native 查询频率：每次 Run/attempt 启动或重试后至少 50 分钟内不查询进度、Job、步骤或日志；之后按需每 60 秒最多检查一次。排队中或未达到等待时长时静默结束本轮，不后台空等；工作流内部遥测心跳和构建限时不变。
 
 详细编译使用当前 Soong 支持的 `NINJA_ARGS=-v`，完整 Ninja 命令保存在本轮临时私有 `compile.log`，公开输出仍为受限摘要。`V=s` 属于其他构建系统的约定，不用于本入口。
 
-用户已于 2026-10-27 决定不使用失败日志 Artifact；失败日志仅留在本轮 Runner，继续使用经公开源码核验的诊断摘要。成功镜像的既有加密交付方式保持不变。
+用户已于 2026-10-27 决定不使用失败日志 Artifact；失败日志仅留在本轮 Runner，继续使用经公开源码核验的诊断摘要。Native 成功镜像自 2026-11-01 最新要求起仅交付明文 `boot.img`，不生成 CMS；暂停的 Docker 交付规则不变。
 
 528 项运行随后明确报告 Recovery 测试缺少 `res-testdata`。现在从单独锁定的同版本公开 AOSP commit 恢复 25 张测试图片与 NOTICE，在新目录中提供原有文件组，保留原测试和全部项目版本。资源恢复单独记录为 `public_resources` 阶段，限时六分钟；资源恢复阶段已在真实运行通过；该轮随后报告 Telephony 缺少 `statslog-cellbroadcast-java-gen`，现在补入其同版本完整 CellBroadcastService 项目，合计 529 项，随后又明确报告 IORap 测试缺少 `iorap-functional-test-apps`，当前补入同版本完整 `prebuilts/runtime`，合计 530 项。该轮实际报告 Bluetooth 未定义，现补齐同版本完整 Bluetooth、vcard 和 RIL 提供方，合计 533 项。该轮继续报告 CTS 的 com.replica.replicaisland 未定义，现补入同标签完整 external/replicaisland，合计 534 项。该轮经受限诊断修正确认缺少 APEX com.android.virt，现补入同标签完整 Virtualization 及 33 个直接/传递提供方，合计 568 项。实际构建随后报告 Microdroid 的 5.10 内核模块包缺失，现补齐同标签 arm64/x86-64 两个完整提供方，合计 570 项。该轮随后报告 com.android.extservices 缺失，现补齐完整 ExtServices 与其测试引用的 fft2d，合计 572 项。该轮继续明确报告 com.android.cellbroadcast 缺失，现补齐同标签完整 CellBroadcastReceiver，与已有 Service 一起提供该 APEX，合计 573 项。该轮已进入 Make，受限诊断确认 required modules 缺项；现按完整提供方及 Calendar 测试依赖补入 12 项，合计 585 项，并用公开源码补丁将三个 Recovery 输出文件名改指实际模块。补丁保留有效文件名和 OEM 条件，并清理当前锁定版本无提供方且无运行调用的旧打包输入；真实加密、日志与 F2FS 实现保留。任务配置通过另一公开补丁将现有非空 task_profiles.json 安装进 Recovery；先检查上下文再应用，完整编译仍待实际验证。
 

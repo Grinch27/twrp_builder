@@ -15,7 +15,7 @@
 1. `recovery-required-modules.patch` 在原有日志条件中加入 `SELENE_STARTUP_DIAGNOSTICS=1` 分支，同时覆盖构建依赖和 ramdisk 文件列表：logd、libsysutils、libnl、`init.recovery.logd.rc`。保持现有 `TWRP_INCLUDE_LOGCAT` 外层条件。Native 固定启用诊断；未启用时继续遵循原有 `TARGET_USES_LOGD` 条件。沿用公开 Recovery 的 init 导入及 logd 服务定义，新镜像启动时该服务会按现有 rc 启动。
 2. 新增 `keystore2-startup-diagnostics.patch`，只在既有调用前后插入固定日志语句，覆盖主服务创建/注册、TEE、可选 StrongBox、KeyMint 缓存锁、兼容服务、HIDL Keymaster 获取及硬件信息调用。不改等待 API、锁、返回分支、超时或重试，不增加线程和轮询。
 3. 保留 Recovery/vold 第一轮阶段标记。六份补丁全部先完成 `git apply --check`，再开始应用；检查或应用失败保留真实失败，不继续编译或自动重试。
-4. 按用户最新要求，Native 固定设置 `BUILDER_PLAINTEXT_ONLY=1`，跳过 CMS 封装，并移除 Native 的加密 Artifact 上传步骤。仅交付原有 `boot.img`、`static-validation.json`、`SHA256SUMS` 三文件明文 Artifact，保留三天，无需收件证书或私钥；`publish=false` 不创建 Release。旧 Artifact 不追溯删除，暂停的 Docker 默认交付分支保留。
+4. 按用户最新要求，Native 固定设置 `BUILDER_PLAINTEXT_ONLY=1`，跳过 CMS 封装，并移除 Native 的加密 Artifact 上传步骤。仅上传明文 `boot.img` 单文件 Artifact，保留三天，无需收件证书或私钥；静态报告和清单继续留在 Runner 本地，不加入 Artifact 或可选 Release；`publish=false` 不创建 Release。旧 Artifact 不追溯删除，暂停的 Docker 默认交付分支保留。
 5. 全部源码 revision、十项私有输入、四个归档覆盖及手机 FBE／数据解密功能保留；不复制私有原文、设备日志、标识、备份或凭据。本仓库没有新增设备操作入口。
 
 ## 日志判读
