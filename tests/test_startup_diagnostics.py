@@ -3,7 +3,7 @@
 # Research: preserve crypto configuration and distinguish storage/keystore waits.
 # Optimization: execute only the real preflight fragment with a bounded Git stub.
 # Risks: partial patching after failed checks or enabling paused Docker diagnostics.
-# Validation: disabled mode, precheck failure, apply failure and fixed Native scope.
+# Validation: patch failures, fixed Native scope and plaintext/CMS delivery branches.
 import os
 from pathlib import Path
 import subprocess
@@ -38,9 +38,11 @@ git() {
 
     def test_native_enables_diagnostics_without_accepting_parent_override(self):
         environment = build_environment({'SELENE_STARTUP_DIAGNOSTICS': '0',
+                                         'BUILDER_PLAINTEXT_ONLY': '0',
                                          'TWRP_SOURCE_TOKEN': 'private-fixture'},
                                         Path('/builder'), Path('/work'))
         self.assertEqual(environment['SELENE_STARTUP_DIAGNOSTICS'], '1')
+        self.assertEqual(environment['BUILDER_PLAINTEXT_ONLY'], '1')
         self.assertNotIn('TWRP_SOURCE_TOKEN', environment)
 
     def test_unset_or_disabled_mode_preserves_original_patch_sequence(self):
@@ -57,17 +59,17 @@ git() {
         result = self.preflight('1')
         self.assertEqual(result.returncode, 0, result.stderr)
         commands = result.stdout.splitlines()
-        self.assertEqual(len(commands), 10)
-        self.assertTrue(all('apply --check ' in command for command in commands[:5]))
-        self.assertTrue(all('apply --check ' not in command for command in commands[5:]))
-        self.assertEqual(commands[4], '-C system/vold apply --check /builder/patches/vold-keystore-diagnostics.patch')
-        self.assertEqual(commands[-1], '-C system/vold apply /builder/patches/vold-keystore-diagnostics.patch')
+        self.assertEqual(len(commands), 12)
+        self.assertTrue(all('apply --check ' in command for command in commands[:6]))
+        self.assertTrue(all('apply --check ' not in command for command in commands[6:]))
+        self.assertEqual(commands[5], '-C system/security apply --check /builder/patches/keystore2-startup-diagnostics.patch')
+        self.assertEqual(commands[-1], '-C system/security apply /builder/patches/keystore2-startup-diagnostics.patch')
 
     def test_diagnostic_precheck_failure_prevents_all_patch_mutations(self):
-        failure = '-C system/vold apply --check /builder/patches/vold-keystore-diagnostics.patch'
+        failure = '-C system/security apply --check /builder/patches/keystore2-startup-diagnostics.patch'
         result = self.preflight('1', failure)
         self.assertEqual(result.returncode, 17)
-        self.assertEqual(len(result.stdout.splitlines()), 5)
+        self.assertEqual(len(result.stdout.splitlines()), 6)
         self.assertTrue(all('apply --check ' in command
                             for command in result.stdout.splitlines()))
 
@@ -77,6 +79,41 @@ git() {
         self.assertEqual(result.returncode, 17)
         self.assertEqual(result.stdout.splitlines()[-1], failure)
         self.assertNotIn('-C system/vold apply /builder/', result.stdout)
+
+    def delivery(self, plaintext=None, seal_exit='0'):
+        source = (ROOT / 'scripts/build.sh').read_text()
+        start = source.index('# Native delivers the existing ready-to-use files;')
+        program = '''set -eo pipefail
+trace_public_command() { printf 'trace:%s\\n' "$1"; }
+python3() { printf 'python:%s\\n' "$*"; return "$SEAL_EXIT"; }
+set_stage() { printf 'stage:%s\\n' "$1"; }
+''' + source[start:]
+        environment = {'PATH': os.environ['PATH'], 'SELF': '/builder',
+                       'WORK': '/work', 'SEAL_EXIT': seal_exit}
+        if plaintext is not None:
+            environment['BUILDER_PLAINTEXT_ONLY'] = plaintext
+        return subprocess.run(['bash', '-c', program], env=environment,
+                              capture_output=True, text=True, timeout=5)
+
+    def test_native_plaintext_completes_without_invoking_sealer(self):
+        result = self.delivery('1', seal_exit='17')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.splitlines(), ['stage:complete'])
+
+    def test_unset_or_disabled_plaintext_keeps_existing_docker_sealer(self):
+        for enabled in [None, '0']:
+            with self.subTest(enabled=enabled):
+                result = self.delivery(enabled)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(result.stdout.splitlines(), [
+                    'trace:cms_seal',
+                    'python:/builder/scripts/seal_output.py --output /work/output --certificate /builder/delivery-recipient.pem',
+                    'stage:complete'])
+
+    def test_existing_sealer_failure_preserves_real_failure(self):
+        result = self.delivery(seal_exit='17')
+        self.assertEqual(result.returncode, 17)
+        self.assertNotIn('stage:complete', result.stdout)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Requirements: fresh work, archive manifest plus reviewed public dependency projects.
 # Ambiguity: the expanded source graph still needs a successful real bootimage build.
-# Research: Native startup markers locate an unconfirmed recovery initialization wait.
+# Research: Native logd and keystore2 markers locate an unconfirmed startup wait.
 # Optimization: CPU count plus one, verbose Ninja and bounded phase clocks.
 # Risks: source availability, old prebuilts, capacity; preserve the failure logs.
 # Validation: exact checkout identities, real phase/exit records, AVB and payloads.
@@ -125,6 +125,8 @@ if [[ "${SELENE_STARTUP_DIAGNOSTICS:-0}" == 1 ]]; then
   git -C bootable/recovery apply --check "${SELF}/patches/recovery-startup-diagnostics.patch"
   trace_public_command vold_startup_patch_check
   git -C system/vold apply --check "${SELF}/patches/vold-keystore-diagnostics.patch"
+  trace_public_command keystore_startup_patch_check
+  git -C system/security apply --check "${SELF}/patches/keystore2-startup-diagnostics.patch"
 fi
 trace_public_command recovery_patch_apply
 git -C bootable/recovery apply "${SELF}/patches/recovery-required-modules.patch"
@@ -137,6 +139,8 @@ if [[ "${SELENE_STARTUP_DIAGNOSTICS:-0}" == 1 ]]; then
   git -C bootable/recovery apply "${SELF}/patches/recovery-startup-diagnostics.patch"
   trace_public_command vold_startup_patch_apply
   git -C system/vold apply "${SELF}/patches/vold-keystore-diagnostics.patch"
+  trace_public_command keystore_startup_patch_apply
+  git -C system/security apply "${SELF}/patches/keystore2-startup-diagnostics.patch"
 fi
 trace_public_command disk_preflight
 [[ "$(df --output=avail -B1 "${WORK}" | tail -n 1)" -ge 19327352832 ]]
@@ -183,7 +187,10 @@ trace_public_command boot_copy
 cp "${image}" "${WORK}/output/boot.img"
 cd "${WORK}/output"
 sha256sum boot.img static-validation.json > SHA256SUMS
-trace_public_command cms_seal
-python3 "${SELF}/scripts/seal_output.py" --output "${WORK}/output" \
-  --certificate "${SELF}/delivery-recipient.pem"
+# Native delivers the existing ready-to-use files; the paused Docker default is CMS.
+if [[ "${BUILDER_PLAINTEXT_ONLY:-0}" != 1 ]]; then
+  trace_public_command cms_seal
+  python3 "${SELF}/scripts/seal_output.py" --output "${WORK}/output" \
+    --certificate "${SELF}/delivery-recipient.pem"
+fi
 set_stage complete

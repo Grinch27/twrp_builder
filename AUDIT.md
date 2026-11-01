@@ -926,3 +926,18 @@ be48ec2运行40473795328的静态检查、608项同步/身份校验和预检通�
 提案新增 Recovery/vold 两份固定阶段日志补丁。Native 启动器固定启用，Docker 未新增启用变量；五份补丁统一先 precheck 后应用，失败保持真实退出。运行时新增标记直接写 Recovery日志/stderr，只含固定阶段与布尔返回，不新增线程、服务启停、超时、数据写入命令或外发渠道。Native build Job 名称标记诊断用途；其 YAML 获批推送到 main 后将按现有自身路径规则自动构建一次，不额外dispatch。
 
 本地标准库170项测试执行完成：166通过、4项环境跳过（两个/proc命名空间限制、Go工具链缺失、aria2缺失），新增5项均通过。五份补丁对匹配公开源码的全部precheck及组合应用通过，五个受改C++文件与提案源码一致；主机C++17替身编译及成功、空服务、RPC错误、阻塞等待、密钥读取成功/失败共6种行为通过，只证明标记顺序及保留返回分支。三份YAML解析、36个内联Shell及全部独立Shell语法通过，Native触发/权限/交付配置除Job名称外保持；普通源码/文档git diff --check通过；新增patch文本的上下文前缀单独处理，实际新增C++行由git apply --check --whitespace=error-all通过。actionlint本机未安装，未执行。真实Android诊断构建、新镜像启动、触控、FBE及备份恢复均未在本轮执行；2026-10-30用户已明确批准清单10文件提交main并自动启动一次Native诊断构建，publish=false，保留加密功能；不额外dispatch或自动重试。任何新设备状态改变仍分别设Gate。
+
+
+## 2026-11-01 — Native logd／keystore2 诊断补齐与仅明文交付（已批准提交）
+
+以远端 main b8dcc69345a8b76345da1f1ec0746ef6254200c8 为基线。其 Native run 41026784027 已成功构建并交付；随后实机仍卡 Logo，ADB 可用，触控受阻未测。两组相隔60秒的固定标记都停在最内层 keystore2_wait enter；回写同版本原厂 boot 后正常 Android 启动和桌面观察已确认。旧提交/构建及设备单次批准均已消费，本轮没有操作手机。
+
+当前证据没有确定 keystore2 注册等待的根因。旧采样中 keystore2 与 teei_daemon 存在，Keymaster 服务 stopped，logcat 两次失败且未采到 logd 进程；不能据此证明二进制缺失、服务从未启动、TEE 故障或数据损坏。锁定 Recovery 的 logd 依赖及 ramdisk 文件列表原来还受 TARGET_USES_LOGD 条件控制；本轮扩充现有公开补丁的条件，使 Native 固定诊断值1能同时纳入 logd、libsysutils、libnl 和既有 init.recovery.logd.rc，继续保留 logcat 外层条件。未启用诊断时遵循原条件，Docker 不新增启用值或运行请求。新镜像启动后会按既有 rc 启动 logd，运行效果仍待实测。
+
+新增 keystore2-startup-diagnostics.patch，匹配 TeamWin/android_system_security@14737db1429b8eebc15568bc748b2cd79ccad5c2。四个文件插入24组固定阶段 enter/exit，覆盖数据库设置、主服务创建/注册、TEE/StrongBox、KeyMint 缓存锁及连接、兼容服务、HIDL 管理服务/manifest/Keymaster 获取和 HAL 信息调用。删除新增日志行后，四文件均与锁定公开原文逐字相同；不改 API、锁、超时、重试、错误传播或加密逻辑。Rust 的 ?／panic 仍可能提前返回，日志需结合错误和 PID/TID 判读。新增补丁与原五份统一先全部 precheck，再依次应用，失败停止。
+
+用户本轮明确表示不需要加密镜像。Native 启动器固定 BUILDER_PLAINTEXT_ONLY=1 并拒绝调用方覆盖，构建跳过 CMS 封装，工作流删除加密 Artifact 上传步骤；只上传既有 boot.img、static-validation.json、SHA256SUMS 明文三文件，保留三天。Native 无需收件证书或私钥，publish=false 仍不创建 Release。保留暂停 Docker 的默认 CMS 分支及其脚本/证书，不追溯删除旧 Artifact；手机 TW_INCLUDE_CRYPTO／FBE 功能保持。AGENTS 和 README 同步当前规则，历史授权记录保留。
+
+本地验证：标准库174项完成，170通过、4项环境跳过（两个 /proc 命名空间限制、Go 缺失、aria2 缺失）。更新已有公开 Make fixture 为原文中的完整日志片段，并新增36种实际 Make 条件组合，验证 Native、旧开关和 logcat 外层条件下的模块/ramdisk依赖；实际公开源码上的同36组合也通过。六补丁在匹配公开源码上全部预检查、组合应用及实际新增行空白检查通过；四个 security 文件与插入日志提案一致。三份 YAML、36个内联 Shell、全部独立 Shell 语法通过；工作流语义比较确认仅 build 名称及 CMS 上传步骤改变，其余触发、权限、publish 默认 false、明文列表和保留期保持。普通代码/文档差异与 patch 上下文单独处理后的空白检查通过。未下载或扫描镜像、摘要、证书或版本标记；rustc、actionlint、ShellCheck 本机缺失，未执行；没有完整 Android 编译或新实机验收。
+
+当前12文件见 docs/SELENE_STARTUP_DIAGNOSTICS.md。2026-11-01用户明确要求“commit到main”，批准以 [gpt-work] enable Native keystore diagnostics and plaintext delivery 提交 main，并由该次 push 自动启动一次 Native 构建，publish=false，不额外 dispatch 或自动重试。提交前重读远端 main 仍为上述基线，使用真实远端父提交及树，禁止推送本地合成审阅历史或强推；真实构建结果尚待该次运行。原始设备记录、私有输入、日志及标识没有复制到公开树；源码锁和输入 allowlist 保持。所有后续手机写入、重启、切槽及调试干预分别设 Gate。

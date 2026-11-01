@@ -17,11 +17,15 @@ index 383adca..e44d716 100644
 -    fscryptpolicyget.recovery \
 -    keystore_auth \
      keystore2 \
-@@ -609,3 +605,3 @@ endif
+@@ -609,6 +605,6 @@ endif
  ifeq ($(TWRP_INCLUDE_LOGCAT), true)
 -    TWRP_REQUIRED_MODULES += logcat event-log-tags
 +    TWRP_REQUIRED_MODULES += logcat
-     ifeq ($(TARGET_USES_LOGD), true)
+-    ifeq ($(TARGET_USES_LOGD), true)
++    ifneq ($(filter true,$(TARGET_USES_LOGD))$(filter 1,$(SELENE_STARTUP_DIAGNOSTICS)),)
+         TWRP_REQUIRED_MODULES += logd libsysutils libnl init.recovery.logd.rc
+     endif
+ endif
 @@ -627,3 +623,2 @@ ifeq ($(TARGET_USERIMAGES_USE_F2FS), true)
          libfs_mgr \
 -        fs_mgr \
@@ -70,7 +74,14 @@ index 3197ec1..4b691a1 100755
 -ifeq ($(TW_INCLUDE_NTFS_3G),true)
 +ifneq ($(filter true,$(TW_INCLUDE_NTFS_3G))$(wildcard external/ntfs-3g/Android.bp),)
      RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/mount.ntfs
-@@ -363,5 +353,3 @@ ifeq ($(TWRP_INCLUDE_LOGCAT), true)
+@@ -357,11 +347,9 @@ endif
+ ifeq ($(TWRP_INCLUDE_LOGCAT), true)
+     RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/logcat
+-    ifeq ($(TARGET_USES_LOGD), true)
++    ifneq ($(filter true,$(TARGET_USES_LOGD))$(filter 1,$(SELENE_STARTUP_DIAGNOSTICS)),)
+         RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/logd
+         RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libsysutils.so
+         RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libnl.so
      endif
 -    RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libpcrecpp.so
 -	RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/liblogcat.so

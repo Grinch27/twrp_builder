@@ -45,6 +45,7 @@ endif
 ifeq ($(TWRP_INCLUDE_LOGCAT), true)
     TWRP_REQUIRED_MODULES += logcat event-log-tags
     ifeq ($(TARGET_USES_LOGD), true)
+        TWRP_REQUIRED_MODULES += logd libsysutils libnl init.recovery.logd.rc
     endif
 endif
 ifeq ($(TARGET_USERIMAGES_USE_F2FS), true)
@@ -76,7 +77,11 @@ endif
         RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libsoftkeymaster.so
         RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/android.hardware.keymaster@4.0.so
 ifeq ($(TWRP_INCLUDE_LOGCAT), true)
+    RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/logcat
     ifeq ($(TARGET_USES_LOGD), true)
+        RECOVERY_BINARY_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/logd
+        RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libsysutils.so
+        RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libnl.so
     endif
     RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libpcrecpp.so
 	RECOVERY_LIBRARY_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/liblogcat.so
@@ -155,6 +160,44 @@ class RecoveryRequiredModulesTests(unittest.TestCase):
             command.append('--check')
         return subprocess.run(command + [str(PATCH)], stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, text=True)
+
+    def test_native_logd_dependencies_and_ramdisk_files_with_legacy_flag_off(self):
+        self.assertEqual(self.git_apply().returncode, 0)
+        for path, variable in [('Android.mk', 'TWRP_REQUIRED_MODULES'),
+                               ('prebuilt/Android.mk', 'RECOVERY_BINARY_SOURCE_FILES')]:
+            lines = (self.tree / path).read_text().splitlines()
+            start = lines.index('ifeq ($(TWRP_INCLUDE_LOGCAT), true)')
+            depth = 0
+            for end in range(start, len(lines)):
+                if lines[end].lstrip().startswith(('ifeq ', 'ifneq ', 'ifdef ', 'ifndef ')):
+                    depth += 1
+                elif lines[end].strip() == 'endif':
+                    depth -= 1
+                    if depth == 0:
+                        break
+            self.assertEqual(depth, 0)
+            program = 'TARGET_OUT_EXECUTABLES := /bin\nTARGET_OUT_SHARED_LIBRARIES := /lib\n'
+            program += '\n'.join(lines[start:end + 1])
+            program += '\n.PHONY: print\nprint:\n\t@echo $(' + variable + ')\n'
+            program += '\t@echo $(RECOVERY_LIBRARY_SOURCE_FILES)\n'
+            for native in ['', '0', '1']:
+                for legacy in ['', 'false', 'true']:
+                    for include in ['false', 'true']:
+                        with self.subTest(path=path, native=native, legacy=legacy, include=include):
+                            result = subprocess.run([
+                                'make', '--no-print-directory', '-sf', '-', 'print',
+                                'SELENE_STARTUP_DIAGNOSTICS=' + native,
+                                'TARGET_USES_LOGD=' + legacy, 'TWRP_INCLUDE_LOGCAT=' + include,
+                            ], input=program, text=True, capture_output=True, check=True, timeout=5)
+                            values = set(result.stdout.split())
+                            expected = include == 'true' and (native == '1' or legacy == 'true')
+                            binary = 'logd' if path == 'Android.mk' else '/bin/logd'
+                            self.assertEqual(binary in values, expected)
+                            if expected:
+                                required = ({'libsysutils', 'libnl', 'init.recovery.logd.rc'}
+                                            if path == 'Android.mk' else
+                                            {'/lib/libsysutils.so', '/lib/libnl.so'})
+                                self.assertTrue(required <= values)
 
     @unittest.skipUnless(shutil.which('go'), 'Go toolchain is unavailable in this executor')
     def test_minui_does_not_require_qcom_kernel_headers_for_mediatek(self):

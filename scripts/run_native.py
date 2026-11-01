@@ -27,7 +27,7 @@ def build_environment(parent, builder, work):
     # Values such as HOME are inherited unchanged; no host configuration is changed.
     result = {key: value for key, value in parent.items() if key in ENVIRONMENT}
     result.update(BUILDER_SELF=str(builder), BUILD_ROOT=str(work), GIT_TERMINAL_PROMPT='0',
-                  SELENE_STARTUP_DIAGNOSTICS='1')
+                  SELENE_STARTUP_DIAGNOSTICS='1', BUILDER_PLAINTEXT_ONLY='1')
     # Public builder identity enables pinned patch proof; credentials remain excluded.
     commit = parent.get('GITHUB_SHA', '')
     if re.fullmatch(r'[0-9a-f]{40}', commit):
@@ -58,6 +58,8 @@ PUBLIC_COMMANDS = {
     "recovery_startup_patch_apply": "git -C bootable/recovery apply patches/recovery-startup-diagnostics.patch",
     "vold_startup_patch_check": "git -C system/vold apply --check patches/vold-keystore-diagnostics.patch",
     "vold_startup_patch_apply": "git -C system/vold apply patches/vold-keystore-diagnostics.patch",
+    "keystore_startup_patch_check": "git -C system/security apply --check patches/keystore2-startup-diagnostics.patch",
+    "keystore_startup_patch_apply": "git -C system/security apply patches/keystore2-startup-diagnostics.patch",
     "disk_preflight": "df --output=avail -B1 <work> (minimum 18 GiB)",
     "jdk_preflight": "test -s prebuilts/jdk/jdk11/linux-x86/lib/modules",
     "monitor_preflight": "test -s prebuilts/tools/common/m2/repository/.../monitor-1.0.2-alpha1.aar",

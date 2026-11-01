@@ -2,7 +2,7 @@
 
 当前集中使用 GitHub Actions 的 Ubuntu 原生路线，为 Xiaomi selene 构建 TWRP 12.1 `bootimage`。目标固件保持 China MIUI `V14.0.4.0.TKUCNXM`。
 
-本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**已完成一次完整原生构建、静态验收与加密交付：[成功运行 40480759870](https://github.com/Grinch27/twrp_builder/actions/runs/40480759870)。2026-10-30 实机测试确认 Recovery ADB 可用、主菜单卡 Logo，基础验收失败，触控受阻未测；同版本原厂 boot 回刷后正常 Android 启动已确认。** 当前准备 Native 阶段诊断，参见 [源码复用与诊断方案](docs/SELENE_STARTUP_DIAGNOSTICS.md)；历史构建证据见 [AUDIT.md](AUDIT.md)。
+本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**Native 诊断构建 [41026784027](https://github.com/Grinch27/twrp_builder/actions/runs/41026784027) 已成功；2026-10-31 实机仍卡 Logo，ADB 可用，触控受阻未测。相隔60秒的两组标记都停在 `keystore2_wait enter`，根因未确认；回刷同版本原厂 boot 后正常 Android 启动和桌面观察通过。** 本轮先修补 Native 的 logd 打包与 keystore2 注册前日志，并按用户要求只交付明文成品；手机 FBE／数据解密功能保留。具体变更与待批准清单见 [诊断修正方案](docs/SELENE_STARTUP_DIAGNOSTICS.md)，历史证据见 [AUDIT.md](AUDIT.md)。
 
 ## 构建方式
 
@@ -26,7 +26,7 @@ flowchart TD
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度为可用 CPU 数加一。原生路线使用 Runner 可用内存并新增 12 GiB Swap，Docker 路线另限 14 GiB |
 | 磁盘检查 | 清理后至少 62 GiB，其中新增 Swap 占 12 GiB；同步前保留至少 50 GiB，编译前至少 18 GiB；不足立即失败 |
 | 自动触发 | Native 仅在 main push 修改 `.github/workflows/twrp_native.yml` 时完整构建；Stock 仅在 main push 修改 `.github/workflows/stock_rom.yml` 时解包发布。两者 PR 也仅匹配各自工作流文件，且只做静态检查。手动入口保留，Docker 仍仅手动 |
-| 唯一手动输入 | Native 的 `publish=false` 仅控制是否另建预发布 Release；成功构建默认上传含 `boot.img` 的明文 Artifact，并保留加密 Artifact |
+| 唯一手动输入 | Native 的 `publish=false` 仅控制是否另建预发布 Release；成功构建仅上传含 `boot.img` 的明文 Artifact，不生成或上传 CMS |
 
 源码预编译 JDK、Clang 等从锁定上游重新同步；不克隆整个 7.44 GiB Git 归档，不回放旧 `out`、Soong 测试禁用、稀疏片段或 `ALLOW_MISSING_DEPENDENCIES`。归档内 18 个 Release 大文件不作为这条干净路线的下载入口。
 
@@ -47,29 +47,21 @@ flowchart TD
 | Artifact 名称 | 内容与使用方式 | 保留时间 |
 | --- | --- | --- |
 | `twrp-selene-native-<run_id>-<attempt>` | 明文 `boot.img`、`static-validation.json`、`SHA256SUMS`；下载 ZIP 后直接解压使用，不需要私钥 | 3 天 |
-| `twrp-selene-native-sealed-<run_id>-<attempt>` | `sealed-output.cms`；保留原加密交付方式，需对应私钥解密 | 3 天 |
 
 Job Summary 会记录明文 Artifact 的实际上传结果，并在有下载地址时显示链接。`publish=false` 也交付明文镜像；`publish=true` 仅额外创建公开预发布 Release。明文 Artifact 可由具备仓库读取权限、已登录 GitHub 的用户下载。该变更不追溯补充以下历史运行的 Artifact。
 
 成功基线：`a01a8089fab3cea8876908b85f68b483ae3e0452`，615 项锁定源码，`twrp_selene-eng / bootimage`。Native 编译、既有静态验收和加密上传全部通过；编译耗时约 59 分钟。该结果不代表已验证设备启动、触控、FBE 或备份恢复。
 
-[下载加密 Artifact](https://github.com/Grinch27/twrp_builder/actions/runs/40480759870/artifacts/12727671032)，67,123,978 bytes，保留至北京时间 2026-11-03 18:37。解压下载文件得到 `sealed-output.cms`，使用本轮匹配的收件私钥解密：
-
-```bash
-openssl cms -decrypt -binary -inform DER -in sealed-output.cms -inkey /path/to/recipient-private.pem -out twrp-selene.tar
-tar -xf twrp-selene.tar
-```
-
-包内为 `boot.img`、`static-validation.json` 和原有 `SHA256SUMS`。私钥由交付方保存，不进入仓库或 Runner；失败日志 Artifact 仍保持关闭。后续完整构建仅在 main push 修改 Native 工作流自身时自动触发，也可使用 Native 手动入口。
+旧运行的交付记录保留在 AUDIT；本轮起 Native 下载明文 Artifact 的 ZIP 后直接解压使用，无需证书或私钥。`seal_output.py` 与收件证书继续供暂停的 Docker 原路线使用，Native 不调用它们。失败日志 Artifact 仍保持关闭。后续完整构建仅在 main push 修改 Native 工作流自身时自动触发，也可使用 Native 手动入口。
 
 ## 首次运行
 
 1. 在 `Grinch27/twrp_builder` 的 **Settings → Secrets and variables → Actions** 添加 `TWRP_SOURCE_TOKEN`。使用仅选择 `Grinch27/twrp_selene`、权限仅 **Contents: read** 的 fine-grained token。不要把令牌写入源码、工作流输入或聊天。
-   独立的新交付会话还应将 `delivery-recipient.pem` 替换为自己持有本地私钥的 RSA 收件证书；仓库证书属于当前交付会话，不能假定后续会话持有对应私钥。私钥必须保存在仓库和 Runner 之外。
+   Native 明文交付无需收件证书或私钥；若将来另行批准恢复 Docker 加密路线，再核对其独立交付条件。
 2. 明确授权 GitHub 托管 runner 处理这十个私有输入后，再配置该 secret 并手动启动。普通 `GITHUB_TOKEN` 只属于 builder 仓库，不能用它读取另一个私有仓库。
-3. 打开 **Actions → TWRP Selene (Native) → Run workflow**，选 `main`；只需明文与加密 Artifact 时保持 `publish=false`，需要额外预发布 Release 时才勾选。Native 成功构建会公开交付明文镜像，其中包含编译所用设备配置与固件。当前只推进原生路线；Docker 研究暂缓，其原有 `publish` 边界不变，需用户明确要求后才恢复其手动入口。Native 并发组包含 run_id，各次推送独立调度，不以新任务替换旧的等待任务；实际并行数量仍受 GitHub Runner 配额限制。
+3. 打开 **Actions → TWRP Selene (Native) → Run workflow**，选 `main`；只需明文 Artifact 时保持 `publish=false`，需要额外预发布 Release 时才勾选。Native 成功构建会公开交付明文镜像，其中包含编译所用设备配置与固件。当前只推进原生路线；Docker 研究暂缓，其原有 `publish` 边界不变，需用户明确要求后才恢复其手动入口。Native 并发组包含 run_id，各次推送独立调度，不以新任务替换旧的等待任务；实际并行数量仍受 GitHub Runner 配额限制。
 4. 完整任务会清理该次临时 GitHub runner 的预装 Android SDK、hostedtoolcache、dotnet、PowerShell 四个目录，以获得空间；不会在本地或 self-hosted runner 上运行该清理脚本。若空间门槛仍不满足，任务停止，不自动购买或选择付费 runner。
-5. Native 成功并通过静态验收后，默认上传只包含 `boot.img`、`static-validation.json` 和 `SHA256SUMS` 的明文 Actions Artifact，保留三天；同时用 `delivery-recipient.pem` 的公钥将这三个成品文件打包为 AES-256-GCM / RSA-OAEP 的 CMS 密文，保留加密 Artifact 三天。私钥只在交付方本地，不进入仓库或 Runner；只有明确勾选 `publish` 才额外创建实验性 prerelease。上传失败保留真实失败状态；加密 Artifact 上传失败不会阻止尝试上传已通过编译与静态验收的明文成品，取消运行时不再上传明文。完整日志仍不上传。
+5. Native 成功并通过静态验收后，仅上传包含 `boot.img`、`static-validation.json` 和原有 `SHA256SUMS` 的明文 Actions Artifact，保留三天；不生成或上传 CMS。Native 启动器固定设置 `BUILDER_PLAINTEXT_ONLY=1`，忽略调用方对该值的覆盖；只有明确勾选 `publish` 才额外创建实验性 prerelease。上传失败保留真实失败状态，取消运行时不再上传明文；完整日志仍不上传。取消的是交付封装加密，`TW_INCLUDE_CRYPTO`／FBE 功能继续保留。
 
 原生路线增加 `Clean native build session (maximum 3 minutes)`：始终尝试清理本轮记录的独立构建进程组，TERM 后清理残留子进程，175 秒内部限时加 5 秒强制退出，步骤 `timeout-minutes: 3`、`continue-on-error: true`；超时跳过清理，保留原编译结果。只读取 `/proc/*/stat`，不输出进程环境、命令行或原始日志。**这不等于给 Runner 内建的 `Complete job` 设置 3 分钟超时：GitHub 没有暴露该阶段的单独限时或跳过接口。** 整次 Job 的 350 分钟上限保持原值；若要求内建阶段超时后强制终止，只能另用独立监控取消整次运行，届时运行结果为 cancelled，不能保留为成功。
 
