@@ -2,7 +2,9 @@
 
 当前集中使用 GitHub Actions 的 Ubuntu 原生路线，为 Xiaomi selene 构建 TWRP 12.1 `bootimage`。目标固件保持 China MIUI `V14.0.4.0.TKUCNXM`。
 
-本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**Native [41374113681](https://github.com/Grinch27/twrp_builder/actions/runs/41374113681) 已成功构建；用户确认 TWRP 菜单、Android 启动及 Android 再次正常重启可用，metadata/FBE 解密仍失败。** 保留已验证的正常启动选择与[同版本原厂 TEE 客户端](public-prebuilts/selene-stock-v14/README.md)修正。日志导出错误传播与 Vold 可选升级 guard 已补充，见[存储错误修正](docs/SELENE_STORAGE_ERRORS.md)。本轮在 Recovery 初始属性生成阶段提供原厂 Android `13`／`2023-12-01`，保持 SDK `32`；这是针对 Keymaster `-33` 的版本环境候选，完整 FBE 仍待实机验证，见[目标版本与 Stock 分析设计](docs/SELENE_TARGET_VERSION_AND_STOCK_ANALYSIS.md)。原始日志和设备标识仅在本地，不进入本仓库。保留 FBE、现有镜像验收及单文件 `boot.img` 交付规则，历史记录见 [AUDIT.md](AUDIT.md)。
+本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**Native [41452626126](https://github.com/Grinch27/twrp_builder/actions/runs/41452626126) 已成功构建；用户提供的单次启动资料确认 metadata、用户 0 DE／CE、`/data` 挂载及三份非空日志导出成功，本轮未复现旧 `-33`。** 保留已验证的正常启动选择、[同版本原厂 TEE 客户端](public-prebuilts/selene-stock-v14/README.md)、[导出错误与 Vold guard](docs/SELENE_STORAGE_ERRORS.md)及[首次 Keymaster OS／SPL 输入](docs/SELENE_TARGET_VERSION_AND_STOCK_ANALYSIS.md)。
+
+本轮补充稳定逻辑块源与重映射／卸载身份、明确跳过 Android bind／overlay 视图、统一 Find／Mount／UnMount 的完整路径匹配；保留原有存储写入目标边界。原因、测试和验收条件见[Recovery 布局技术报告](docs/SELENE_RECOVERY_LAYOUT.md)。这份新补丁尚未通过完整 Android 编译与实机验收，跨重启 FBE、备份恢复及 MIUI overlay 内容视角也未验证。原始日志和设备标识仅在本地，不进入本仓库。保留 FBE、现有镜像验收及单文件 `boot.img` 交付规则，历史记录见 [AUDIT.md](AUDIT.md)。
 
 ## 构建方式
 

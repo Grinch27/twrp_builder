@@ -573,6 +573,14 @@ Read README.md, AUDIT.md and source.lock.json before changes. Use Chinese for us
 - 本次按用户要求不监测构建进度，不轮询、不自动重试或重复 dispatch；后续另获查询请求时再读取真实结果。
 - Native 固定启用 `SELENE_STOCK_TEE_CLIENT=1`：在 checkout 验证和既有 overlay 后覆盖上述公开原厂客户端，并以 `verify_boot.py --tee-common` 比较最终 boot ramdisk 的实际库。来源见同目录 README；不扩大十项私有输入，不替换 TA/daemon/HAL，不关闭 FBE 或安全验证。Docker 默认不启用此覆盖；静态通过不能证明新候选已启动或完整解密成功。
 
+## Native Recovery 布局修正（261103 诊断批次）
+
+- 用户授权完整分析、修正并 commit main。Native 41452626126 的用户提供资料仅证明单启动、用户 0 的 metadata／DE／CE、数据挂载及实际导出通过；跨重启、备份恢复、overlay 视图未验收。私密日志、标识和输入不得复制到公开树。
+- Native 固定 `SELENE_RECOVERY_LAYOUT_FIXES=1`；共享脚本／暂停的 Docker 默认不启用。`recovery-layout-paths.patch` 与原九份补丁全部预检查后再应用，任一失败不进入应用；源码锁、十项私有输入、原厂二进制、FBE、安全验证与正常启动选择保持。
+- 逻辑身份使用原 fstab 块源和最后成功映射名，不以挂载点或当前 dm 路径重新推导。只管理本对象创建的 by-name 链接；失败真实返回，保留错误上下文，不伪称原子回滚。
+- Find／Mount／UnMount 共用最长路径组件匹配并按同一对象分派；长／短对象及 flags 保留。存储备份／还原、刷写、USB LUN、SD 分区目标保留原根路径边界。Android bind／overlay 只识别为非块视图并明确跳过，不宣称完整支持 MIUI overlay；原 first-stage fstab 保持。
+- 详见 `docs/SELENE_RECOVERY_LAYOUT.md`。本次 push 由既有规则进入 Native；不额外 dispatch、不监测、不重试、不操作手机，Stock 工作流不变。主机测试不能替代完整编译和实机验收。
+
 ## 官方原厂镜像解包与发布（2026-10-28）
 
 2026-11-02 用户明确批准 main 提交并完善 Stock 提取。新增离线阶段仅复用该 Job 的本地公开 ROM 载荷，导出实际非空逻辑分区、完整常规文件及数值目录元数据、boot/APEX/TEE 模块和 FBE 配置/ELF 索引；原包及原始 sparse 附件继续保留。先完成全部派生附件及检查，再生成完成清单，最后公开同一新草稿；失败保留原包备份，不把未知格式或运行时健康标为成功。新增 Stock 脚本不触发 Native 完整编译，Stock 路径触发仍只匹配自身工作流。详见 docs/SELENE_TARGET_VERSION_AND_STOCK_ANALYSIS.md。

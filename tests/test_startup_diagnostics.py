@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class StartupDiagnosticsTests(unittest.TestCase):
-    def preflight(self, enabled=None, failure='', repairs=None, target_version=None):
+    def preflight(self, enabled=None, failure='', repairs=None, target_version=None, layout=None):
         source = (ROOT / 'scripts/build.sh').read_text()
         start = source.index('trace_public_command recovery_patch_check\n')
         end = source.index('trace_public_command disk_preflight\n', start)
@@ -37,6 +37,8 @@ git() {
             environment['SELENE_RECOVERY_FIXES'] = repairs
         if target_version is not None:
             environment['SELENE_TARGET_KEYMASTER_VERSION'] = target_version
+        if layout is not None:
+            environment['SELENE_RECOVERY_LAYOUT_FIXES'] = layout
         return subprocess.run(['bash', '-c', program], env=environment,
                               capture_output=True, text=True, timeout=5)
 
@@ -122,6 +124,18 @@ git() {
         self.assertTrue(commands[-1].startswith('-C build/make apply '))
         failure = commands[8]
         result = self.preflight('1', failure, repairs='1', target_version='1')
+        self.assertEqual(result.returncode, 17)
+        self.assertTrue(all('apply --check ' in c for c in result.stdout.splitlines()))
+
+    def test_layout_patch_is_prechecked_with_all_native_patches(self):
+        result = self.preflight('1', repairs='1', target_version='1', layout='1')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        commands = result.stdout.splitlines()
+        self.assertEqual(len(commands), 20)
+        self.assertTrue(all('apply --check ' in c for c in commands[:10]))
+        self.assertTrue(commands[9].endswith('/patches/recovery-layout-paths.patch'))
+        self.assertEqual(commands[-1], '-C bootable/recovery apply /builder/patches/recovery-layout-paths.patch')
+        result = self.preflight('1', commands[9], repairs='1', target_version='1', layout='1')
         self.assertEqual(result.returncode, 17)
         self.assertTrue(all('apply --check ' in c for c in result.stdout.splitlines()))
 

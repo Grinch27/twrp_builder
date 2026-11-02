@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Requirements: locked sources, Native normal boot/storage fixes and initial target OS inputs.
-# Ambiguity: Keymaster INVALID_KEY_BLOB still needs device-specific root-cause evidence.
+# Requirements: locked sources, Native FBE inputs and consistent Recovery partition layout.
+# Ambiguity: the closed TA branch and cross-boot FBE stability remain unproven.
 # Research: the V14 isee driver needs the stock mmap-based TEE client protocol.
 # Optimization: CPU count plus one, verbose Ninja and bounded phase clocks.
 # Risks: source availability, old prebuilts, capacity; preserve the failure logs.
@@ -155,6 +155,10 @@ if [[ "${SELENE_TARGET_KEYMASTER_VERSION:-0}" == 1 ]]; then
   trace_public_command target_keymaster_version_patch_check
   git -C build/make apply --check "${SELF}/patches/recovery-target-keymaster-version.patch"
 fi
+if [[ "${SELENE_RECOVERY_LAYOUT_FIXES:-0}" == 1 ]]; then
+  trace_public_command recovery_layout_patch_check
+  git -C bootable/recovery apply --check "${SELF}/patches/recovery-layout-paths.patch"
+fi
 trace_public_command recovery_patch_apply
 git -C bootable/recovery apply "${SELF}/patches/recovery-required-modules.patch"
 trace_public_command task_profiles_patch_apply
@@ -180,6 +184,10 @@ if [[ "${SELENE_TARGET_KEYMASTER_VERSION:-0}" == 1 ]]; then
   trace_public_command target_keymaster_version_patch_apply
   git -C build/make apply "${SELF}/patches/recovery-target-keymaster-version.patch"
   target_version_args=(--target-keymaster-version)
+fi
+if [[ "${SELENE_RECOVERY_LAYOUT_FIXES:-0}" == 1 ]]; then
+  trace_public_command recovery_layout_patch_apply
+  git -C bootable/recovery apply "${SELF}/patches/recovery-layout-paths.patch"
 fi
 trace_public_command disk_preflight
 [[ "$(df --output=avail -B1 "${WORK}" | tail -n 1)" -ge 19327352832 ]]

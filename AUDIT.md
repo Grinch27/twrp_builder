@@ -985,3 +985,21 @@ Stock仍先备份完整原包到新草稿，再提取全部原始载荷。新增
 本地标准库227项完成，223通过、4项既有环境限制跳过（两项进程命名空间、Go、aria2）。初轮遇到既有cleanup测试读取尚未写完PID就绪文件的竞态，仅将fixture改为完整写入后原子公布，未改生产cleanup行为或新增跳过。Stock合成集新增正常/畸形sparse/liblp/ELF/cpio/模块表、APEX与CAPEX、实际mke2fs文件系统、链接/权限、附件分片、域隔离、空间不足和禁止错误完成标记用例。锁定公开Makefile严格空白预检查及实际应用、原recipe执行通过；实际旧Native被新属性验收拒绝，仅在内存修改两项目标输入后，其余已知属性源检查通过。真实导出libTEECommon与已审阅公开输入逐字节一致。三份YAML、38段内联Shell和4份独立Shell语法、actionlint1.7.7通过。未执行完整Android编译或实机FBE验收，不把静态和离线通过写成解密成功。
 
 本次main push依现有规则分别进入一次Native和Stock，不额外dispatch，不查询、轮询或重试新运行。Native仍publish=false、只交付boot.img三天；Stock使用既有原包恢复、新唯一草稿、全部上传才发布及非Latest规则。详细差异、提取协议、限制与下一轮验收见docs/SELENE_TARGET_VERSION_AND_STOCK_ANALYSIS.md。
+
+## 2026-11-02 UTC — 261103 现场的 Recovery 布局根因与最小修正
+
+用户明确要求完整分析并修正、commit main；随后补交 41452626126 解密诊断报告、mi_ext 定位报告和八组纯函数复现。基线与写入前远端 main 均为 92ee1b879899c61e30640a5c1f6184ce84454927。Run 41452626126 attempt 1 已完成且成功，head 为该基线；按既有时间门槛只读取这个旧 Run 的必要元数据，不监测任何新构建。用户把现场与该镜像关联，本轮未下载 Native Artifact 或读回设备建立字节绑定。
+
+完整读取用户提供的 69 文件私密归档，28 组采集长度／完整状态一致，另行上传的报告与归档内版本相同。当前 Recovery、logcat、dmesg 属于同一启动，较早导出的 Recovery 是主日志前缀；累计快照和内核重复消息不重复计算，归属不明 pstore/last_kmsg 不并入当前事件。当前现场确认 metadata、用户 0 DE/CE、F2FS 数据挂载和三份非空导出成功，旧 -33、共享内存分配失败及 SIGSEGV 在三个核心日志均未复现。这是单会话成功，不能唯一定位闭源 TA 先前拒绝分支或证明跨重启／备份恢复。原始日志、报告、设备标识和私密输入均未复制到公开树。
+
+公开锁定 Recovery 5c3d206a5eeb3d446bcda8248a405a4b278bab5c 的 Prepare_Super_Volume 从挂载点去首斜杠推导源，把 /mnt/vendor/mi_ext 变成 mnt/vendor/mi_ext_a；现场 mi_ext_a dm 和原厂非空分区实际存在。锁定 core ac4f36c7eb076ea2c582061a21dfc49eaa71e623 的 fs_mgr 按源名查 dm，并将 blk_device 换成运行时路径，不能用后者反推原逻辑身份。旧代码还在成功前追加 Super 列表，重映射失败 erase(iter--) 会使迭代器无效，unmap 使用新活动槽而非实际映射身份。Android bind 行被误当 TWRP v1，overlay 附加 FS flags 并不构成完整合成视图。六个长路径和四个短对象同时存在；Get_Root_Path 把长路径截成 /mnt，288 条状态提示等于六路径各 48 次查询，不是实际挂载失败次数。013 动画是加载器遍历 001–012 后的正常终止探测，不修改资源。
+
+只下载同固件已发布 Stock 分析索引 5,792,873 bytes，未重下 boot/super/ROM 分卷。mi_ext 常规文件只有 NOTICE、属性、init 与两份权限配置；现有成功 FBE 会话没有该 bind/overlay 视图。新 recovery-layout-paths.patch 保存原始块源、最后成功映射名和本对象创建链接的目标，统一 Find/Mount/UnMount 的最长组件匹配并按同一对象分派；正式挂载点优先于碰撞别名，子分区按正式父路径处理。源名按 SlotSelect 加槽，显式后缀不重复；节点等待有界，成功后才登记，失败保留错误上下文。仅管理仍指向本对象目标的链接，保留外部链接和真实节点；unmap 检查卸载／主 dm／COW／链接清理结果。不伪称部分销毁后可以原子回滚，不新增自动重试。
+
+Recovery 分词前精确识别 bind/overlay 为 Android 非块视图并明确跳过；不将 none 加入文件系统白名单，不改原 first-stage fstab、ro/AVB/logical/slotselect 或挂载顺序，不宣称完整 MIUI overlay 支持。备份/还原、备份文件识别、刷写、USB LUN 与 SD 分区的动态目标调用保留旧根路径边界；Wipe/Repair/Resize 原分派不变，不合并长短对象或扩充备份/擦除 flags。完整 overlay、长路径备份恢复、真实 snapshot/OTA/fastbootd/cow 部分失败恢复仍待独立验收。
+
+Native 固定 SELENE_RECOVERY_LAYOUT_FIXES=1，父环境不能关闭；共享脚本及暂停 Docker 默认关闭。新补丁与既有九份补丁先统一预检查后再应用，任一检查失败不进入应用，仅新增两个固定公开阶段名。源码锁、615 项、十项私有输入、四个设备覆盖、原厂二进制、正常启动选择、初始 OS/SPL 和 SDK32、FBE/安全验证及交付策略保持。
+
+验证：标准库 240 项完成，236 通过、4 项既有环境限制跳过（两个 /proc 命名空间、Go、aria2），没有新增跳过。12 项新布局行为测试从实际 patch 提取完整函数，以 g++ C++17 -Wall -Wextra -Werror 编译 AB/非 AB 两套虚拟回调 harness；覆盖六长四短路径、最长组件边界、别名碰撞与一致分派、system/sdcard、子分区、写入边界、源名/slotselect/显式槽、反复映射、失败/超时、变槽后按记录卸载、外部节点保护、COW 失败、首对象重映射失败与视图分类。复核中发现仅统一查找仍可能在别名碰撞时挂载两个对象，已改为选中对象指针分派并补充行为验证。四份 Recovery 补丁在完整锁定公开源码上严格空白预检查、组合应用及 diff 检查通过；11 个实际受测函数与组合栈一致，另外两个候选源文件逐字节一致。构建编排测试证明全部十项先检查及新检查失败不发生修改。三份 YAML、38 段内联／4 份独立 Shell 语法、actionlint 1.7.7 通过。没有完整 Android 编译、新镜像或设备验收，没有新增摘要、签名、证书、DEX 或无关版本扫描。
+
+完整原因、差异矩阵、候选排序、P0/P1/P2 及下一轮验收见 docs/SELENE_RECOVERY_LAYOUT.md。仅按本次授权提交 main，由既有 push 规则进入 Native；不新建分支/PR、不强推、不额外 dispatch、不查询新运行、不自动重试，Stock 工作流保持不变。本次没有连接手机、刷写、重启、切槽、主动解密或修改安全存储。
