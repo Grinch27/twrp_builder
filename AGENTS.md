@@ -575,6 +575,10 @@ Read README.md, AUDIT.md and source.lock.json before changes. Use Chinese for us
 
 ## 官方原厂镜像解包与发布（2026-10-28）
 
+2026-11-02 用户明确批准 main 提交并完善 Stock 提取。新增离线阶段仅复用该 Job 的本地公开 ROM 载荷，导出实际非空逻辑分区、完整常规文件及数值目录元数据、boot/APEX/TEE 模块和 FBE 配置/ELF 索引；原包及原始 sparse 附件继续保留。先完成全部派生附件及检查，再生成完成清单，最后公开同一新草稿；失败保留原包备份，不把未知格式或运行时健康标为成功。新增 Stock 脚本不触发 Native 完整编译，Stock 路径触发仍只匹配自身工作流。详见 docs/SELENE_TARGET_VERSION_AND_STOCK_ANALYSIS.md。
+
+Native 固定 SELENE_TARGET_KEYMASTER_VERSION=1，只修改锁定 build/make 的 Recovery prop.default 生成规则，将原厂 release=13、security_patch=2023-12-01 在首次 HAL 配置前供给，SDK32保持，所有补丁先统一预检查。共享脚本/Docker 默认不启用；源码锁和十项私有输入、TA/daemon/HAL、vendor SPL、FBE、安全验证及正常启动选择保持。必要的 Keymaster OS/SPL 输入与最终 ramdisk 冲突检查属于本修复验收，不授权额外整包版本标记扫描。静态通过不证明实机解密通过。
+
 - 用户明确指定本仓库新增独立 stock_rom.yml，从固定小米官方 selene China V14.0.4.0.TKUCNXM Fastboot URL 下载，提取全部实际分区载荷并公开发布到独立 stock Release。该授权仅适用于此公开原厂包，不扩大 TWRP 私有输入白名单或现有 Native Release 门槛，不运行 Docker 或接入设备。
 - 保留 images/ 常规载荷及配套元数据；不得执行包内刷机程序、脚本或工具，不得生成不存在的 recovery。异常路径、链接、重名、未覆盖的镜像候选或缺少 boot 时失败。
 - 原字节直出；大文件分片严格低于 GitHub Release 单附件限制并提供合并说明，不做额外 SHA256、签名证书、DEX 或版本标记扫描。

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Requirements: locked sources, Native normal boot and checked Recovery storage errors.
+# Requirements: locked sources, Native normal boot/storage fixes and initial target OS inputs.
 # Ambiguity: Keymaster INVALID_KEY_BLOB still needs device-specific root-cause evidence.
 # Research: the V14 isee driver needs the stock mmap-based TEE client protocol.
 # Optimization: CPU count plus one, verbose Ninja and bounded phase clocks.
@@ -151,6 +151,10 @@ if [[ "${SELENE_RECOVERY_FIXES:-0}" == 1 ]]; then
   trace_public_command vold_key_storage_patch_check
   git -C system/vold apply --check "${SELF}/patches/vold-key-storage-guard.patch"
 fi
+if [[ "${SELENE_TARGET_KEYMASTER_VERSION:-0}" == 1 ]]; then
+  trace_public_command target_keymaster_version_patch_check
+  git -C build/make apply --check "${SELF}/patches/recovery-target-keymaster-version.patch"
+fi
 trace_public_command recovery_patch_apply
 git -C bootable/recovery apply "${SELF}/patches/recovery-required-modules.patch"
 trace_public_command task_profiles_patch_apply
@@ -170,6 +174,12 @@ if [[ "${SELENE_RECOVERY_FIXES:-0}" == 1 ]]; then
   git -C bootable/recovery apply "${SELF}/patches/recovery-copylog-errors.patch"
   trace_public_command vold_key_storage_patch_apply
   git -C system/vold apply "${SELF}/patches/vold-key-storage-guard.patch"
+fi
+target_version_args=()
+if [[ "${SELENE_TARGET_KEYMASTER_VERSION:-0}" == 1 ]]; then
+  trace_public_command target_keymaster_version_patch_apply
+  git -C build/make apply "${SELF}/patches/recovery-target-keymaster-version.patch"
+  target_version_args=(--target-keymaster-version)
 fi
 trace_public_command disk_preflight
 [[ "$(df --output=avail -B1 "${WORK}" | tail -n 1)" -ge 19327352832 ]]
@@ -211,7 +221,7 @@ python3 external/avb/avbtool.py verify_image --image "${image}" \
 trace_public_command boot_static_verify
 python3 "${SELF}/scripts/verify_boot.py" --image "${image}" \
   --stock "${WORK}/prebuilts/selene-stock-v14" \
-  --report "${WORK}/output/static-validation.json" "${tee_common_args[@]}"
+  --report "${WORK}/output/static-validation.json" "${tee_common_args[@]}" "${target_version_args[@]}"
 trace_public_command boot_copy
 cp "${image}" "${WORK}/output/boot.img"
 cd "${WORK}/output"

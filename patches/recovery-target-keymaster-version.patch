@@ -1,0 +1,15 @@
+diff --git a/core/Makefile b/core/Makefile
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -2174,6 +2174,11 @@ $(INSTALLED_RECOVERY_BUILD_PROP_TARGET): \
+ 	$(hide) cat $(INSTALLED_ODM_BUILD_PROP_TARGET) >> $@
+ 	$(hide) cat $(INSTALLED_PRODUCT_BUILD_PROP_TARGET) >> $@
+ 	$(hide) cat $(INSTALLED_SYSTEM_EXT_BUILD_PROP_TARGET) >> $@
++	# Selene China V14 target encryption environment, before the first HAL configure.
++	# Only Recovery defaults change; SDK and normal Android property inputs stay intact.
++	$(hide) sed -i -e '/^ro\.build\.version\.release[?]*=/d' \
++	    -e '/^ro\.build\.version\.security_patch[?]*=/d' $@
++	$(hide) printf '%s\n' 'ro.build.version.release=13' 'ro.build.version.security_patch=2023-12-01' >> $@
+ 	$(call append-recovery-ui-properties,$(PRIVATE_RECOVERY_UI_PROPERTIES),$@)
+ 
+ # Only install boot/etc/build.prop to recovery image on recovery_as_boot.

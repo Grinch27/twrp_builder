@@ -27,7 +27,8 @@ class NativeCleanupTests(unittest.TestCase):
                        'pid=os.fork()\n'
                        'if pid == 0:\n'
                        ' signal.signal(signal.SIGTERM,signal.SIG_IGN)\n'
-                       ' open(sys.argv[1],"w").write(str(os.getpid()))\n'
+                       ' with open(sys.argv[1]+".pending","w") as target: target.write(str(os.getpid()))\n'
+                       ' os.replace(sys.argv[1]+".pending",sys.argv[1])\n'
                        ' while True: time.sleep(1)\n'
                        'signal.signal(signal.SIGTERM,lambda *args: sys.exit(0))\n'
                        'while True: time.sleep(1)\n')

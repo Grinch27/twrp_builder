@@ -969,3 +969,19 @@ Native 固定 `SELENE_RECOVERY_FIXES=1`，父环境不能关闭。两份新补�
 验证：标准库207项完成，205通过、2项既有工具缺失跳过；38项定向行为/编排测试由独立审查再次通过。CopyLog在完整锁定公开三文件上的严格空白预检查、实际应用、反向检查均通过，受测五函数与实际应用结果逐字节一致。Vold guard 在完整锁定 KeyStorage 上实际预检查/应用通过；主机 C++ 测试含旧版本空 optional 失败负对照，并逐案确认合成原 metadata 文件集合与内容不变。三份 YAML、37段内联及3份独立 Shell 语法通过；actionlint、ShellCheck 本机缺失，未安装或执行。未进行新的摘要/二进制扫描、完整 Android 编译或设备操作；本地验证不代表实机 FBE 成功。
 
 本次按已明确授权更新 main，不强推、不新建分支/PR；由既有 push 规则进行 Native 验收，未额外 dispatch、轮询或重试。新镜像编译、导出错误的实机表现及完整解密均仍待验收。
+
+## 2026-11-02 — 首次 Keymaster 目标版本与完整 Stock 离线提取
+
+用户明确要求 commit main，并将近期分析需要的原厂文件和流程纳入 stock_rom.yml；暂停后又明确 continue。远端基线仍为1850e42a8b9c395ca0a0f7480614069eb984ff94。只修改公开 builder，未连接手机、读取个人密钥或将私有现场归档复制到仓库。
+
+P0候选针对首次配置：实际41374113681 ramdisk的prop.default为release12、security_patch2022-04-05、SDK32；同V14原厂system属性为13、2023-12-01。已确认的HAL/provider读取这两个系统属性并发送配置，AOSP版本比较存在“key比当前新→-33”分支，但闭源TA实际拒绝条件仍未最终证明。锁定TeamWin build/make 1b692e2248609f50a27c48cce53b7445cecdcfc5的Recovery属性生成规则在合并后精准去重并写入两项目标值；不修改原system/vendor属性输入、框架SDK或已签好的镜像。锁定init ac4f36c7eb076ea2c582061a21dfc49eaa71e623只在Recovery分支读取根prop.default；最终镜像检查同时拒绝已知后续ramdisk属性源的冲突值。Native固定启用新flag，九份补丁统一先检查再应用，默认共享脚本/Docker不启用。既有正常启动、原厂TEE客户端、导出错误与KeyStorage guard均保留；不替换TA/daemon/HAL，不改vendor SPL、源码锁、十项私有输入、FBE或安全验证。
+
+Stock仍先备份完整原包到新草稿，再提取全部原始载荷。新增两份标准库脚本直接索引本地sparse分片/liblp/ext4，不生成完整raw super副本；预检查各主元数据槽布局、必需文件与真实文件逻辑长度预算，导出所有非空逻辑镜像、全部常规文件/权限链接目录、boot节段与ramdisk、APEX/CAPEX payload、TEE完整模块表和FBE相关文件依赖。原厂SOTER按模块记录中的开始/结束/名称偏移提取，不再依赖ELF/名称顺序猜测；专有容器语义和TA安全封装仍明确未验证。索引包括init/fstab/VINTF/SELinux/linker/属性、ELF ABI/强弱导入导出/DT_NEEDED候选和未解析项，TEE与Android分域。资源、路径/链接、循环、长度、附件上限和失败退出有界；无新摘要、签名证书或DEX扫描。不执行OEM程序，不创建设备节点/宿主链接，不读取设备RPMB/persist。
+
+真实离线验收复用指定公开Release的boot.img、tee.img及五个super分片，未取原ROM三个归档分卷。3个主liblp槽布局一致；6个非空逻辑分区包括非空system_b，另外4项为空。完整导出35个文件系统范围（boot+6分区+28 APEX），共12695个目录entry、10335个常规文件；TEE模块100个，其中82个ELF。516个ELF/3891条依赖边中4条Android未解析边保留，来自原厂boot ramdisk的wait_for_keymaster/vold/keystore2/gatekeeperd，不强行闭合或当作实际缺库证明。配置索引含53份属性文件、1528个init块、3份fstab、69份VINTF。43个派生逻辑附件、46个附件分片共12761131079 bytes；小型索引5792873 bytes，实际二进制分析包211744531 bytes。除这46份分片外另有两份分析入口元数据；已有原包和原始载荷继续保留，上传空间/耗时相应增加。
+
+初次真实导出在最终附件检查处失败，修正为与实际发布集合一致，同时把原先过早写入的完成清单调整为验收后最后生成，避免失败目录残留成功标记；再次验收发现vendor常规文件总逻辑长度760613185大于分区718508032，改为按所有inode实际长度预算，不能用分区大小代替。两次失败均未生成新的成功交付或远端发布；最终完整CLI提取退出0，完成标记最后生成。只清理本轮失败的临时派生目录，原厂输入继续复用。上述验证没有运行原始ROM恢复/原包解压/上传发布的真实Actions整链，后者仍待新工作流验收。
+
+本地标准库227项完成，223通过、4项既有环境限制跳过（两项进程命名空间、Go、aria2）。初轮遇到既有cleanup测试读取尚未写完PID就绪文件的竞态，仅将fixture改为完整写入后原子公布，未改生产cleanup行为或新增跳过。Stock合成集新增正常/畸形sparse/liblp/ELF/cpio/模块表、APEX与CAPEX、实际mke2fs文件系统、链接/权限、附件分片、域隔离、空间不足和禁止错误完成标记用例。锁定公开Makefile严格空白预检查及实际应用、原recipe执行通过；实际旧Native被新属性验收拒绝，仅在内存修改两项目标输入后，其余已知属性源检查通过。真实导出libTEECommon与已审阅公开输入逐字节一致。三份YAML、38段内联Shell和4份独立Shell语法、actionlint1.7.7通过。未执行完整Android编译或实机FBE验收，不把静态和离线通过写成解密成功。
+
+本次main push依现有规则分别进入一次Native和Stock，不额外dispatch，不查询、轮询或重试新运行。Native仍publish=false、只交付boot.img三天；Stock使用既有原包恢复、新唯一草稿、全部上传才发布及非Latest规则。详细差异、提取协议、限制与下一轮验收见docs/SELENE_TARGET_VERSION_AND_STOCK_ANALYSIS.md。

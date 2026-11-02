@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class StartupDiagnosticsTests(unittest.TestCase):
-    def preflight(self, enabled=None, failure='', repairs=None):
+    def preflight(self, enabled=None, failure='', repairs=None, target_version=None):
         source = (ROOT / 'scripts/build.sh').read_text()
         start = source.index('trace_public_command recovery_patch_check\n')
         end = source.index('trace_public_command disk_preflight\n', start)
@@ -35,6 +35,8 @@ git() {
             environment['SELENE_STARTUP_DIAGNOSTICS'] = enabled
         if repairs is not None:
             environment['SELENE_RECOVERY_FIXES'] = repairs
+        if target_version is not None:
+            environment['SELENE_TARGET_KEYMASTER_VERSION'] = target_version
         return subprocess.run(['bash', '-c', program], env=environment,
                               capture_output=True, text=True, timeout=5)
 
@@ -109,6 +111,19 @@ git() {
         self.assertEqual(result.stdout.splitlines()[-1], failure)
         self.assertNotIn('-C system/vold apply /builder/patches/vold-key-storage-guard.patch',
                          result.stdout)
+
+    def test_target_version_is_prechecked_before_any_mutation(self):
+        result = self.preflight('1', repairs='1', target_version='1')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        commands = result.stdout.splitlines()
+        self.assertEqual(len(commands), 18)
+        self.assertTrue(all('apply --check ' in c for c in commands[:9]))
+        self.assertTrue(commands[8].startswith('-C build/make apply --check '))
+        self.assertTrue(commands[-1].startswith('-C build/make apply '))
+        failure = commands[8]
+        result = self.preflight('1', failure, repairs='1', target_version='1')
+        self.assertEqual(result.returncode, 17)
+        self.assertTrue(all('apply --check ' in c for c in result.stdout.splitlines()))
 
     def delivery(self, plaintext=None, seal_exit='0'):
         source = (ROOT / 'scripts/build.sh').read_text()

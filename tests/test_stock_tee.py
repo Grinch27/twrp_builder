@@ -95,6 +95,8 @@ class StockTeeTests(unittest.TestCase):
                      (['public-prebuilts/selene-stock-v14/README.md'], False),
                      (['tests/test_stock_tee.py'], False),
                      (['scripts/stock_rom.py'], False),
+                     (['scripts/stock_rom_analysis.py'], False),
+                     (['scripts/stock_rom_formats.py'], False),
                      (['scripts/run_native.py'], True)]
             for changed, required in cases:
                 with self.subTest(changed=changed):

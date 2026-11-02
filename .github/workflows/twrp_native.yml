@@ -106,7 +106,7 @@ jobs:
                 ;;
               scripts/*)
                 case "${path}" in
-                  scripts/container.sh|scripts/seal_output.py|scripts/stock_rom.py|scripts/stock_rom_relay.py)
+                  scripts/container.sh|scripts/seal_output.py|scripts/stock_rom.py|scripts/stock_rom_relay.py|scripts/stock_rom_analysis.py|scripts/stock_rom_formats.py)
                     ;;
                   *)
                     build_required=true

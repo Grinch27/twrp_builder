@@ -2,7 +2,7 @@
 
 当前集中使用 GitHub Actions 的 Ubuntu 原生路线，为 Xiaomi selene 构建 TWRP 12.1 `bootimage`。目标固件保持 China MIUI `V14.0.4.0.TKUCNXM`。
 
-本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**Native [41374113681](https://github.com/Grinch27/twrp_builder/actions/runs/41374113681) 已成功构建；用户确认 TWRP 菜单、Android 启动及 Android 再次正常重启可用，metadata/FBE 解密仍失败。** 保留已验证的正常启动选择与[同版本原厂 TEE 客户端](public-prebuilts/selene-stock-v14/README.md)修正。本轮修正日志导出失败仍显示成功，以及 Vold 在无需升级时解引用空升级 blob 的独立缺陷；没有将它们当成 Keymaster `-33` 的根因修复，见[存储错误修正与验收边界](docs/SELENE_STORAGE_ERRORS.md)。原始日志和设备标识仅在本地，不进入本仓库。保留 FBE、现有镜像验收及单文件 `boot.img` 交付规则，历史记录见 [AUDIT.md](AUDIT.md)。
+本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**Native [41374113681](https://github.com/Grinch27/twrp_builder/actions/runs/41374113681) 已成功构建；用户确认 TWRP 菜单、Android 启动及 Android 再次正常重启可用，metadata/FBE 解密仍失败。** 保留已验证的正常启动选择与[同版本原厂 TEE 客户端](public-prebuilts/selene-stock-v14/README.md)修正。日志导出错误传播与 Vold 可选升级 guard 已补充，见[存储错误修正](docs/SELENE_STORAGE_ERRORS.md)。本轮在 Recovery 初始属性生成阶段提供原厂 Android `13`／`2023-12-01`，保持 SDK `32`；这是针对 Keymaster `-33` 的版本环境候选，完整 FBE 仍待实机验证，见[目标版本与 Stock 分析设计](docs/SELENE_TARGET_VERSION_AND_STOCK_ANALYSIS.md)。原始日志和设备标识仅在本地，不进入本仓库。保留 FBE、现有镜像验收及单文件 `boot.img` 交付规则，历史记录见 [AUDIT.md](AUDIT.md)。
 
 ## 构建方式
 
@@ -98,6 +98,8 @@ Job Summary 会记录明文 Artifact 的实际上传结果，并在有下载地�
 失败时公开日志仅报告阶段、退出码和受限摘要。同步摘要只含错误类别、HTTP 状态和已知公开上游标识；编译摘要只含固定错误类别，以及经锁定上游 Git blob 核验的公开文件位置和依赖字面量，排除私有覆盖文件。不上传原始日志。公开最小测试使用合成 manifest 初始化，并只同步一个公开 bionic 项目，不读取私有输入。需要保留完整私有诊断时，应先设计私有 runner/私有存储出口；不能通过直接 `cat` 或上传整个工作区绕过边界。本项目不创建服务凭据、付费资源、定时任务或手机操作入口。
 
 ## 官方 ROM 分区镜像解包与 Release
+
+现增加可复用的离线分析阶段：先读 `stock-analysis.md` / `.json`，优先下载小型 `stock-analysis-index.tar.gz`；需要实际二进制时再取 `stock-analysis-bundle.tar.gz`。同一 Release 另交付所有非空逻辑分区的 raw 镜像、完整常规文件归档、boot ramdisk 和每个 APEX/CAPEX payload，以及 init/VINTF/权限/链接/属性/ELF/TEE 索引。原始 ROM 与原始 sparse 载荷继续保留；`logical-*.img` 是单独展开的派生物。解析直接复用已提取的本地分片，失败保留原包草稿，全部附件完成后才发布。覆盖范围、资源预算及未知项见 [详细设计](docs/SELENE_TARGET_VERSION_AND_STOCK_ANALYSIS.md)。
 
 独立入口为 **Actions → Selene Stock ROM Images**（`.github/workflows/stock_rom.yml`）。仅当 `.github/workflows/stock_rom.yml` 自身变更并推送到 main 时自动运行，也支持 main 手动运行；PR 只运行合成测试。它与 TWRP 编译独立，不读取私有归档、私钥或 `TWRP_SOURCE_TOKEN`，不操作手机。
 

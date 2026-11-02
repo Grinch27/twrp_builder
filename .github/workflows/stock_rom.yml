@@ -1,7 +1,7 @@
-# Requirements: download the fixed official ROM with bounded cross-run continuation.
+# Requirements: fixed official ROM backup, complete reusable offline extraction and relay.
 # Ambiguity: a paused checkpoint is not a completed ROM or a published Release.
 # Research: aria2 SIGINT, sparse tar, one-day Artifacts and workflow_dispatch.
-# Optimization: 16 connections, five-second progress and sparse checkpoint storage.
+# Optimization: 16 connections, saved-ROM reuse and direct sparse-part analysis.
 # Risks: job limits, partial uploads, disk copies and automatic continuation loops.
 # Validation: synthetic extraction/relay tests and successful five-minute Actions relay acceptance.
 name: Selene Stock ROM Images
@@ -208,6 +208,7 @@ jobs:
     if: needs.download.outputs.state == 'complete'
     needs: [runner-image, download]
     runs-on: ${{ needs.runner-image.outputs.RUNNER_IMAGE }}
+    timeout-minutes: 350
     permissions:
       contents: write
     env:
@@ -253,6 +254,12 @@ jobs:
           rm -- "${ROM_WORK}/original/assets/"*.tgz*
       - name: List archive and extract all stock image payloads
         run: /usr/bin/python3 scripts/stock_rom.py "${ROM_WORK}/rom.tgz" "${ROM_WORK}/output" --payload-only
+      - name: Extract reusable boot, logical partitions, APEX, TEE and FBE dependency evidence
+        timeout-minutes: 180
+        run: |
+          set -euo pipefail
+          /usr/bin/python3 scripts/stock_rom_analysis.py "${ROM_WORK}/output" "${ROM_WORK}/analysis"
+          printf 'Offline stock extraction complete; see stock-analysis.md and stock-analysis.json in the Release. Runtime FBE remains unverified.\n' >> "${GITHUB_STEP_SUMMARY}"
       - name: Add payloads to the saved draft and publish the complete Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -262,6 +269,7 @@ jobs:
           set -euo pipefail
           tag="${STOCK_RELEASE_TAG}"
           gh release upload "${tag}" "${ROM_WORK}/output/assets/"*
-          gh release edit "${tag}" --notes-file "${ROM_WORK}/output/release-notes.md" --draft=false --latest=false
+          gh release upload "${tag}" "${ROM_WORK}/analysis/assets/"*
+          gh release edit "${tag}" --notes-file "${ROM_WORK}/analysis/release-notes.md" --draft=false --latest=false
           printf '[Download official stock payloads](https://github.com/%s/releases/tag/%s)\n\nStock ROM extraction only; not a device backup or proof of flash safety.\n' \
             "${GH_REPO}" "${tag}" >> "${GITHUB_STEP_SUMMARY}"

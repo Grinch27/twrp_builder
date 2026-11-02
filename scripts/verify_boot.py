@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Requirements: selene boot with stock kernel/DTB and the Native stock TEE client.
+# Requirements: selene boot, stock kernel/DTB/client and Native initial Keymaster inputs.
 # Ambiguity: static validation cannot prove device startup or FBE compatibility.
 # Research: device tests need separate approval and current backup evidence.
 # Optimization: read the bounded boot image once; never extract ramdisk paths.
@@ -79,7 +79,48 @@ def verify_tee_common(files, reference):
         raise ValueError("ramdisk TEE client differs from reviewed stock input")
 
 
-def verify(data, kernel, dtb, fstab, tee_common=None):
+def verify_target_keymaster_version(files):
+    """Require unambiguous initial HAL inputs, without changing the framework SDK."""
+    entry = files.get('prop.default')
+    if not entry or not stat.S_ISREG(entry[0]):
+        raise ValueError('Recovery prop.default must be a regular file')
+    expected = {'ro.build.version.release': '13',
+                'ro.build.version.security_patch': '2023-12-01',
+                'ro.build.version.sdk': '32'}
+    found = {key: [] for key in expected}
+    for line in entry[1].decode('utf-8').splitlines():
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        key = key.strip().removesuffix('?')
+        if key in found:
+            found[key].append(value.strip())
+    if any(found[key] != [value] for key, value in expected.items()):
+        raise ValueError('Initial Recovery Keymaster inputs or framework SDK mismatch')
+    # Locked init reads these after /prop.default. Reject ramdisk-local conflicts;
+    # the mounted target system and runtime configure still need device acceptance.
+    for name in ('system/etc/ramdisk/build.prop', 'system/build.prop',
+                 'system_ext/etc/build.prop', 'system_ext/build.prop',
+                 'vendor/default.prop', 'vendor/build.prop', 'vendor_dlkm/etc/build.prop',
+                 'odm_dlkm/etc/build.prop', 'odm/etc/build.prop', 'odm/default.prop',
+                 'odm/build.prop', 'product/etc/build.prop', 'product/default.prop',
+                 'product/build.prop', 'debug_ramdisk/adb_debug.prop'):
+        other = files.get(name)
+        if not other:
+            continue
+        if not stat.S_ISREG(other[0]):
+            raise ValueError('Initial property source is not a regular file')
+        for line in other[1].decode('utf-8').splitlines():
+            if line.strip().startswith('#') or '=' not in line:
+                continue
+            key, value = line.split('=', 1)
+            key = key.strip().removesuffix('?')
+            if key in expected and value.strip() != expected[key]:
+                raise ValueError('Later initial ramdisk property source conflicts with target')
+
+
+def verify(data, kernel, dtb, fstab, tee_common=None, target_keymaster_version=False):
     if not 1660 <= len(data) <= MAX_IMAGE or data[:8] != b"ANDROID!":
         raise ValueError("invalid boot image magic or size")
     values = struct.unpack_from("<10I", data, 8)
@@ -124,6 +165,8 @@ def verify(data, kernel, dtb, fstab, tee_common=None):
         raise ValueError("Novatek touch firmware missing")
     if tee_common is not None:
         verify_tee_common(files, tee_common)
+    if target_keymaster_version:
+        verify_target_keymaster_version(files)
     result = {
         "static_validation": "PASS", "image_bytes": len(data),
         "image_sha256": hashlib.sha256(data).hexdigest(), "header_version": version,
@@ -136,6 +179,9 @@ def verify(data, kernel, dtb, fstab, tee_common=None):
     }
     if tee_common is not None:
         result['stock_tee_common_match'] = True
+    if target_keymaster_version:
+        result['initial_keymaster_target'] = {'release': '13', 'security_patch': '2023-12-01',
+                                              'framework_sdk': '32', 'runtime_configure': 'NOT_TESTED'}
     return result
 
 
@@ -146,12 +192,15 @@ def main():
     parser.add_argument("--tee-common", type=Path,
                         help="require this reviewed stock TEE client in the final ramdisk")
     parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument('--target-keymaster-version', action='store_true',
+                        help='require V14 target OS inputs in initial Recovery defaults')
     args = parser.parse_args()
     if args.image.is_symlink() or not args.image.is_file() or args.image.stat().st_size > MAX_IMAGE:
         raise ValueError("missing, oversized or linked boot image")
     result = verify(args.image.read_bytes(), (args.stock / "kernel").read_bytes(),
                     (args.stock / "dtb/selene.dtb").read_bytes(), (args.stock / "fstab.mt6768").read_bytes(),
-                    args.tee_common.read_bytes() if args.tee_common is not None else None)
+                    args.tee_common.read_bytes() if args.tee_common is not None else None,
+                    args.target_keymaster_version)
     with args.report.open("x", encoding="utf-8") as stream:
         json.dump(result, stream, indent=2)
         stream.write("\n")

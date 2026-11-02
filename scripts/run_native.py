@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Requirements: Native boot/storage fixes, private logs, startup markers and stock TEE client.
-# Ambiguity: Keymaster error -33 and device decryption still need separate acceptance.
+# Requirements: Native boot/storage fixes, initial target OS inputs and stock TEE client.
+# Ambiguity: the target-version candidate still requires runtime Keymaster/FBE acceptance.
 # Research: preserve host HOME unchanged; omit CI credentials from the build child.
 # Optimization: bounded log samples; upload progress only at phase transitions.
 # Risks: leaked output, inherited credentials, stale work and orphaned build groups.
@@ -29,7 +29,7 @@ def build_environment(parent, builder, work):
     result.update(BUILDER_SELF=str(builder), BUILD_ROOT=str(work), GIT_TERMINAL_PROMPT='0',
                   SELENE_STARTUP_DIAGNOSTICS='1', BUILDER_PLAINTEXT_ONLY='1',
                   SELENE_STOCK_TEE_CLIENT='1', SELENE_NORMAL_BOOT='1',
-                  SELENE_RECOVERY_FIXES='1')
+                  SELENE_RECOVERY_FIXES='1', SELENE_TARGET_KEYMASTER_VERSION='1')
     # Public builder identity enables pinned patch proof; credentials remain excluded.
     commit = parent.get('GITHUB_SHA', '')
     if re.fullmatch(r'[0-9a-f]{40}', commit):
@@ -39,6 +39,8 @@ def build_environment(parent, builder, work):
 
 # Command names and descriptions are fixed public literals; the file never contains arguments.
 PUBLIC_COMMANDS = {
+    "target_keymaster_version_patch_check": "git -C build/make apply --check patches/recovery-target-keymaster-version.patch",
+    "target_keymaster_version_patch_apply": "git -C build/make apply patches/recovery-target-keymaster-version.patch",
     "repo_fetch": "curl -fLsS --retry 2 <locked public git-repo launcher> -o <repo>",
     "repo_verify": "sha256sum --check --status <locked git-repo launcher digest>",
     "manifest_compose": "python3 scripts/source_inputs.py compose --manifest <private input> --output <local locked manifest>",

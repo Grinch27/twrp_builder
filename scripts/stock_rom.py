@@ -310,7 +310,7 @@ def extract_rom(archive, output, part_bytes=PART_BYTES, include_original=True):
         'Original images/ payloads and companion metadata; no OEM flashing scripts were run.',
         'This is an official-ROM extraction, NOT a backup of boot_a or boot_b.',
         'Device correspondence and restore/flash safety are NOT_VERIFIED.',
-        'Android sparse images remain in their original format; do not run simg2img.',
+        'Original sparse payloads retain their format; logical-*.img are separately expanded derivatives.',
         'Release assets do not have the three-day Actions Artifact expiry.', '',
         '## Original ROM archive', '',
         f"`{original_name}`: {original['bytes']} bytes; original downloaded bytes, without repacking.",
