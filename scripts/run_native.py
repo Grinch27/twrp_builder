@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Requirements: Native persistent boot, private logs, startup markers and stock TEE client.
-# Ambiguity: normal boot still depends on bootloader flags and first-stage mounts.
+# Requirements: Native boot/storage fixes, private logs, startup markers and stock TEE client.
+# Ambiguity: Keymaster error -33 and device decryption still need separate acceptance.
 # Research: preserve host HOME unchanged; omit CI credentials from the build child.
 # Optimization: bounded log samples; upload progress only at phase transitions.
 # Risks: leaked output, inherited credentials, stale work and orphaned build groups.
@@ -28,7 +28,8 @@ def build_environment(parent, builder, work):
     result = {key: value for key, value in parent.items() if key in ENVIRONMENT}
     result.update(BUILDER_SELF=str(builder), BUILD_ROOT=str(work), GIT_TERMINAL_PROMPT='0',
                   SELENE_STARTUP_DIAGNOSTICS='1', BUILDER_PLAINTEXT_ONLY='1',
-                  SELENE_STOCK_TEE_CLIENT='1', SELENE_NORMAL_BOOT='1')
+                  SELENE_STOCK_TEE_CLIENT='1', SELENE_NORMAL_BOOT='1',
+                  SELENE_RECOVERY_FIXES='1')
     # Public builder identity enables pinned patch proof; credentials remain excluded.
     commit = parent.get('GITHUB_SHA', '')
     if re.fullmatch(r'[0-9a-f]{40}', commit):
@@ -63,6 +64,10 @@ PUBLIC_COMMANDS = {
     "vold_startup_patch_apply": "git -C system/vold apply patches/vold-keystore-diagnostics.patch",
     "keystore_startup_patch_check": "git -C system/security apply --check patches/keystore2-startup-diagnostics.patch",
     "keystore_startup_patch_apply": "git -C system/security apply patches/keystore2-startup-diagnostics.patch",
+    "recovery_copylog_patch_check": "git -C bootable/recovery apply --check patches/recovery-copylog-errors.patch",
+    "recovery_copylog_patch_apply": "git -C bootable/recovery apply patches/recovery-copylog-errors.patch",
+    "vold_key_storage_patch_check": "git -C system/vold apply --check patches/vold-key-storage-guard.patch",
+    "vold_key_storage_patch_apply": "git -C system/vold apply patches/vold-key-storage-guard.patch",
     "disk_preflight": "df --output=avail -B1 <work> (minimum 18 GiB)",
     "jdk_preflight": "test -s prebuilts/jdk/jdk11/linux-x86/lib/modules",
     "monitor_preflight": "test -s prebuilts/tools/common/m2/repository/.../monitor-1.0.2-alpha1.aar",

@@ -1,4 +1,4 @@
-# Requirements: Native-only startup traces with all patch checks before mutation.
+# Requirements: Native traces/storage fixes with all patch checks before mutation.
 # Ambiguity: shell fixtures do not prove Android compilation or device behavior.
 # Research: preserve crypto configuration and distinguish storage/keystore waits.
 # Optimization: execute only the real preflight fragment with a bounded Git stub.
@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class StartupDiagnosticsTests(unittest.TestCase):
-    def preflight(self, enabled=None, failure=''):
+    def preflight(self, enabled=None, failure='', repairs=None):
         source = (ROOT / 'scripts/build.sh').read_text()
         start = source.index('trace_public_command recovery_patch_check\n')
         end = source.index('trace_public_command disk_preflight\n', start)
@@ -33,6 +33,8 @@ git() {
         environment = {'PATH': os.environ['PATH'], 'SELF': '/builder', 'FAILURE': failure}
         if enabled is not None:
             environment['SELENE_STARTUP_DIAGNOSTICS'] = enabled
+        if repairs is not None:
+            environment['SELENE_RECOVERY_FIXES'] = repairs
         return subprocess.run(['bash', '-c', program], env=environment,
                               capture_output=True, text=True, timeout=5)
 
@@ -79,6 +81,34 @@ git() {
         self.assertEqual(result.returncode, 17)
         self.assertEqual(result.stdout.splitlines()[-1], failure)
         self.assertNotIn('-C system/vold apply /builder/', result.stdout)
+
+    def test_native_repairs_check_every_patch_before_any_mutation(self):
+        result = self.preflight('1', repairs='1')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        commands = result.stdout.splitlines()
+        self.assertEqual(len(commands), 16)
+        self.assertTrue(all('apply --check ' in command for command in commands[:8]))
+        self.assertTrue(all('apply --check ' not in command for command in commands[8:]))
+        self.assertTrue(commands[6].endswith('/patches/recovery-copylog-errors.patch'))
+        self.assertTrue(commands[7].endswith('/patches/vold-key-storage-guard.patch'))
+
+    def test_repair_precheck_failures_prevent_all_mutations(self):
+        for project, patch in [('bootable/recovery', 'recovery-copylog-errors.patch'),
+                               ('system/vold', 'vold-key-storage-guard.patch')]:
+            failure = f'-C {project} apply --check /builder/patches/{patch}'
+            with self.subTest(patch=patch):
+                result = self.preflight('1', failure, repairs='1')
+                self.assertEqual(result.returncode, 17)
+                self.assertTrue(all('apply --check ' in command
+                                    for command in result.stdout.splitlines()))
+
+    def test_copylog_apply_failure_stops_before_key_storage_apply(self):
+        failure = '-C bootable/recovery apply /builder/patches/recovery-copylog-errors.patch'
+        result = self.preflight('1', failure, repairs='1')
+        self.assertEqual(result.returncode, 17)
+        self.assertEqual(result.stdout.splitlines()[-1], failure)
+        self.assertNotIn('-C system/vold apply /builder/patches/vold-key-storage-guard.patch',
+                         result.stdout)
 
     def delivery(self, plaintext=None, seal_exit='0'):
         source = (ROOT / 'scripts/build.sh').read_text()

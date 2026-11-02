@@ -955,3 +955,17 @@ be48ec2运行40473795328的静态检查、608项同步/身份校验和预检通�
 源锁和十项私有输入白名单保持；不替换 TA、teei_daemon、Keymaster HAL、VINTF、内核/DTB、fstab 或安全存储，不更改 FBE 开关、原有 AVB/镜像验收或验证策略。该共享库也影响 Gatekeeper 等 TEEC 消费者，新候选仍须逐层验证 Keymaster/Gatekeeper、keystore2、Recovery 菜单及原有凭据的完整 FBE 解密。TA/daemon 差异和 persist/RPMB 就绪仍是后续不确定性，不清除或重建安全存储。
 
 本次仅提交 main，由现有规则自动进入 Native 验收，publish=false，仅成功交付 boot.img 三天；不额外 dispatch、不监测或轮询、不重试，不修改暂停的 Docker 或 Stock 工作流、不强推。新构建和实机结果尚未取得，不将本地静态通过写成启动、解密或刷写安全证明。
+
+## 2026-11-02 — Recovery 导出错误传播与 Vold 可选升级 guard
+
+用户明确要求修正并 commit 到 main。写入前核对远端仍为 `c99bfb52cdcc76568d59696d1d48982814dd2f0b`；独立本地候选的基线树与远端 `317f1aafbe82447b12dc2389431012abc2e31a3c` 完全一致，未覆盖旧工作目录或证据。Native `41374113681` 成功构建后，用户确认 Android 启动及再次正常重启通过；本轮 metadata 解密仍在 Keymaster begin 返回 `-33`。原始现场与标识只保存在本机，不复制到公开源码或测试。
+
+锁定 Recovery 的 CopyLog 忽略挂载/复制/可选日志采集和写入失败，仍报告成功。本轮在新公开补丁中传播这些失败，处理流打开、写入及关闭错误，只有实际成功才显示相应成功提示；不创建未挂载的 `/data/media` 作替代存储。原有 Recovery 文件复制的空文件、二进制内容和成功返回保持；可选导出失败会使总体操作失败，已成功的 Recovery 导出仍可单独报告。
+
+锁定 Vold `BeginKeymasterOp` 在成功但无需升级时，注释掉的 guard 会允许空 upgraded blob 被解引用。本轮只恢复这一行 guard，不新增 Keymaster 参数、重试、升级触发或原 metadata 写回。`-33` 发生在该 guard 之前，**这项修正不解决本轮 INVALID_KEY_BLOB**；缺少原厂调用环境对照时不改 APPLICATION_ID、版本属性、wrapped-key、fstab 映射或安全存储。详细依据见 `docs/SELENE_STORAGE_ERRORS.md`。
+
+Native 固定 `SELENE_RECOVERY_FIXES=1`，父环境不能关闭。两份新补丁与原六份统一先全部预检查再应用，失败保持真实退出。共享构建脚本默认不启用新补丁，Docker/Stock 工作流不变；保留正常启动选择、原厂 TEE 客户端、FBE/AVB/SELinux、源码锁和十项私有输入、单文件 boot.img 三天及 publish=false。
+
+验证：标准库207项完成，205通过、2项既有工具缺失跳过；38项定向行为/编排测试由独立审查再次通过。CopyLog在完整锁定公开三文件上的严格空白预检查、实际应用、反向检查均通过，受测五函数与实际应用结果逐字节一致。Vold guard 在完整锁定 KeyStorage 上实际预检查/应用通过；主机 C++ 测试含旧版本空 optional 失败负对照，并逐案确认合成原 metadata 文件集合与内容不变。三份 YAML、37段内联及3份独立 Shell 语法通过；actionlint、ShellCheck 本机缺失，未安装或执行。未进行新的摘要/二进制扫描、完整 Android 编译或设备操作；本地验证不代表实机 FBE 成功。
+
+本次按已明确授权更新 main，不强推、不新建分支/PR；由既有 push 规则进行 Native 验收，未额外 dispatch、轮询或重试。新镜像编译、导出错误的实机表现及完整解密均仍待验收。

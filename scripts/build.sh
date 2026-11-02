@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Requirements: fresh work, locked sources and Native persistent normal-boot selection.
-# Ambiguity: normal bootloader flags and first-stage mounts still need device acceptance.
+# Requirements: locked sources, Native normal boot and checked Recovery storage errors.
+# Ambiguity: Keymaster INVALID_KEY_BLOB still needs device-specific root-cause evidence.
 # Research: the V14 isee driver needs the stock mmap-based TEE client protocol.
 # Optimization: CPU count plus one, verbose Ninja and bounded phase clocks.
 # Risks: source availability, old prebuilts, capacity; preserve the failure logs.
-# Validation: post-overlay boot selection, real exits, AVB and final Native TEE payload.
+# Validation: all patch checks before mutation, error paths, AVB and final TEE payload.
 set -eo pipefail
 umask 077
 SELF="${BUILDER_SELF:-/builder/self}"
@@ -145,6 +145,12 @@ if [[ "${SELENE_STARTUP_DIAGNOSTICS:-0}" == 1 ]]; then
   trace_public_command keystore_startup_patch_check
   git -C system/security apply --check "${SELF}/patches/keystore2-startup-diagnostics.patch"
 fi
+if [[ "${SELENE_RECOVERY_FIXES:-0}" == 1 ]]; then
+  trace_public_command recovery_copylog_patch_check
+  git -C bootable/recovery apply --check "${SELF}/patches/recovery-copylog-errors.patch"
+  trace_public_command vold_key_storage_patch_check
+  git -C system/vold apply --check "${SELF}/patches/vold-key-storage-guard.patch"
+fi
 trace_public_command recovery_patch_apply
 git -C bootable/recovery apply "${SELF}/patches/recovery-required-modules.patch"
 trace_public_command task_profiles_patch_apply
@@ -158,6 +164,12 @@ if [[ "${SELENE_STARTUP_DIAGNOSTICS:-0}" == 1 ]]; then
   git -C system/vold apply "${SELF}/patches/vold-keystore-diagnostics.patch"
   trace_public_command keystore_startup_patch_apply
   git -C system/security apply "${SELF}/patches/keystore2-startup-diagnostics.patch"
+fi
+if [[ "${SELENE_RECOVERY_FIXES:-0}" == 1 ]]; then
+  trace_public_command recovery_copylog_patch_apply
+  git -C bootable/recovery apply "${SELF}/patches/recovery-copylog-errors.patch"
+  trace_public_command vold_key_storage_patch_apply
+  git -C system/vold apply "${SELF}/patches/vold-key-storage-guard.patch"
 fi
 trace_public_command disk_preflight
 [[ "$(df --output=avail -B1 "${WORK}" | tail -n 1)" -ge 19327352832 ]]

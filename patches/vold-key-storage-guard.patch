@@ -1,0 +1,11 @@
+--- a/KeyStorage.cpp
++++ b/KeyStorage.cpp
+@@ -370,7 +370,7 @@
+     if (!opHandle) return opHandle;
+ 
+     // If key blob wasn't upgraded, nothing left to do.
+-    // if (!opHandle.getUpgradedBlob()) return opHandle;
++    if (!opHandle.getUpgradedBlob()) return opHandle;
+ 
+     // if (already_upgraded) {
+     //     LOG(ERROR) << "Unexpected case; already-upgraded key " << upgraded_blob_file

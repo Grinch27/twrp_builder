@@ -2,7 +2,7 @@
 
 当前集中使用 GitHub Actions 的 Ubuntu 原生路线，为 Xiaomi selene 构建 TWRP 12.1 `bootimage`。目标固件保持 China MIUI `V14.0.4.0.TKUCNXM`。
 
-本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**Native 诊断构建 [41286275650](https://github.com/Grinch27/twrp_builder/actions/runs/41286275650) 已成功，实机仍卡 Logo。离线分析定位到旧 `libTEECommon.so` 的共享内存 ioctl 与同版本原厂 isee 驱动不匹配；错误被转换成 `0xFFFF000C`，HAL 随后继续使用空缓冲区。** 首轮修复仅替换为同版本原厂客户端，并校验最终 boot ramdisk 的实际库；新候选的启动与完整 FBE 解密仍待实测。来源、静态机制和验收边界见 [原厂 TEE 客户端说明](public-prebuilts/selene-stock-v14/README.md)。保留现有诊断标记、FBE 功能及仅明文 `boot.img` 交付规则，历史记录见 [AUDIT.md](AUDIT.md)。
+本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**Native [41374113681](https://github.com/Grinch27/twrp_builder/actions/runs/41374113681) 已成功构建；用户确认 TWRP 菜单、Android 启动及 Android 再次正常重启可用，metadata/FBE 解密仍失败。** 保留已验证的正常启动选择与[同版本原厂 TEE 客户端](public-prebuilts/selene-stock-v14/README.md)修正。本轮修正日志导出失败仍显示成功，以及 Vold 在无需升级时解引用空升级 blob 的独立缺陷；没有将它们当成 Keymaster `-33` 的根因修复，见[存储错误修正与验收边界](docs/SELENE_STORAGE_ERRORS.md)。原始日志和设备标识仅在本地，不进入本仓库。保留 FBE、现有镜像验收及单文件 `boot.img` 交付规则，历史记录见 [AUDIT.md](AUDIT.md)。
 
 ## 构建方式
 
