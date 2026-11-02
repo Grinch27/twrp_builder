@@ -23,12 +23,15 @@ flowchart TD
 | 源码 | `source.lock.json` 固定私有归档提交、每个输入的 Git blob、282 项原始 SHA 和 333 项公开补充项目 SHA，共 615 项 |
 | 公开测试资源 | 同版本 AOSP Recovery 的 25 张测试图片和 NOTICE；单独锁定，恢复 `res-testdata` 文件组，十项私有输入不变 |
 | 产品 / 目标 | `twrp_selene-eng` / `mka bootimage -j"$(($(nproc) + 1))"`，`NINJA_ARGS=-v` |
+| Native 持久启动候选 | 固定 `SELENE_NORMAL_BOOT=1`，在既有设备覆盖之后设置 `TW_NO_FASTBOOT_BOOT := true`，保留 bootloader 正常启动请求 |
 | 资源界限 | 同步 140 分钟、编译 160 分钟、job 350 分钟；编译并行度为可用 CPU 数加一。原生路线使用 Runner 可用内存并新增 12 GiB Swap，Docker 路线另限 14 GiB |
 | 磁盘检查 | 清理后至少 62 GiB，其中新增 Swap 占 12 GiB；同步前保留至少 50 GiB，编译前至少 18 GiB；不足立即失败 |
 | 自动触发 | Native 的 main push / PR 路径包括工作流、`patches/**`、`scripts/**`、`tests/**`、`source.lock.json` 及 `public-prebuilts/selene-stock-v14/libTEECommon.so`。push 先执行公开检查；涉及 Native 构建输入时才完整编译，纯测试或 Stock/Docker 专属脚本变更仅检查。Stock 仍只由自身工作流文件触发；PR 仅静态检查，Native 手动入口保留，Docker 仍仅手动 |
 | 唯一手动输入 | Native 的 `publish=false` 仅控制是否另建预发布 Release；成功构建仅上传含 `boot.img` 的明文 Artifact，不生成或上传 CMS |
 
 源码预编译 JDK、Clang 等从锁定上游重新同步；不克隆整个 7.44 GiB Git 归档，不回放旧 `out`、Soong 测试禁用、稀疏片段或 `ALLOW_MISSING_DEPENDENCIES`。归档内 18 个 Release 大文件不作为这条干净路线的下载入口。
+
+Native 的这个候选只修改本轮隔离 checkout 的 BoardConfig，不修改只读归档。锁定的 TWRP vendor 配置默认加入 `twrpfastboot=1`，锁定 init 会因此屏蔽 `force_normal_boot`；`TW_NO_FASTBOOT_BOOT := true` 阻止该静态参数注入，保留原有正常启动选择。它不关闭 fastbootd、FBE 或 AVB。取舍是 `fastboot boot` 临时启动镜像不再保证进入 TWRP；当前验收采用明确写入目标 boot 槽、再进入 Recovery 的路线。新候选必须分别验证 Recovery 和“重启系统”进入原厂 Android，以及再次进入 Recovery；正常模式的 bootloader 标志和 first-stage 挂载仍待实测，离线检查不等于启动修复通过。
 
 原归档 manifest 原样保留并校验。构建前另生成仅供当前 runner 使用的有效 manifest，添加同一 `android-12.1.0_r4` 标签的完整公开 `platform/cts` 和 `platform/platform_testing` 项目，分别提供 `cts_defaults` 及其直接依赖 `platform-test-annotations`。不更新原来 282 个项目的 SHA，不新增私有下载文件。[运行 39728081394](https://github.com/Grinch27/twrp_builder/actions/runs/39728081394) 已通过 284 项同步和 checkout 校验；编译随后因缺少 `tradefed`、`compatibility-tradefed` 停止，依赖闭包仍未完成。
 

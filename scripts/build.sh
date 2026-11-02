@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Requirements: fresh work, archive manifest plus reviewed public dependency projects.
-# Ambiguity: the expanded source graph still needs a successful real bootimage build.
+# Requirements: fresh work, locked sources and Native persistent normal-boot selection.
+# Ambiguity: normal bootloader flags and first-stage mounts still need device acceptance.
 # Research: the V14 isee driver needs the stock mmap-based TEE client protocol.
 # Optimization: CPU count plus one, verbose Ninja and bounded phase clocks.
 # Risks: source availability, old prebuilts, capacity; preserve the failure logs.
-# Validation: checkout identities, real exits, AVB and the final Native TEE payload.
+# Validation: post-overlay boot selection, real exits, AVB and final Native TEE payload.
 set -eo pipefail
 umask 077
 SELF="${BUILDER_SELF:-/builder/self}"
@@ -105,6 +105,14 @@ python3 "${SELF}/scripts/source_inputs.py" checkout \
 [[ "$(git -C device/xiaomi/selene rev-parse HEAD)" == c77512445ab5be5908ddb3ca9c659e6b149c78de ]]
 trace_public_command overlay_copy
 cp -a "${WORK}/inputs/overlay/." "${WORK}/android/"
+if [[ "${SELENE_NORMAL_BOOT:-0}" == 1 ]]; then
+  # The locked TWRP vendor config otherwise injects twrpfastboot=1, which
+  # suppresses ForceNormalBoot even when the bootloader requests Android.
+  [[ -f device/xiaomi/selene/BoardConfig.mk && ! -L device/xiaomi/selene/BoardConfig.mk ]]
+  trace_public_command normal_boot_overlay
+  printf '\n# Native persistent boot: honor the bootloader normal-boot request.\nTW_NO_FASTBOOT_BOOT := true\n' \
+    >> device/xiaomi/selene/BoardConfig.mk
+fi
 trace_public_command stock_prebuilts_copy
 cp -a "${WORK}/inputs/prebuilts" "${WORK}/prebuilts"
 

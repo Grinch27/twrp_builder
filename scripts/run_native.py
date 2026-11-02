@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Requirements: Native build with private logs, startup markers and the stock TEE client.
-# Ambiguity: native execution has no Docker memory limit or filesystem isolation.
+# Requirements: Native persistent boot, private logs, startup markers and stock TEE client.
+# Ambiguity: normal boot still depends on bootloader flags and first-stage mounts.
 # Research: preserve host HOME unchanged; omit CI credentials from the build child.
 # Optimization: bounded log samples; upload progress only at phase transitions.
 # Risks: leaked output, inherited credentials, stale work and orphaned build groups.
@@ -28,7 +28,7 @@ def build_environment(parent, builder, work):
     result = {key: value for key, value in parent.items() if key in ENVIRONMENT}
     result.update(BUILDER_SELF=str(builder), BUILD_ROOT=str(work), GIT_TERMINAL_PROMPT='0',
                   SELENE_STARTUP_DIAGNOSTICS='1', BUILDER_PLAINTEXT_ONLY='1',
-                  SELENE_STOCK_TEE_CLIENT='1')
+                  SELENE_STOCK_TEE_CLIENT='1', SELENE_NORMAL_BOOT='1')
     # Public builder identity enables pinned patch proof; credentials remain excluded.
     commit = parent.get('GITHUB_SHA', '')
     if re.fullmatch(r'[0-9a-f]{40}', commit):
@@ -47,6 +47,7 @@ PUBLIC_COMMANDS = {
     "repo_sync": "timeout 140m repo sync -c -j4 --no-clone-bundle --no-tags --fail-fast --retry-fetches=2",
     "checkout_verify": "python3 scripts/source_inputs.py checkout --manifest <private input> --source <checkout>",
     "overlay_copy": "cp -a <private reviewed overlay> <checkout>",
+    "normal_boot_overlay": "set TW_NO_FASTBOOT_BOOT := true in isolated Native BoardConfig",
     "stock_prebuilts_copy": "cp -a <private reviewed prebuilts> <local work>",
     "stock_tee_common_copy": "install -m 0644 public-prebuilts/selene-stock-v14/libTEECommon.so <device ramdisk>/vendor/lib64/libTEECommon.so",
     "testdata_restore": "timeout 6m python3 scripts/restore_public_testdata.py --source <checkout>",
