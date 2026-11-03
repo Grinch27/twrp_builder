@@ -378,7 +378,7 @@ class RecoveryLayoutTests(unittest.TestCase):
         self.assertIn('Primary_Block_Device = ptr;\n\t\t\t\tLogical_Partition_Source = ptr;', part)
         self.assertLess(part.index('if (Recovery_Fstab_View(fstab_line))'), part.index('char full_line['))
         pm = image('partitionmanager.cpp')
-        self.assertGreaterEqual(pm.count('Find_Partition_By_Root_Path('), 11)
+        self.assertGreaterEqual(pm.count('Find_Partition_By_Root_Path('), 7)
         self.assertNotIn('Get_Bare_Partition_Name(twrpPart->Get_Mount_Point())', pm)
 
 

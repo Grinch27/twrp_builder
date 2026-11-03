@@ -40,6 +40,11 @@ def build_environment(parent, builder, work):
 
 # Command names and descriptions are fixed public literals; the file never contains arguments.
 PUBLIC_COMMANDS = {
+    "backup_integrity_host_check": "timeout 3m python3 tests/host_libtar_integration.py --source <locked public Recovery checkout>",
+    "recovery_backup_integrity_patch_check": "git -C bootable/recovery apply --check patches/recovery-backup-integrity.patch",
+    "recovery_backup_integrity_patch_apply": "git -C bootable/recovery apply patches/recovery-backup-integrity.patch",
+    "vold_fscrypt_errno_patch_check": "git -C system/vold apply --check patches/vold-fscrypt-policy-errno.patch",
+    "vold_fscrypt_errno_patch_apply": "git -C system/vold apply patches/vold-fscrypt-policy-errno.patch",
     "recovery_layout_patch_check": "git -C bootable/recovery apply --check patches/recovery-layout-paths.patch",
     "recovery_layout_patch_apply": "git -C bootable/recovery apply patches/recovery-layout-paths.patch",
     "target_keymaster_version_patch_check": "git -C build/make apply --check patches/recovery-target-keymaster-version.patch",

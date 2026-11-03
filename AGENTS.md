@@ -581,6 +581,15 @@ Read README.md, AUDIT.md and source.lock.json before changes. Use Chinese for us
 - Find／Mount／UnMount 共用最长路径组件匹配并按同一对象分派；长／短对象及 flags 保留。存储备份／还原、刷写、USB LUN、SD 分区目标保留原根路径边界。Android bind／overlay 只识别为非块视图并明确跳过，不宣称完整支持 MIUI overlay；原 first-stage fstab 保持。
 - 详见 `docs/SELENE_RECOVERY_LAYOUT.md`。本次 push 由既有规则进入 Native；不额外 dispatch、不监测、不重试、不操作手机，Stock 工作流不变。主机测试不能替代完整编译和实机验收。
 
+## Native 备份还原预检与资源失败分类（2026-11-03）
+
+- 用户授权诊断失败 Run 41549550320、继续 P0 修正并 commit main；已确认失败停在 public_resources，不能当作 C++ 编译失败。历史具体异常未知，后续仅发布绑定锁定 revision 的固定错误类别、HTTP 数字及次数，不公开异常、URL、路径或响应体。
+- SELENE_RECOVERY_LAYOUT_FIXES=1 统一供给布局、backup-integrity 和 Vold policy errno 补丁，全部十二份先检查后应用，避免半套实现。共享/Docker 默认关闭，Native 固定开启；源码锁、私有 allowlist、原厂 TEE、OS/SPL、SDK32、FBE、AVB 和正常启动选择保持。
+- 全部目标、隐式子分区、当前用户解密状态与归档入口先预检；使用固定 selection，不扩大旧根路径写入边界。tar 只读流预检在任何还原清理前运行，必要 policy／元数据失败真实传播；合法 ENODATA 与错误查询分开处理，不改合法归档编码。
+- Digest 的当前 UI 是 Enable，保留 >0 执行及现有默认，不按变量名误翻转；修正子分区实际归档路径，不添加无关摘要／版本扫描。预检不代表事务回滚、完整缺卷证明或硬件密钥恢复保证。
+- Native 在 Android 编译前，限三分钟运行 tests/host_libtar_integration.py，使用完整锁定公开 C 源码及合成安全回调／临时归档；不得引入真实设备数据。详见 docs/SELENE_BACKUP_PREFLIGHT.md。
+- 跨重启／正式还原仍需独立设备授权，MIUI 只读视图保持后续按需设计。本轮不额外 dispatch、不查询新运行、不重试构建，Stock/Docker 工作流不改。
+
 ## 官方原厂镜像解包与发布（2026-10-28）
 
 2026-11-02 用户明确批准 main 提交并完善 Stock 提取。新增离线阶段仅复用该 Job 的本地公开 ROM 载荷，导出实际非空逻辑分区、完整常规文件及数值目录元数据、boot/APEX/TEE 模块和 FBE 配置/ELF 索引；原包及原始 sparse 附件继续保留。先完成全部派生附件及检查，再生成完成清单，最后公开同一新草稿；失败保留原包备份，不把未知格式或运行时健康标为成功。新增 Stock 脚本不触发 Native 完整编译，Stock 路径触发仍只匹配自身工作流。详见 docs/SELENE_TARGET_VERSION_AND_STOCK_ANALYSIS.md。

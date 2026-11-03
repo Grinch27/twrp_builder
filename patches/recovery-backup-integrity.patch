@@ -1,0 +1,1338 @@
+diff --git a/libtar/append.c b/libtar/append.c
+--- a/libtar/append.c
++++ b/libtar/append.c
+@@ -76,266 +76,276 @@
+ int
+ tar_append_file(TAR *t, const char *realname, const char *savename)
+ {
+ 	struct stat s;
+ 	int i;
+ 	libtar_hashptr_t hp;
+ 	tar_dev_t *td = NULL;
+ 	tar_ino_t *ti = NULL;
+ 	char path[MAXPATHLEN];
+-	int filefd;
+ 
+ #ifdef DEBUG
+ 	LOG("==> tar_append_file(TAR=0x%p (\"%s\"), realname=\"%s\", "
+ 	       "savename=\"%s\")\n", (void*) t, t->pathname, realname,
+ 	       (savename ? savename : "[NULL]"));
+ #endif
+ 
+ 	if (lstat(realname, &s) != 0)
+ 	{
+ #ifdef DEBUG
+ 		perror("lstat()");
+ #endif
+ 		return -1;
+ 	}
+ 
+ 	/* set header block */
+ #ifdef DEBUG
+ 	LOG("tar_append_file(): setting header block...");
+ #endif
+ 	memset(&(t->th_buf), 0, sizeof(struct tar_header));
+ 	th_set_from_stat(t, &s);
+ 
+ 	/* set the header path */
+ #ifdef DEBUG
+ 	LOG("tar_append_file(): setting header path...");
+ #endif
+ 	th_set_path(t, (savename ? savename : realname));
+ 
+ 	/* get selinux context */
+ 	if (t->options & TAR_STORE_SELINUX)
+ 	{
+ 		if (t->th_buf.selinux_context != NULL)
+ 		{
+ 			free(t->th_buf.selinux_context);
+ 			t->th_buf.selinux_context = NULL;
+ 		}
+ 
+ 		security_context_t selinux_context = NULL;
+ 		if (lgetfilecon(realname, &selinux_context) >= 0)
+ 		{
+ 			t->th_buf.selinux_context = strdup(selinux_context);
+ 			LOG("  ==> set selinux context: %s\n", selinux_context);
+ 			freecon(selinux_context);
+ 		}
+ 		else
+ 		{
+-#ifdef DEBUG
+-			perror("Failed to get selinux context");
++			int saved_errno = errno;
++			if (saved_errno != ENODATA && saved_errno != EOPNOTSUPP)
++				return -1;
++#ifdef USE_FSCRYPT
++			if (t->options & TAR_REQUIRE_FSCRYPT_POL) {
++				errno = saved_errno;
++				return -1;
++			}
+ #endif
+ 		}
+ 	}
+ 
+ #ifdef USE_FSCRYPT
+ 	if (TH_ISDIR(t) && t->options & TAR_STORE_FSCRYPT_POL)
+ 	{
+ 		if (t->th_buf.fep != NULL)
+ 		{
+ 			free(t->th_buf.fep);
+ 			t->th_buf.fep = NULL;
+ 		}
+ 		t->th_buf.fep = (fscrypt_policy *)malloc(sizeof(fscrypt_policy));
+ 		if (!t->th_buf.fep) {
+ 			LOG("malloc fs_encryption_policy\n");
+ 			return -1;
+ 		}
+ 
+ 		if (fscrypt_policy_get_struct(realname, t->th_buf.fep)) {
+ 			uint8_t size, hex_size, *descriptor;
+ 			size = get_policy_size(t->th_buf.fep, false);
+ 			hex_size = get_policy_size(t->th_buf.fep, true);
+ 			descriptor = get_policy_descriptor(t->th_buf.fep);
++			if (!descriptor || !size || !hex_size) {
++				errno = EINVAL;
++				return -1;
++			}
+ 			char user_ce[4], user_de[4], system_de[4];
+-			sprintf(user_ce,"%u%s", t->th_buf.fep->version, USER_CE_FSCRYPT_POLICY);
+-			sprintf(user_de,"%u%s", t->th_buf.fep->version, USER_DE_FSCRYPT_POLICY);
+-			sprintf(system_de,"%u%s", t->th_buf.fep->version, SYSTEM_DE_FSCRYPT_POLICY);
++			snprintf(user_ce, sizeof(user_ce), "%c%s", '0' + t->th_buf.fep->version, USER_CE_FSCRYPT_POLICY);
++			snprintf(user_de, sizeof(user_de), "%c%s", '0' + t->th_buf.fep->version, USER_DE_FSCRYPT_POLICY);
++			snprintf(system_de, sizeof(system_de), "%c%s", '0' + t->th_buf.fep->version, SYSTEM_DE_FSCRYPT_POLICY);
+ #ifdef DEBUG
+ 			LOG("version: %u\n", t->th_buf.fep->version);
+ #endif
+ 			uint8_t tar_policy[size];
+ 			char policy_hex[hex_size];
+ 			memset(tar_policy, 0, sizeof(tar_policy));
+ 			bytes_to_hex(descriptor, size, policy_hex);
+ 			if (lookup_ref_key(t->th_buf.fep,  &tar_policy[0])) {
+ 				if (strncmp((char *) tar_policy, user_ce, sizeof(user_ce) - 1) == 0 
+ 				|| strncmp((char *) tar_policy, user_de, sizeof(user_de) - 1) == 0 
+ 				|| strncmp((char *) tar_policy, system_de, sizeof(system_de)) == 0) {
+ 					memcpy(descriptor, tar_policy, size);
+ 					LOG("found fscrypt policy '%s' - '%s' - '%s'\n", realname, descriptor, policy_hex);
+ 				} else {
+ 					LOG("failed to match fscrypt tar policy for '%s' - '%s'\n", realname, policy_hex);
+ 					free(t->th_buf.fep);
+ 					t->th_buf.fep = NULL;
++					errno = ENOKEY;
++					return -1;
+ 				}
+ 			} else {
+ 				LOG("failed to lookup fscrypt tar policy for '%s' - '%s'\n", realname, policy_hex);
+ 				free(t->th_buf.fep);
+ 				t->th_buf.fep = NULL;
++					errno = ENOKEY;
++					return -1;
+ 			}
+ 		}
+ 		else {
+-			// no policy found, but this is not an error as not all dirs will have a policy
++			int saved_errno = errno;
+ 			free(t->th_buf.fep);
+ 			t->th_buf.fep = NULL;
++			// ENODATA is a real unencrypted directory, including FBE parents.
++			// Unsupported ioctls are acceptable only outside an FBE data archive.
++			if (saved_errno != ENODATA &&
++				((t->options & TAR_REQUIRE_FSCRYPT_POL) ||
++				 (saved_errno != ENOTTY && saved_errno != EOPNOTSUPP))) {
++				errno = saved_errno ? saved_errno : EIO;
++				return -1;
++			}
+ 		}
+ 	}
+ #endif
+ 
+ 	/* get posix file capabilities */
+ 	if (TH_ISREG(t) && t->options & TAR_STORE_POSIX_CAP)
+ 	{
+ 		if (t->th_buf.has_cap_data)
+ 		{
+ 			memset(&t->th_buf.cap_data, 0, sizeof(struct vfs_cap_data));
+ 			t->th_buf.has_cap_data = 0;
+ 		}
+ 
+ 		if (getxattr(realname, XATTR_NAME_CAPS, &t->th_buf.cap_data, sizeof(struct vfs_cap_data)) >= 0)
+ 		{
+ 			t->th_buf.has_cap_data = 1;
+ #if 1 //def DEBUG
+ 			print_caps(&t->th_buf.cap_data);
+ #endif
+ 		}
++		else if (errno != ENODATA && errno != EOPNOTSUPP)
++			return -1;
+ 	}
+ 
+ 	/* get android user.default xattr */
+ 	if (TH_ISDIR(t) && t->options & TAR_STORE_ANDROID_USER_XATTR)
+ 	{
+ 		if (getxattr(realname, "user.default", NULL, 0) >= 0)
+ 		{
+ 			t->th_buf.has_user_default = 1;
+ #if 1 //def DEBUG
+ 			LOG("storing xattr user.default\n");
+ #endif
+ 		}
+ 		if (getxattr(realname, "user.inode_cache", NULL, 0) >= 0)
+ 		{
+ 			t->th_buf.has_user_cache = 1;
+ #if 1 //def DEBUG
+ 			LOG("storing xattr user.inode_cache\n");
+ #endif
+ 		}
+ 		if (getxattr(realname, "user.inode_code_cache", NULL, 0) >= 0)
+ 		{
+ 			t->th_buf.has_user_code_cache = 1;
+ #if 1 //def DEBUG
+ 			LOG("storing xattr user.inode_code_cache\n");
+ #endif
+ 		}
+ 	}
+ 
+ 	/* check if it's a hardlink */
+ #ifdef DEBUG
+ 	LOG("tar_append_file(): checking inode cache for hardlink...");
+ #endif
+ 	libtar_hashptr_reset(&hp);
+ 	if (libtar_hash_getkey(t->h, &hp, &(s.st_dev),
+ 			       (libtar_matchfunc_t)dev_match) != 0)
+ 		td = (tar_dev_t *)libtar_hashptr_data(&hp);
+ 	else
+ 	{
+ #ifdef DEBUG
+ 		LOG("+++ adding hash for device (0x%x, 0x%x)...\n",
+ 		       major(s.st_dev), minor(s.st_dev));
+ #endif
+ 		td = (tar_dev_t *)calloc(1, sizeof(tar_dev_t));
+ 		td->td_dev = s.st_dev;
+ 		td->td_h = libtar_hash_new(256, (libtar_hashfunc_t)ino_hash);
+ 		if (td->td_h == NULL)
+ 			return -1;
+ 		if (libtar_hash_add(t->h, td) == -1)
+ 			return -1;
+ 	}
+ 	libtar_hashptr_reset(&hp);
+ 	if (libtar_hash_getkey(td->td_h, &hp, &(s.st_ino),
+ 			       (libtar_matchfunc_t)ino_match) != 0)
+ 	{
+ 		ti = (tar_ino_t *)libtar_hashptr_data(&hp);
+ #ifdef DEBUG
+ 		LOG("    tar_append_file(): encoding hard link \"%s\" "
+ 		       "to \"%s\"...\n", realname, ti->ti_name);
+ #endif
+ 		t->th_buf.typeflag = LNKTYPE;
+ 		th_set_link(t, ti->ti_name);
+ 	}
+ 	else
+ 	{
+ #ifdef DEBUG
+ 		LOG("+++ adding entry: device (0x%d,0x%x), inode %lu"
+ 		       "(\"%s\")...\n", major(s.st_dev), minor(s.st_dev),
+ 		       (unsigned long) s.st_ino, realname);
+ #endif
+ 		ti = (tar_ino_t *)calloc(1, sizeof(tar_ino_t));
+ 		if (ti == NULL)
+ 			return -1;
+ 		ti->ti_ino = s.st_ino;
+ 		snprintf(ti->ti_name, sizeof(ti->ti_name), "%s",
+ 			 savename ? savename : realname);
+ 		libtar_hash_add(td->td_h, ti);
+ 	}
+ 
+ 	/* check if it's a symlink */
+ 	if (TH_ISSYM(t))
+ 	{
+ 		i = readlink(realname, path, sizeof(path));
+ 		if (i == -1)
+ 			return -1;
+ 		if (i >= MAXPATHLEN)
+ 			i = MAXPATHLEN - 1;
+ 		path[i] = '\0';
+ #ifdef DEBUG
+ 		LOG("tar_append_file(): encoding symlink \"%s\" -> "
+ 		       "\"%s\"...\n", realname, path);
+ #endif
+ 		th_set_link(t, path);
+ 	}
+ 
+ 	/* print file info */
+ 	if (t->options & TAR_VERBOSE)
+ 		LOG("%s\n", th_get_pathname(t));
+ 
+-#if defined(O_BINARY)
+-        filefd = open(realname, O_RDONLY|O_BINARY);
+-#else
+-        filefd = open(realname, O_RDONLY);
+-#endif
+-        if (filefd == -1)
+-        {
+-                if (errno == ENOKEY) {
+-                        LOG("Required key not available, skipping file\n");
+-			close(filefd);
+-			return 0;
+-                }
+-        }
+-	close(filefd);
++
+ #ifdef DEBUG
+ 	LOG("tar_append_file(): writing header");
+ #endif
+ 	/* write header */
+ 	if (th_write(t) != 0)
+ 	{
+ #ifdef DEBUG
+ 		LOG("t->fd = %ld\n", t->fd);
+ #endif
+ 		return -1;
+ 	}
+ #ifdef DEBUG
+ 	LOG("tar_append_file(): back from th_write()");
+ #endif
+ 
+ 	/* if it's a regular file, write the contents as well */
+ 	if (TH_ISREG(t) && tar_append_regfile(t, realname) != 0)
+ 		return -1;
+ 
+ 	return 0;
+ }
+@@ -368,8 +378,8 @@
+ int
+ tar_append_regfile(TAR *t, const char *realname)
+ {
++	int filefd;
+ 	char block[T_BLOCKSIZE];
+-	int filefd;
+ 	int64_t i, size;
+ 	ssize_t j;
+ 	int rv = -1;
+diff --git a/libtar/extract.c b/libtar/extract.c
+--- a/libtar/extract.c
++++ b/libtar/extract.c
+@@ -115,91 +115,95 @@
+ int
+ tar_extract_file(TAR *t, const char *realname, const char *prefix, const int *progress_fd)
+ {
+ 	int i;
+ #ifdef LIBTAR_FILE_HASH
+ 	char *lnp;
+ 	char *pn;
+ 	int pathname_len;
+ 	int realname_len;
+ #endif
+ 
+ 	if (t->options & TAR_NOOVERWRITE)
+ 	{
+ 		struct stat s;
+ 
+ 		if (lstat(realname, &s) == 0 || errno != ENOENT)
+ 		{
+ 			errno = EEXIST;
+ 			return -1;
+ 		}
+ 	}
+ 
+ 	if (TH_ISDIR(t))
+ 	{
+ 		i = tar_extract_dir(t, realname);
+ 		if (i == 1)
+ 			i = 0;
+ 	}
+ 	else if (TH_ISLNK(t))
+ 		i = tar_extract_hardlink(t, realname, prefix);
+ 	else if (TH_ISSYM(t))
+ 		i = tar_extract_symlink(t, realname);
+ 	else if (TH_ISCHR(t))
+ 		i = tar_extract_chardev(t, realname);
+ 	else if (TH_ISBLK(t))
+ 		i = tar_extract_blockdev(t, realname);
+ 	else if (TH_ISFIFO(t))
+ 		i = tar_extract_fifo(t, realname);
+ 	else /* if (TH_ISREG(t)) */
+ 		i = tar_extract_regfile(t, realname, progress_fd);
+ 
+ 	if (i != 0) {
+ 		fprintf(stderr, "tar_extract_file(): failed to extract %s !!!\n", realname);
+ 		return i;
+ 	}
+ 
+ 	i = tar_set_file_perms(t, realname);
+ 	if (i != 0) {
+ 		fprintf(stderr, "tar_extract_file(): failed to set permissions on %s !!!\n", realname);
+ 		return i;
+ 	}
+ 
+ 	if((t->options & TAR_STORE_SELINUX) && t->th_buf.selinux_context != NULL)
+ 	{
+ #ifdef DEBUG
+ 		LOG("tar_extract_file(): restoring SELinux context %s to file %s\n", t->th_buf.selinux_context, realname);
+ #endif
+-		if (lsetfilecon(realname, t->th_buf.selinux_context) < 0)
++		if (lsetfilecon(realname, t->th_buf.selinux_context) < 0) {
+ 			fprintf(stderr, "tar_extract_file(): failed to restore SELinux context %s to file %s !!!\n", t->th_buf.selinux_context, realname);
++			return -1;
++		}
+ 	}
+ 
+ 	if((t->options & TAR_STORE_POSIX_CAP) && t->th_buf.has_cap_data)
+ 	{
+ #if 1 //def DEBUG
+ 		LOG("tar_extract_file(): restoring posix capabilities to file %s\n", realname);
+ 		print_caps(&t->th_buf.cap_data);
+ #endif
+-		if (setxattr(realname, XATTR_NAME_CAPS, &t->th_buf.cap_data, sizeof(struct vfs_cap_data), 0) < 0)
++		if (setxattr(realname, XATTR_NAME_CAPS, &t->th_buf.cap_data, sizeof(struct vfs_cap_data), 0) < 0) {
+ 			fprintf(stderr, "tar_extract_file(): failed to restore posix capabilities to file %s !!!\n", realname);
++			return -1;
++		}
+ 	}
+ 
+ #ifdef LIBTAR_FILE_HASH
+ 	pn = th_get_pathname(t);
+ 	pathname_len = strlen(pn) + 1;
+ 	realname_len = strlen(realname) + 1;
+ 	lnp = (char *)calloc(1, pathname_len + realname_len);
+ 	if (lnp == NULL)
+ 		return -1;
+ 	strcpy(&lnp[0], pn);
+ 	strcpy(&lnp[pathname_len], realname);
+ #ifdef DEBUG
+ 	LOG("tar_extract_file(): calling libtar_hash_add(): key=\"%s\", "
+ 	       "value=\"%s\"\n", pn, realname);
+ #endif
+ 	if (libtar_hash_add(t->h, lnp) != 0)
+ 		return -1;
+ 	free(lnp);
+ #endif
+ 
+ 	return 0;
+ }
+@@ -480,116 +484,126 @@
+ int
+ tar_extract_dir(TAR *t, const char *realname)
+ {
+ 	mode_t mode;
+ 	const char *filename;
+ 	char *pn;
+ 
+ 	if (!TH_ISDIR(t))
+ 	{
+ 		errno = EINVAL;
+ 		return -1;
+ 	}
+ 	pn = th_get_pathname(t);
+ 	filename = (realname ? realname : pn);
+ 	mode = th_get_mode(t);
+ 
+ 	if (mkdirhier(dirname(filename)) == -1)
+ 		return -1;
+ 
+ 	LOG("  ==> extracting: %s (mode %04o, directory)\n", filename,
+ 	       mode);
+ 
+ 	if (mkdir(filename, mode) == -1)
+ 	{
+ 		if (errno == EEXIST)
+ 		{
++			struct stat existing;
++			if (lstat(filename, &existing) != 0 || !S_ISDIR(existing.st_mode)) {
++				errno = ENOTDIR;
++				return -1;
++			}
+ 			if (chmod(filename, mode) == -1)
+ 			{
+ #ifdef DEBUG
+ 				perror("chmod()");
+ #endif
+ 				return -1;
+ 			}
+ 			else
+ 			{
+ #if 1 //def DEBUG
+ 				puts("  *** using existing directory");
+ #endif
+-				return 1;
++				// Existing directories still require xattr and policy validation.
+ 			}
+ 		}
+ 		else
+ 		{
+ #ifdef DEBUG
+ 			perror("mkdir()");
+ #endif
+ 			return -1;
+ 		}
+ 	}
+ 
+ 	if (t->options & TAR_STORE_ANDROID_USER_XATTR)
+ 	{
+ 		if (t->th_buf.has_user_default) {
+ #if 1 //def DEBUG
+ 			LOG("tar_extract_file(): restoring android user.default xattr to %s\n", realname);
+ #endif
+ 			if (setxattr(realname, "user.default", NULL, 0, 0) < 0) {
+ 				fprintf(stderr, "tar_extract_file(): failed to restore android user.default to file %s !!!\n", realname);
+ 				return -1;
+ 			}
+ 		}
+ 		if (t->th_buf.has_user_cache) {
+ #if 1 //def DEBUG
+ 			LOG("tar_extract_file(): restoring android user.inode_cache xattr to %s\n", realname);
+ #endif
+ 			if (write_path_inode(realname, "cache", "user.inode_cache"))
+ 				return -1;
+ 		}
+ 		if (t->th_buf.has_user_code_cache) {
+ #if 1 //def DEBUG
+ 			LOG("tar_extract_file(): restoring android user.inode_code_cache xattr to %s\n", realname);
+ #endif
+ 			if (write_path_inode(realname, "code_cache", "user.inode_code_cache"))
+ 				return -1;
+ 		}
+ 	}
+ 
+ #ifdef USE_FSCRYPT
+-	if(t->th_buf.fep != NULL)
+-	{
+-		uint8_t hex_size, size, *descriptor;
+-		hex_size = get_policy_size(t->th_buf.fep, true);
+-		size = get_policy_size(t->th_buf.fep, false);
+-		descriptor = get_policy_descriptor(t->th_buf.fep);
+-		char policy_hex[hex_size];
+-#ifdef DEBUG
+-		bytes_to_hex(descriptor, size, policy_hex);
+-		LOG("tar_extract_dir(): restoring fscrypt policy %s to dir %s\n", (char *)policy_hex, realname);
+-#endif
+-		bool policy_lookup_error = false;
+-		uint8_t binary_policy[size];
+-		memset(&binary_policy, 0, size);
+-
+-		if (!lookup_ref_tar(t->th_buf.fep, &binary_policy[0])) {
+-			LOG("error looking up fscrypt policy for '%s' - %s\n", realname, descriptor);
+-			policy_lookup_error = true;
++	if (t->th_buf.fep != NULL) {
++		fscrypt_policy expected = *t->th_buf.fep;
++		uint8_t *descriptor = get_policy_descriptor(&expected);
++		int size = fscrypt_policy_size(&expected);
++		int descriptor_size = get_policy_size(&expected, false);
++		uint8_t binary_policy[sizeof(fscrypt_policy)] = {0};
++		if (!descriptor || !size || !descriptor_size ||
++			descriptor_size > (int)sizeof(binary_policy) ||
++			!lookup_ref_tar(&expected, binary_policy)) {
++			LOG("Unable to resolve required fscrypt policy for '%s'\n", realname);
++			errno = ENOKEY;
++			return -1;
+ 		}
+-		memcpy(descriptor, binary_policy, size);
+-		bytes_to_hex(descriptor, size, policy_hex);
+-		if (!policy_lookup_error)
+-		{
+-			LOG("attempting to restore policy: %s\n", policy_hex);
+-			if (!fscrypt_policy_set_struct(realname, t->th_buf.fep))
+-			{
+-				LOG("tar_extract_file(): failed to restore fscrypt policy to dir '%s' '%s'!!!\n", realname, policy_hex);
+-				//return -1; // This may not be an error in some cases, so log and ignore
++		memcpy(descriptor, binary_policy, descriptor_size);
++		fscrypt_policy actual;
++		if (fscrypt_policy_get_struct(realname, &actual)) {
++			if (fscrypt_policy_size(&actual) != size ||
++				memcmp(get_policy(&actual), get_policy(&expected), size) != 0) {
++				errno = EEXIST;
++				return -1;
+ 			}
+-		} else
+-			LOG("No policy was found. Continuing restore.");
++		} else {
++			if (errno != ENODATA || !fscrypt_policy_set_struct(realname, &expected))
++				return -1;
++			if (!fscrypt_policy_get_struct(realname, &actual) ||
++				fscrypt_policy_size(&actual) != size ||
++				memcmp(get_policy(&actual), get_policy(&expected), size) != 0) {
++				errno = EIO;
++				return -1;
++			}
++		}
++	} else if (t->options & TAR_REQUIRE_FSCRYPT_POL) {
++		fscrypt_policy actual;
++		if (fscrypt_policy_get_struct(realname, &actual) || errno != ENODATA) {
++			LOG("Missing or unreadable fscrypt policy metadata for '%s'\n", realname);
++			errno = EINVAL;
++			return -1;
++		}
+ 	}
+-	else
+-		LOG("NULL FSCRYPT\n");
+ #endif
+ 
+ 	return 0;
+ }
+diff --git a/libtar/block.c b/libtar/block.c
+--- a/libtar/block.c
++++ b/libtar/block.c
+@@ -12,6 +12,7 @@
+ 
+ #include <internal.h>
+ #include <errno.h>
++#include <stdio.h>
+ 
+ #ifdef STDC_HEADERS
+ # include <string.h>
+@@ -128,265 +129,242 @@
+ 
+ 
+ /* wrapper function for th_read_internal() to handle GNU extensions */
++/* Parse declared PAX record lengths; binary values may contain NUL or newlines. */
++static int
++th_read_metadata(TAR *t, const char *buf, size_t size)
++{
++	size_t offset = 0;
++	while (offset < size) {
++		size_t start = offset, length = 0;
++		while (offset < size && buf[offset] >= '0' && buf[offset] <= '9') {
++			size_t digit = buf[offset++] - '0';
++			if (length > size / 10 || length * 10 + digit > size)
++				goto invalid;
++			length = length * 10 + digit;
++		}
++		if (offset == start || offset >= size || buf[offset++] != ' ' ||
++			length <= offset - start || length > size - start ||
++			buf[start + length - 1] != '\n')
++			goto invalid;
++		const char *record = buf + offset;
++		size_t remaining = start + length - 1 - offset;
++		if (remaining >= CAPABILITIES_TAG_LEN &&
++			memcmp(record, CAPABILITIES_TAG, CAPABILITIES_TAG_LEN) == 0) {
++			if (remaining != CAPABILITIES_TAG_LEN + sizeof(struct vfs_cap_data) || t->th_buf.has_cap_data)
++				goto invalid;
++			memcpy(&t->th_buf.cap_data, record + CAPABILITIES_TAG_LEN, sizeof(struct vfs_cap_data));
++			t->th_buf.has_cap_data = 1;
++		} else if (remaining >= SELINUX_TAG_LEN && memcmp(record, SELINUX_TAG, SELINUX_TAG_LEN) == 0) {
++			size_t count = remaining - SELINUX_TAG_LEN;
++			if (!count || t->th_buf.selinux_context || memchr(record + SELINUX_TAG_LEN, 0, count))
++				goto invalid;
++			t->th_buf.selinux_context = strndup(record + SELINUX_TAG_LEN, count);
++			if (!t->th_buf.selinux_context)
++				return -1;
++		} else if (remaining == ANDROID_USER_DEFAULT_TAG_LEN &&
++			memcmp(record, ANDROID_USER_DEFAULT_TAG, remaining) == 0) {
++			t->th_buf.has_user_default = 1;
++		} else if (remaining == ANDROID_USER_CACHE_TAG_LEN &&
++			memcmp(record, ANDROID_USER_CACHE_TAG, remaining) == 0) {
++			t->th_buf.has_user_cache = 1;
++		} else if (remaining == ANDROID_USER_CODE_CACHE_TAG_LEN &&
++			memcmp(record, ANDROID_USER_CODE_CACHE_TAG, remaining) == 0) {
++			t->th_buf.has_user_code_cache = 1;
++#ifdef USE_FSCRYPT
++		} else if (remaining >= FSCRYPT_TAG_LEN && memcmp(record, FSCRYPT_TAG, FSCRYPT_TAG_LEN) == 0) {
++			const unsigned char *payload = (const unsigned char *)record + FSCRYPT_TAG_LEN;
++			size_t count = remaining - FSCRYPT_TAG_LEN;
++			fscrypt_policy preview = {0};
++			if (count < 2 || payload[0] != '0' || t->th_buf.fep)
++				goto invalid;
++			preview.version = payload[1];
++			int policy_size = fscrypt_policy_size(&preview);
++			if (policy_size <= 0 || count != (size_t)policy_size + 1)
++				goto invalid;
++			t->th_buf.fep = (fscrypt_policy *)calloc(1, sizeof(fscrypt_policy));
++			if (!t->th_buf.fep)
++				return -1;
++			t->th_buf.fep->version = preview.version;
++			memcpy(get_policy(t->th_buf.fep), payload + 1, policy_size);
++#endif
++		}
++		offset = start + length;
++	}
++	return 0;
++invalid:
++	errno = EINVAL;
++	return -1;
++}
++
+ int
+ th_read(TAR *t)
+ {
+ 	int i;
+ 	size_t sz, j, blocks;
+ 	char *ptr;
+ 
+ #ifdef DEBUG
+ 	LOG("==> th_read(t=0x%p)\n", (void *)t);
+ #endif
+ 
+ 	if (t->th_buf.gnu_longname != NULL)
+ 		free(t->th_buf.gnu_longname);
+ 	if (t->th_buf.gnu_longlink != NULL)
+ 		free(t->th_buf.gnu_longlink);
+ 	if (t->th_buf.selinux_context != NULL)
+ 		free(t->th_buf.selinux_context);
+ 
+ #ifdef USE_FSCRYPT
+ 	if (t->th_buf.fep != NULL)
+ 		free(t->th_buf.fep);
+ #endif
+ 
+ 	if (t->th_buf.has_cap_data)
+ 	{
+ 		memset(&t->th_buf.cap_data, 0, sizeof(struct vfs_cap_data));
+ 		t->th_buf.has_cap_data = 0;
+ 	}
+ 	t->th_buf.has_user_default = 0;
+ 	t->th_buf.has_user_cache = 0;
+ 	t->th_buf.has_user_code_cache = 0;
+ 
+ 	memset(&(t->th_buf), 0, sizeof(struct tar_header));
+ 
+ 	i = th_read_internal(t);
+ 	if (i == 0)
+ 		return 1;
+ 	else if (i != T_BLOCKSIZE)
+ 	{
+ 		if (i != -1)
+ 			errno = EINVAL;
+ 		return -1;
+ 	}
+ 
+ 	/* check for GNU long link extention */
+ 	if (TH_ISLONGLINK(t))
+ 	{
+ 		sz = th_get_size(t);
+ 		blocks = (sz / T_BLOCKSIZE) + (sz % T_BLOCKSIZE ? 1 : 0);
+ 		if (blocks > ((size_t)-1 / T_BLOCKSIZE))
+ 		{
+ 			errno = E2BIG;
+ 			return -1;
+ 		}
+ #ifdef DEBUG
+ 		LOG("    th_read(): GNU long linkname detected "
+ 		       "(%zu bytes, %zu blocks)\n", sz, blocks);
+ #endif
+ 		t->th_buf.gnu_longlink = (char *)malloc(blocks * T_BLOCKSIZE);
+ 		if (t->th_buf.gnu_longlink == NULL)
+ 			return -1;
+ 
+ 		for (j = 0, ptr = t->th_buf.gnu_longlink; j < blocks;
+ 		     j++, ptr += T_BLOCKSIZE)
+ 		{
+ #ifdef DEBUG
+ 			LOG("    th_read(): reading long linkname "
+ 			       "(%zu blocks left, ptr == %p)\n", blocks-j, (void *) ptr);
+ #endif
+ 			i = tar_block_read(t, ptr);
+ 			if (i != T_BLOCKSIZE)
+ 			{
+ 				if (i != -1)
+ 					errno = EINVAL;
+ 				return -1;
+ 			}
+ #ifdef DEBUG
+ 			LOG("    th_read(): read block == \"%s\"\n", ptr);
+ #endif
+ 		}
+ #ifdef DEBUG
+ 		LOG("    th_read(): t->th_buf.gnu_longlink == \"%s\"\n",
+ 		       t->th_buf.gnu_longlink);
+ #endif
+ 
+ 		i = th_read_internal(t);
+ 		if (i != T_BLOCKSIZE)
+ 		{
+ 			if (i != -1)
+ 				errno = EINVAL;
+ 			return -1;
+ 		}
+ 	}
+ 
+ 	/* check for GNU long name extention */
+ 	if (TH_ISLONGNAME(t))
+ 	{
+ 		sz = th_get_size(t);
+ 		blocks = (sz / T_BLOCKSIZE) + (sz % T_BLOCKSIZE ? 1 : 0);
+ 		if (blocks > ((size_t)-1 / T_BLOCKSIZE))
+ 		{
+ 			errno = E2BIG;
+ 			return -1;
+ 		}
+ #ifdef DEBUG
+ 		LOG("    th_read(): GNU long filename detected "
+ 		       "(%zu bytes, %zu blocks)\n", sz, blocks);
+ #endif
+ 		t->th_buf.gnu_longname = (char *)malloc(blocks * T_BLOCKSIZE);
+ 		if (t->th_buf.gnu_longname == NULL)
+ 			return -1;
+ 
+ 		for (j = 0, ptr = t->th_buf.gnu_longname; j < blocks;
+ 		     j++, ptr += T_BLOCKSIZE)
+ 		{
+ #ifdef DEBUG
+ 			LOG("    th_read(): reading long filename "
+ 			       "(%zu blocks left, ptr == %p)\n", blocks-j, (void *) ptr);
+ #endif
+ 			i = tar_block_read(t, ptr);
+ 			if (i != T_BLOCKSIZE)
+ 			{
+ 				if (i != -1)
+ 					errno = EINVAL;
+ 				return -1;
+ 			}
+ #ifdef DEBUG
+ 			LOG("    th_read(): read block == \"%s\"\n", ptr);
+ #endif
+ 		}
+ #ifdef DEBUG
+ 		LOG("    th_read(): t->th_buf.gnu_longname == \"%s\"\n",
+ 		       t->th_buf.gnu_longname);
+ #endif
+ 
+ 		i = th_read_internal(t);
+ 		if (i != T_BLOCKSIZE)
+ 		{
+ 			if (i != -1)
+ 				errno = EINVAL;
+ 			return -1;
+ 		}
+ 	}
+ 
+ 	// Extended headers (selinux contexts, posix file capabilities and encryption policies)
+ 	while(TH_ISEXTHEADER(t) || TH_ISPOLHEADER(t))
+ 	{
+ 		sz = th_get_size(t);
+ 
+-		if(sz >= T_BLOCKSIZE) // Not supported
+-		{
+-#ifdef DEBUG
+-			LOG("    th_read(): Extended header is too long!\n");
+-#endif
+-		}
+-		else
+-		{
+-			char buf[T_BLOCKSIZE];
+-			i = tar_block_read(t, buf);
+-			if (i != T_BLOCKSIZE)
+-			{
+-				if (i != -1)
+-					errno = EINVAL;
+-				return -1;
+-			}
+-
+-			// To be sure
+-			buf[T_BLOCKSIZE-1] = 0;
+-
+-			int len = strlen(buf);
+-			// posix capabilities
+-			char *start = strstr(buf, CAPABILITIES_TAG);
+-			if (start && start+CAPABILITIES_TAG_LEN < buf+len)
+-			{
+-				start += CAPABILITIES_TAG_LEN;
+-				memcpy(&t->th_buf.cap_data, start, sizeof(struct vfs_cap_data));
+-				t->th_buf.has_cap_data = 1;
+-#ifdef DEBUG
+-				LOG("    th_read(): Posix capabilities detected\n");
+-#endif
+-			} // end posix capabilities
+-			// selinux contexts
+-			start = strstr(buf, SELINUX_TAG);
+-			if (start && start+SELINUX_TAG_LEN < buf+len)
+-			{
+-				start += SELINUX_TAG_LEN;
+-				char *end = strchr(start, '\n');
+-				if(end)
+-				{
+-					t->th_buf.selinux_context = strndup(start, end-start);
+-#ifdef DEBUG
+-					LOG("    th_read(): SELinux context xattr detected: %s\n", t->th_buf.selinux_context);
+-#endif
+-				}
+-			} // end selinux contexts
+-			// android user.default xattr
+-			start = strstr(buf, ANDROID_USER_DEFAULT_TAG);
+-			if (start)
+-			{
+-				t->th_buf.has_user_default = 1;
+-#ifdef DEBUG
+-				LOG("    th_read(): android user.default xattr detected\n");
+-#endif
+-			} // end android user.default xattr
+-			// android user.inode_cache xattr
+-			start = strstr(buf, ANDROID_USER_CACHE_TAG);
+-			if (start)
+-			{
+-				t->th_buf.has_user_cache = 1;
+-#ifdef DEBUG
+-				LOG("    th_read(): android user.inode_cache xattr detected\n");
+-#endif
+-			} // end android user.inode_cache xattr
+-			// android user.inode_code_cache xattr
+-			start = strstr(buf, ANDROID_USER_CODE_CACHE_TAG);
+-			if (start)
+-			{
+-				t->th_buf.has_user_code_cache = 1;
+-#ifdef DEBUG
+-				LOG("    th_read(): android user.inode_code_cache xattr detected\n");
+-#endif
+-			} // end android user.inode_code_cache xattr
+-
+-#ifdef USE_FSCRYPT
+-			start = strstr(buf, FSCRYPT_TAG);
+-			if (start && start+FSCRYPT_TAG_LEN < buf+len) {
+-				t->th_buf.fep = (fscrypt_policy*)malloc(sizeof(fscrypt_policy));
+-				if (!t->th_buf.fep) {
+-					LOG("malloc failed for fscrypt policy\n");
+-					return -1;
+-				}
+-				start += FSCRYPT_TAG_LEN;
+-				if (*start == '0') {
+-					start++;
+-					memcpy(get_policy(t->th_buf.fep), start, fscrypt_policy_size(t->th_buf.fep));
+-#ifdef DEBUG
+-					uint8_t version;
+-					char content[50];
+-					memcpy(&version, start, sizeof(version));
+-					get_policy_content(t->th_buf.fep, content);
+-					LOG("version: %u\n", version);
+-					LOG("    th_read(): FSCrypt policy detected: %s\n", content);
+-#endif
+-				}
+-				else {
+-					LOG("     invalid fscrypt header found\n");
+-				}
+-			}
+-#endif // USE_FSCRYPT
++		if (sz == 0 || sz >= T_BLOCKSIZE) {
++			errno = E2BIG;
++			return -1;
++		}
++		char buf[T_BLOCKSIZE];
++		i = tar_block_read(t, buf);
++		if (i != T_BLOCKSIZE || th_read_metadata(t, buf, (size_t)sz) != 0) {
++			if (i != -1)
++				errno = EINVAL;
++			return -1;
+ 		}
+ 
+ 		i = th_read_internal(t);
+ 		if (i != T_BLOCKSIZE)
+ 		{
+ 			if (i != -1)
+ 				errno = EINVAL;
+ 			return -1;
+ 		}
+ 	}
+ 
+ 	return 0;
+ }
+@@ -583,6 +561,10 @@
+ 		uint8_t size, *descriptor;
+ 		size = fscrypt_policy_size(t->th_buf.fep);
+ 		descriptor = get_policy_descriptor(t->th_buf.fep);
++		if (!size || !descriptor) {
++			errno = EINVAL;
++			return -1;
++		}
+ #ifdef DEBUG
+ 		LOG("th_write(): using fscrypt_policy %s\n", descriptor);
+ #endif
+diff --git a/libtar/wrapper.c b/libtar/wrapper.c
+--- a/libtar/wrapper.c
++++ b/libtar/wrapper.c
+@@ -11,6 +11,9 @@
+ */
+ 
+ #include <internal.h>
++#ifdef USE_FSCRYPT
++#include "fscrypt_policy.h"
++#endif
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -52,6 +55,88 @@
+ 	return (i == 1 ? 0 : -1);
+ }
+ 
+ 
++/* Normalize a legacy tar name lexically, retaining its selected partition boundary. */
++static int
++tar_validation_path(const char *prefix, const char *name, const char *root, char *out)
++{
++	char input[MAXPATHLEN];
++	if (!root || root[0] != '/' || !prefix || !name || (prefix[0] && prefix[0] != '/'))
++		return -1;
++	int count = snprintf(input, sizeof(input), "%s/%s", prefix, name);
++	if (count < 0 || (size_t)count >= sizeof(input))
++		return -1;
++	size_t read = 0, written = 0;
++	while (input[read]) {
++		while (input[read] == '/') ++read;
++		if (!input[read]) break;
++		size_t start = read;
++		while (input[read] && input[read] != '/') ++read;
++		size_t length = read - start;
++		if ((length == 1 && input[start] == '.') ||
++			(length == 2 && input[start] == '.' && input[start + 1] == '.'))
++			return -1;
++		if (written + 1 + length >= MAXPATHLEN)
++			return -1;
++		out[written++] = '/';
++		memcpy(out + written, input + start, length);
++		written += length;
++	}
++	if (!written) out[written++] = '/';
++	out[written] = 0;
++	size_t length = strlen(root);
++	while (length > 1 && root[length - 1] == '/') --length;
++	if (length == 1 && root[0] == '/') return 0;
++	return strncmp(out, root, length) == 0 && (out[length] == 0 || out[length] == '/') ? 0 : -1;
++}
++
++/* Read and validate headers/payloads only. Never create directories, files or policies. */
++int
++tar_validate_all(TAR *t, const char *prefix, const char *root)
++{
++	int result, entries = 0;
++	char path[MAXPATHLEN];
++	while ((result = th_read(t)) == 0) {
++		if (tar_validation_path(prefix, th_get_pathname(t), root, path) != 0) {
++			errno = EINVAL;
++			return -1;
++		}
++#ifdef USE_FSCRYPT
++		if (t->th_buf.fep) {
++			fscrypt_policy expected = *t->th_buf.fep, actual;
++			int size = fscrypt_policy_size(&expected);
++			int descriptor_size = get_policy_size(&expected, false);
++			uint8_t binary[sizeof(fscrypt_policy)] = {0};
++			uint8_t *descriptor = get_policy_descriptor(&expected);
++			if (!TH_ISDIR(t) || !size || !descriptor || !descriptor_size ||
++				descriptor_size > (int)sizeof(binary) || !lookup_ref_tar(&expected, binary)) {
++				errno = ENOKEY;
++				return -1;
++			}
++			memcpy(descriptor, binary, descriptor_size);
++			if (fscrypt_policy_get_struct(path, &actual)) {
++				if (fscrypt_policy_size(&actual) != size ||
++					memcmp(get_policy(&actual), get_policy(&expected), size) != 0) {
++					errno = EEXIST;
++					return -1;
++				}
++			} else if (errno != ENODATA && errno != ENOENT) {
++				return -1;
++			}
++		} else if (TH_ISDIR(t) && (t->options & TAR_REQUIRE_FSCRYPT_POL)) {
++			fscrypt_policy actual;
++			if (fscrypt_policy_get_struct(path, &actual) || (errno != ENODATA && errno != ENOENT)) {
++				errno = EINVAL;
++				return -1;
++			}
++		}
++#endif
++		if (TH_ISREG(t) && tar_skip_regfile(t) != 0)
++			return -1;
++		++entries;
++	}
++	return result == 1 && entries ? 0 : -1;
++}
++
+ int
+ tar_extract_all(TAR *t, char *prefix, const int *progress_fd)
+diff --git a/libtar/libtar.h b/libtar/libtar.h
+--- a/libtar/libtar.h
++++ b/libtar/libtar.h
+@@ -125,6 +125,7 @@
+ 
+ #ifdef USE_FSCRYPT
+ #define TAR_STORE_FSCRYPT_POL 512 /* store fscrypt crypto policy */
++#define TAR_REQUIRE_FSCRYPT_POL 4096 /* FBE data: policy queries must be supported */
+ #endif
+ 
+ #define TAR_STORE_POSIX_CAP	1024	/* store posix file capabilities */
+@@ -343,6 +344,7 @@
+ /* extract groups of files */
+ int tar_extract_glob(TAR *t, char *globname, char *prefix);
+ int tar_extract_all(TAR *t, char *prefix, const int *progress_fd);
++int tar_validate_all(TAR *t, const char *prefix, const char *root);
+ 
+ /* add a whole tree of files */
+ int tar_append_tree(TAR *t, char *realdir, char *savedir);
+diff --git a/twrpTar.cpp b/twrpTar.cpp
+--- a/twrpTar.cpp
++++ b/twrpTar.cpp
+@@ -68,6 +68,15 @@
+ 
+ using namespace std;
++
++int twrpTar::tarOptions() {
++	int options = TWTAR_FLAGS;
++#ifdef USE_FSCRYPT
++	if (require_fscrypt_policy)
++		options |= TAR_REQUIRE_FSCRYPT_POL;
++#endif
++	return options;
++}
+ 
+ twrpTar::twrpTar(void) {
+ 	use_encryption = 0;
+ 	userdata_encryption = 0;
+@@ -78,6 +87,8 @@
+ 	Total_Backup_Size = 0;
+ 	Archive_Current_Size = 0;
+ 	include_root_dir = true;
++	validate_only = false;
++	require_fscrypt_policy = false;
+ 	tar_type.openfunc = open;
+ 	tar_type.closefunc = close;
+ 	tar_type.readfunc = read;
+@@ -100,6 +111,11 @@
+ 
+ void twrpTar::setdir(string dir) {
+ 	tardir = dir;
++#if defined(USE_FSCRYPT) && !defined(BUILD_TWRPTAR_MAIN)
++	if (DataManager::GetIntValue(TW_IS_FBE) &&
++		(dir == "/data" || dir.compare(0, 6, "/data/") == 0))
++		require_fscrypt_policy = true;
++#endif
+ }
+ 
+ void twrpTar::setsize(unsigned long long backup_size) {
+@@ -168,6 +184,9 @@
+ 			string FileName;
+ 			struct TarListStruct TarItem;
+ 			twrpTar reg, enc[9];
++			reg.require_fscrypt_policy = require_fscrypt_policy;
++			for (auto& archive : enc)
++				archive.require_fscrypt_policy = require_fscrypt_policy;
+ 			struct stat st;
+ 			pthread_t enc_thread[9];
+ 			pthread_attr_t tattr;
+@@ -487,6 +506,14 @@
+ 	return 0;
++}
++
++int twrpTar::validateTarFork() {
++	validate_only = true;
++	validation_root = tardir;
++	int result = extractTarFork();
++	validate_only = false;
++	return result;
+ }
+ 
+ int twrpTar::extractTarFork() {
+ 	int status = 0;
+ 	pid_t tar_fork_pid;
+@@ -517,6 +544,11 @@
+ 				string temp;
+ 				char actual_filename[255];
+ 				twrpTar tars[9];
++				for (auto& archive : tars) {
++					archive.validate_only = validate_only;
++					archive.require_fscrypt_policy = require_fscrypt_policy;
++					archive.validation_root = validation_root;
++				}
+ 				pthread_t tar_thread[9];
+ 				pthread_attr_t tattr;
+ 				unsigned thread_count = 0, i, start_thread_id = 1;
+@@ -672,7 +704,6 @@
+ 	d = opendir(Path.c_str());
+ 	if (d == NULL) {
+ 		gui_msg(Msg(msg::kError, "error_opening_strerr=Error opening: '{1}' ({2})")(Path)(strerror(errno)));
+-		closedir(d);
+ 		return -1;
+ 	}
+ 	while ((de = readdir(d)) != NULL) {
+@@ -708,22 +739,24 @@
+ int twrpTar::extractTar() {
+ 	char* charRootDir = (char*) tardir.c_str();
+ 	if (openTar() == -1)
+ 		return -1;
+-	if (tar_extract_all(t, charRootDir, &progress_pipe_fd) != 0) {
++	int result = validate_only ? tar_validate_all(t, charRootDir, validation_root.c_str()) :
++		tar_extract_all(t, charRootDir, &progress_pipe_fd);
++	if (result != 0) {
+ 		LOGINFO("Unable to extract tar archive '%s'\n", tarfn.c_str());
+ 		gui_err("restore_error=Error during restore process.");
+ 		return -1;
+ 	}
+ 	if (tar_close(t) != 0) {
+ 		LOGINFO("Unable to close tar file\n");
+ 		gui_err("restore_error=Error during restore process.");
+ 		return -1;
+ 	}
+ #ifndef BUILD_TWRPTAR_MAIN
+ 	if (part_settings->adbbackup) {
+ 		if (!twadbbu::Write_TWEOF())
+ 			return -1;
+ 	}
+ #endif
+ 	return 0;
+ }
+@@ -882,10 +915,10 @@
+ int twrpTar::addFilesToExistingTar(vector <string> files, string fn) {
+ 	char* charTarFile = (char*) fn.c_str();
+ 
+-	if (tar_open(&t, charTarFile, NULL, O_CLOEXEC | O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TWTAR_FLAGS) == -1)
++	if (tar_open(&t, charTarFile, NULL, O_CLOEXEC | O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, tarOptions()) == -1)
+ 		return -1;
+ 	removeEOT(charTarFile);
+-	if (tar_open(&t, charTarFile, NULL, O_CLOEXEC | O_WRONLY | O_APPEND | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TWTAR_FLAGS) == -1)
++	if (tar_open(&t, charTarFile, NULL, O_CLOEXEC | O_WRONLY | O_APPEND | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, tarOptions()) == -1)
+ 		return -1;
+ 	for (unsigned int i = 0; i < files.size(); ++i) {
+ 		char* file = (char*) files.at(i).c_str();
+@@ -972,7 +1005,7 @@
+ 				fd = pipes[1];
+ 				init_libtar_no_buffer(progress_pipe_fd);
+ 				tar_type.writefunc = write_tar_no_buffer;
+-				if (tar_fdopen(&t, fd, charRootDir, &tar_type, O_CLOEXEC | O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TWTAR_FLAGS) != 0) {
++				if (tar_fdopen(&t, fd, charRootDir, &tar_type, O_CLOEXEC | O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, tarOptions()) != 0) {
+ 					close(fd);
+ 					LOGINFO("tar_fdopen failed\n");
+ 					gui_err("backup_error=Error creating backup.");
+@@ -1028,7 +1061,7 @@
+ 			fd = pigzfd[1];   // copy parent output
+ 			init_libtar_no_buffer(progress_pipe_fd);
+ 			tar_type.writefunc = write_tar_no_buffer;
+-			if (tar_fdopen(&t, fd, charRootDir, &tar_type, O_CLOEXEC | O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TWTAR_FLAGS) != 0) {
++			if (tar_fdopen(&t, fd, charRootDir, &tar_type, O_CLOEXEC | O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, tarOptions()) != 0) {
+ 				close(fd);
+ 				LOGINFO("tar_fdopen failed\n");
+ 				gui_err("backup_error=Error creating backup.");
+@@ -1075,7 +1108,7 @@
+ 			fd = oaesfd[1];   // copy parent output
+ 			init_libtar_no_buffer(progress_pipe_fd);
+ 			tar_type.writefunc = write_tar_no_buffer;
+-			if (tar_fdopen(&t, fd, charRootDir, &tar_type, O_CLOEXEC | O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TWTAR_FLAGS) != 0) {
++			if (tar_fdopen(&t, fd, charRootDir, &tar_type, O_CLOEXEC | O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, tarOptions()) != 0) {
+ 				close(fd);
+ 				LOGINFO("tar_fdopen failed\n");
+ 				gui_err("backup_error=Error creating backup.");
+@@ -1091,7 +1124,7 @@
+ 			LOGINFO("Opening TW_ADB_BACKUP uncompressed stream\n");
+ 			tar_type.writefunc = write_tar_no_buffer;
+ 			output_fd = open(TW_ADB_BACKUP, O_WRONLY);
+-			if(tar_fdopen(&t, output_fd, charRootDir, &tar_type, O_CLOEXEC | O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TWTAR_FLAGS) != 0) {
++			if(tar_fdopen(&t, output_fd, charRootDir, &tar_type, O_CLOEXEC | O_WRONLY | O_CREAT | O_EXCL | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, tarOptions()) != 0) {
+ 				close(output_fd);
+ 				LOGERR("tar_fdopen failed\n");
+ 				return -1;
+@@ -1099,7 +1132,7 @@
+ 		}
+ 		else {
+ 			tar_type.writefunc = write_tar;
+-			if (tar_open(&t, charTarFile, &tar_type, O_CLOEXEC | O_WRONLY | O_CREAT | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TWTAR_FLAGS) == -1) {
++			if (tar_open(&t, charTarFile, &tar_type, O_CLOEXEC | O_WRONLY | O_CREAT | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, tarOptions()) == -1) {
+ 				LOGERR("tar_open error opening '%s'\n", tarfn.c_str());
+ 				gui_err("backup_error=Error creating backup.");
+ 				return -1;
+@@ -1181,7 +1214,7 @@
+ 				close(pipes[1]);
+ 				close(pipes[3]);
+ 				fd = pipes[2];
+-				if (tar_fdopen(&t, fd, charRootDir, NULL, O_CLOEXEC | O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TWTAR_FLAGS) != 0) {
++				if (tar_fdopen(&t, fd, charRootDir, NULL, O_CLOEXEC | O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, tarOptions()) != 0) {
+ 					close(fd);
+ 					LOGINFO("tar_fdopen failed\n");
+ 					gui_err("restore_error=Error during restore process.");
+@@ -1226,7 +1259,7 @@
+ 			// Parent
+ 			close(oaesfd[1]); // close parent output
+ 			fd = oaesfd[0];   // copy parent input
+-			if (tar_fdopen(&t, fd, charRootDir, NULL, O_CLOEXEC | O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TWTAR_FLAGS) != 0) {
++			if (tar_fdopen(&t, fd, charRootDir, NULL, O_CLOEXEC | O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, tarOptions()) != 0) {
+ 				close(fd);
+ 				LOGINFO("tar_fdopen failed\n");
+ 				gui_err("restore_error=Error during restore process.");
+@@ -1277,7 +1310,7 @@
+ 			// Parent
+ 			close(pigzfd[1]); // close parent output
+ 			fd = pigzfd[0];   // copy parent input
+-			if (tar_fdopen(&t, fd, charRootDir, NULL, O_CLOEXEC | O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TWTAR_FLAGS) != 0) {
++			if (tar_fdopen(&t, fd, charRootDir, NULL, O_CLOEXEC | O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, tarOptions()) != 0) {
+ 				close(fd);
+ 				LOGINFO("tar_fdopen failed\n");
+ 				gui_err("restore_error=Error during restore process.");
+@@ -1288,14 +1321,14 @@
+ 		if (part_settings->adbbackup) {
+ 			LOGINFO("Opening TW_ADB_RESTORE uncompressed stream\n");
+ 			input_fd = open(TW_ADB_RESTORE, O_RDONLY);
+-			if (tar_fdopen(&t, input_fd, charRootDir, NULL, O_CLOEXEC | O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TWTAR_FLAGS) != 0) {
++			if (tar_fdopen(&t, input_fd, charRootDir, NULL, O_CLOEXEC | O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, tarOptions()) != 0) {
+ 				LOGERR("Unable to open tar archive '%s'\n", charTarFile);
+ 				gui_err("restore_error=Error during restore process.");
+ 				return -1;
+ 			}
+ 		}
+ 		else {
+-			if (tar_open(&t, charTarFile, NULL, O_CLOEXEC | O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, TWTAR_FLAGS) != 0) {
++			if (tar_open(&t, charTarFile, NULL, O_CLOEXEC | O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH, tarOptions()) != 0) {
+ 				LOGERR("Unable to open tar archive '%s'\n", charTarFile);
+ 				gui_err("restore_error=Error during restore process.");
+ 				return -1;
+diff --git a/twrpTar.hpp b/twrpTar.hpp
+--- a/twrpTar.hpp
++++ b/twrpTar.hpp
+@@ -50,6 +50,7 @@
+ 	virtual ~twrpTar();
+ 	int createTarFork(pid_t *tar_fork_pid);
+ 	int extractTarFork();
++	int validateTarFork();
+ 	void setfn(string fn);
+ 	void setdir(string dir);
+ 	void setsize(unsigned long long backup_size);
+@@ -80,6 +81,7 @@
+ 	int extractTar();
+ 	string Strip_Root_Dir(string Path);
+ 	int openTar();
++	int tarOptions();
+ 	int Generate_TarList(string Path, std::vector<TarListStruct> *TarList, unsigned long long *Target_Size, unsigned *thread_id);
+ 	static void* createList(void *cookie);
+ 	static void* extractMulti(void *cookie);
+@@ -91,6 +93,9 @@
+ 	unsigned long long Archive_Current_Size;
+ 	unsigned long long Total_Backup_Size;
+ 	bool include_root_dir;
++	bool validate_only;
++	bool require_fscrypt_policy;
++	string validation_root;
+ 	TAR *t;
+ 	tartype_t tar_type; // Only used in createTar() but variable must persist while the tar is open
+ 	int fd;
+diff --git a/partition.cpp b/partition.cpp
+--- a/partition.cpp
++++ b/partition.cpp
+@@ -2982,6 +2982,35 @@
+ 	return Restore_Size;
++}
++
++bool TWPartition::Validate_Restore_Archive(const string& Folder) {
++	PartitionSettings settings = {};
++	settings.Backup_Folder = Folder;
++	settings.Part = this;
++	settings.PM_Method = PM_RESTORE;
++	settings.adbbackup = false;
++	string type = Get_Restore_File_System(&settings);
++	if (Is_Image(type))
++		return true; // Raw image size/digest checks retain their existing separate path.
++	if (!Is_File_System(type))
++		return false;
++	ProgressTracking progress(0);
++	settings.progress = &progress;
++	twrpTar tar;
++	tar.part_settings = &settings;
++	tar.setdir(Backup_Path);
++	tar.setfn(Folder + "/" + Backup_FileName);
++	tar.backup_name = Backup_Name;
++	tar.partition_name = Backup_Name;
++	tar.backup_folder = Folder;
++#ifndef TW_EXCLUDE_ENCRYPTED_BACKUPS
++	string password;
++	DataManager::GetValue("tw_restore_password", password);
++	if (!password.empty())
++		tar.setpassword(password);
++#endif
++	return tar.validateTarFork() == 0;
+ }
+ 
+ bool TWPartition::Restore_Tar(PartitionSettings *part_settings) {
+ 	string Full_FileName;
+ 	bool ret = false;

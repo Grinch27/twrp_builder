@@ -26,6 +26,7 @@ from summarize_compile_failure import public_generated_families
 from summarize_compile_failure import LINK_CLASSES, LINK_ARCHES
 from summarize_repo_failure import RULES as REPO_RULES
 from build_telemetry import STAGES, read_json, sanitize_metrics
+from restore_public_testdata import public_status
 
 BRANCH = 'build-progress'
 
@@ -87,7 +88,7 @@ def public_module_names(manifest, source):
 
 
 def record(status, run_id, commit, summary=None, source=None, manifest=None, excluded=(),
-           metrics=None, source_summary=None):
+           metrics=None, source_summary=None, resource_summary=None):
     if (not isinstance(status.get('stage'), str) or status['stage'] not in STAGES
             or not SHA.fullmatch(commit) or not 0 < run_id < 10**20):
         raise ValueError('invalid progress identity')
@@ -100,6 +101,9 @@ def record(status, run_id, commit, summary=None, source=None, manifest=None, exc
     safe_metrics = sanitize_metrics(metrics)
     if safe_metrics:
         result['metrics'] = safe_metrics
+    resource = public_status(resource_summary, load_lock())
+    if resource is not None:
+        result['public_resources'] = resource
     if isinstance(source_summary, dict):
         result['source_categories'] = [c for c in source_summary.get('categories', [])
                                        if isinstance(c, str) and c in
@@ -204,6 +208,10 @@ def render_summary(value):
     lines = ['### Build diagnostics', '',
              f"Stage: `{value['stage']}`; exit: `{value.get('exit_code', 'running')}`.", '']
     metrics = value.get('metrics', {})
+    resource = value.get('public_resources')
+    if resource:
+        lines.append(f"- Public resources: `{resource['code']}`; "
+                     f"HTTP: `{resource['http_status']}`; attempts: `{resource['attempts']}`.")
     timings = metrics.get('stage_seconds', {})
     if timings:
         lines += ['| Stage | Seconds |', '| --- | ---: |']
@@ -315,7 +323,8 @@ def main():
     value = record(status, run_id, commit, summary,
                    args.work / 'android', manifest_data, excluded,
                    metrics=read_json(args.work / 'output/telemetry.json'),
-                   source_summary=read_json(args.work / 'output/source-error-summary.json'))
+                   source_summary=read_json(args.work / 'output/source-error-summary.json'),
+                   resource_summary=read_json(args.work / 'output/public-resource-status.json'))
     print('BUILD_DIAGNOSTICS ' + json.dumps(value, sort_keys=True), flush=True)
     if 'exit_code' in value and os.environ.get('GITHUB_STEP_SUMMARY'):
         try:

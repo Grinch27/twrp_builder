@@ -131,13 +131,14 @@ git() {
         result = self.preflight('1', repairs='1', target_version='1', layout='1')
         self.assertEqual(result.returncode, 0, result.stderr)
         commands = result.stdout.splitlines()
-        self.assertEqual(len(commands), 20)
-        self.assertTrue(all('apply --check ' in c for c in commands[:10]))
+        self.assertEqual(len(commands), 24)
+        self.assertTrue(all('apply --check ' in c for c in commands[:12]))
         self.assertTrue(commands[9].endswith('/patches/recovery-layout-paths.patch'))
-        self.assertEqual(commands[-1], '-C bootable/recovery apply /builder/patches/recovery-layout-paths.patch')
-        result = self.preflight('1', commands[9], repairs='1', target_version='1', layout='1')
-        self.assertEqual(result.returncode, 17)
-        self.assertTrue(all('apply --check ' in c for c in result.stdout.splitlines()))
+        self.assertEqual(commands[-1], '-C system/vold apply /builder/patches/vold-fscrypt-policy-errno.patch')
+        for failed_check in commands[9:12]:
+            result = self.preflight('1', failed_check, repairs='1', target_version='1', layout='1')
+            self.assertEqual(result.returncode, 17)
+            self.assertTrue(all('apply --check ' in c for c in result.stdout.splitlines()))
 
     def delivery(self, plaintext=None, seal_exit='0'):
         source = (ROOT / 'scripts/build.sh').read_text()

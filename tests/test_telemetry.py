@@ -23,6 +23,20 @@ import report_progress
 
 
 class TelemetryTests(unittest.TestCase):
+    def test_public_resource_failure_is_bound_and_rendered_without_raw_error(self):
+        from source_inputs import load_lock
+        resource = {'schema': 1, 'revision': load_lock()['public_test_resources']['revision'],
+                    'code': 'HTTP_ERROR', 'http_status': 503, 'attempts': 3}
+        value = record({'stage': 'public_resources', 'exit_code': 1}, 42, 'a' * 40,
+                       resource_summary=resource)
+        self.assertEqual(value['public_resources'], resource)
+        self.assertIn('HTTP_ERROR', render_summary(value))
+        self.assertIn('503', render_summary(value))
+        value = record({'stage': 'public_resources', 'exit_code': 1}, 42, 'a' * 40,
+                       resource_summary={**resource, 'raw': 'private exception'})
+        self.assertNotIn('public_resources', value)
+        self.assertNotIn('private exception', render_summary(value))
+
     def test_repo_cr_ansi_progress_returns_only_numeric_metadata(self):
         text = ('secret credential\r\x1b[32mFetching: 25% (1/4) private-url\x1b[0m'
                 '\rChecking out: 75% (3/4) private-source')

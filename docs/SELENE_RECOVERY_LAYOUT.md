@@ -2,6 +2,8 @@
 
 适用固件：China MIUI `V14.0.4.0.TKUCNXM`。分析与修正基线：builder `92ee1b879899c61e30640a5c1f6184ce84454927`，Native [41452626126](https://github.com/Grinch27/twrp_builder/actions/runs/41452626126)，attempt 1。本报告区分用户提供的单次启动诊断、公开锁定源码证据、主机测试和仍待进行的实机验收。私人原始报告、日志、标识和归档不进入本仓库。
 
+后续更新：41549550320 失败于公开测试资源恢复，未进入 Android 编译；新的资源失败分类、十二补丁编排及备份还原 P0 见[备份预检报告](SELENE_BACKUP_PREFLIGHT.md)。以下保留首次布局修正时的证据与验收边界。
+
 ## 1. 结论与证据边界
 
 本轮现场已经形成 metadata 解密、用户 0 的 DE/CE 密钥安装、`/data` 的 F2FS 挂载及三份非空日志实际导出的成功链；没有复现旧 `-33`、TEE 共享内存分配失败或 Keymaster SIGSEGV。当前 `mi_ext` 告警属于 Recovery 的逻辑名推导、Android 视图行解析和嵌套路径匹配问题，不能据此认定逻辑分区缺失或 FBE 仍失败。

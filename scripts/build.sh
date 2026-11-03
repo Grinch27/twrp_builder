@@ -128,7 +128,8 @@ fi
 set_stage public_resources
 trace_public_command testdata_restore
 timeout --signal=TERM --kill-after=30s 6m \
-  python3 "${SELF}/scripts/restore_public_testdata.py" --source "${WORK}/android"
+  python3 "${SELF}/scripts/restore_public_testdata.py" --source "${WORK}/android" \
+    --status-output "${WORK}/output/public-resource-status.json"
 
 set_stage preflight
 trace_public_command recovery_patch_check
@@ -158,6 +159,10 @@ fi
 if [[ "${SELENE_RECOVERY_LAYOUT_FIXES:-0}" == 1 ]]; then
   trace_public_command recovery_layout_patch_check
   git -C bootable/recovery apply --check "${SELF}/patches/recovery-layout-paths.patch"
+  trace_public_command recovery_backup_integrity_patch_check
+  git -C bootable/recovery apply --check "${SELF}/patches/recovery-backup-integrity.patch"
+  trace_public_command vold_fscrypt_errno_patch_check
+  git -C system/vold apply --check "${SELF}/patches/vold-fscrypt-policy-errno.patch"
 fi
 trace_public_command recovery_patch_apply
 git -C bootable/recovery apply "${SELF}/patches/recovery-required-modules.patch"
@@ -188,6 +193,10 @@ fi
 if [[ "${SELENE_RECOVERY_LAYOUT_FIXES:-0}" == 1 ]]; then
   trace_public_command recovery_layout_patch_apply
   git -C bootable/recovery apply "${SELF}/patches/recovery-layout-paths.patch"
+  trace_public_command recovery_backup_integrity_patch_apply
+  git -C bootable/recovery apply "${SELF}/patches/recovery-backup-integrity.patch"
+  trace_public_command vold_fscrypt_errno_patch_apply
+  git -C system/vold apply "${SELF}/patches/vold-fscrypt-policy-errno.patch"
 fi
 trace_public_command disk_preflight
 [[ "$(df --output=avail -B1 "${WORK}" | tail -n 1)" -ge 19327352832 ]]
@@ -195,6 +204,11 @@ trace_public_command jdk_preflight
 test -s prebuilts/jdk/jdk11/linux-x86/lib/modules
 trace_public_command monitor_preflight
 test -s prebuilts/tools/common/m2/repository/com/android/support/test/monitor/1.0.2-alpha1/monitor-1.0.2-alpha1.aar
+if [[ "${SELENE_RECOVERY_LAYOUT_FIXES:-0}" == 1 ]]; then
+  trace_public_command backup_integrity_host_check
+  timeout --signal=TERM --kill-after=10s 3m \
+    python3 "${SELF}/tests/host_libtar_integration.py" --source "${WORK}/android/bootable/recovery"
+fi
 trace_public_command java_version
 prebuilts/jdk/jdk11/linux-x86/bin/java -version
 export OUT_DIR="${WORK}/out"

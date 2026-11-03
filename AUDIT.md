@@ -1003,3 +1003,23 @@ Native 固定 SELENE_RECOVERY_LAYOUT_FIXES=1，父环境不能关闭；共享脚
 验证：标准库 240 项完成，236 通过、4 项既有环境限制跳过（两个 /proc 命名空间、Go、aria2），没有新增跳过。12 项新布局行为测试从实际 patch 提取完整函数，以 g++ C++17 -Wall -Wextra -Werror 编译 AB/非 AB 两套虚拟回调 harness；覆盖六长四短路径、最长组件边界、别名碰撞与一致分派、system/sdcard、子分区、写入边界、源名/slotselect/显式槽、反复映射、失败/超时、变槽后按记录卸载、外部节点保护、COW 失败、首对象重映射失败与视图分类。复核中发现仅统一查找仍可能在别名碰撞时挂载两个对象，已改为选中对象指针分派并补充行为验证。四份 Recovery 补丁在完整锁定公开源码上严格空白预检查、组合应用及 diff 检查通过；11 个实际受测函数与组合栈一致，另外两个候选源文件逐字节一致。构建编排测试证明全部十项先检查及新检查失败不发生修改。三份 YAML、38 段内联／4 份独立 Shell 语法、actionlint 1.7.7 通过。没有完整 Android 编译、新镜像或设备验收，没有新增摘要、签名、证书、DEX 或无关版本扫描。
 
 完整原因、差异矩阵、候选排序、P0/P1/P2 及下一轮验收见 docs/SELENE_RECOVERY_LAYOUT.md。仅按本次授权提交 main，由既有 push 规则进入 Native；不新建分支/PR、不强推、不额外 dispatch、不查询新运行、不自动重试，Stock 工作流保持不变。本次没有连接手机、刷写、重启、切槽、主动解密或修改安全存储。
+
+## 2026-11-03 — 41549550320 资源失败分类与备份还原 P0
+
+用户明确指定失败 Run 41549550320，要求按已讨论结论继续修正、commit main，随后补充 Chat 报告。本轮读取完整补充文本并与当前 main 95e4f8def46f24aff270a6e671d5c51037d92156、受限诊断和锁定公开源码交叉核验；没有将报告中的其他会话操作指令当作本轮设备授权。没有连接手机、刷写、重启、切槽、主动解密、清理 userdata 或访问个人密钥／安全存储。
+
+Run attempt 1 于北京时间 2026-11-03 07:59:35 开始；前置公开检查成功，Native Job 125633628686 最终失败、Artifact 跳过。首轮查询时距开始已超过50分钟。阶段 JSON 与公开固定标记确认同步、checkout 结束后在 public_resources 退出1，尚未进入 patch preflight／Soong／Ninja，因此不能归因为布局补丁 C++ 编译。公开日志没有 Python 具体异常，历史HTTP／路径／验证／I/O根因仍未知。原资源恢复脚本的真实本地复现26文件成功，新CLI再验证26文件成功并生成SUCCESS状态；没有据此反推失败时网络状态。
+
+restore_public_testdata.py 保留原26个公开资源与现有身份验证、新目录保护和非空真实模块，四并发、每文件三次、1/2秒退避、20秒单请求及240秒共享预算，外层六分钟不变。仅瞬时HTTP／连接／超时重试；404、TLS、重定向、内容与目标冲突不绕过。受限状态只含锁定revision、固定枚举、HTTP数字和尝试数，经report_progress再次绑定过滤后发布；不复制原始异常、URL、路径、响应体或凭据。部分写入失败不伪造完成模块，不自动删除冲突目录。
+
+复核Chat报告新增发现：子分区Digest复用父路径、已有目录提前返回及无符号空间减法均有直接源码证据，已修正。所谓Digest方向不能按变量名判断：portrait/watch UI明确是Enable Digest Verification，与>0执行一致；保留现有默认及开关，不新增摘要扫描。确认PBRP公开BoardConfig使用2127-12-31／99.87.36，Qin README自述往返通过且使用software Keymaster／vendor_boot，BoardConfig请求policy2；仅作参考，不替换本设备TEE／版本／固件／槽位配置，不把维护者自述当selene实测。原厂md_udc、19条只读OverlayFS及pangu路线保持原结论，不下载第三方镜像或重下ROM。
+
+Recovery布局补丁增加一次解析的selection：全部必选目标／隐式子分区验证可用性、方法、权限、实际块设备重复及FBE用户解密状态，保留原根路径写入边界；失败在准备存储、创建备份或还原清理前停止。还原预检所有父子归档入口非空、类型与身份，固定使用已有归档名；子分区Digest使用子文件，空间先检查32MiB再减法。文件级归档使用原解压／解密／分卷读取器先作只读流预检，解析头、载荷和policy引用，比较当前可查询目标；全部通过后才允许Wipe。该预检增加一次读取，不是介质快照或事务。
+
+新backup-integrity补丁严格区分ENODATA与错误查询，FBE Data要求查询能力；未知引用不再丢弃，读取ENOKEY不再跳过文件报成功。已存在的目录仍验证元数据，链接占位拒绝；现有／继承policy一致不重复设，冲突失败，新设后读回比较；SELinux/capabilities实际设置失败传播。进一步发现旧扩展头strlen/strstr会在二进制NUL处截断，而且policy union版本尚未初始化就求结构长度；现按现有PAX声明长度、实际版本及结构边界解码，拒绝畸形／重复元数据。新Vold policy errno补丁只保存日志／close前真实errno并保留原bool API和查询协议；不更改密钥或加密参数。合法v1/v2归档编码保持。
+
+全部十二份补丁统一先预检查再应用；Native原layout固定flag供给完整依赖组，共享/Docker默认不启用。Android编译前增加三分钟有界的完整公开libtar主机检查；复用现有公开checkout，不增加网络／私有输入或发布附件。永久可重复脚本为tests/host_libtar_integration.py，标准库、gcc与临时host兼容头／安全回调；不挂载、不访问设备。新测试从实际patch提取完整受测C/C++函数，未添加缺依赖绕过、禁用或新的跳过。
+
+验证：标准库260项完成，256通过、4项原环境限制跳过（两个/proc命名空间、Go、aria2）。实际目标计划及元数据／errno测试覆盖重复、隐式子分区、锁定用户、根边界、入口／只读流失败、v1/v2、NUL后capabilities、合法无policy、查询错误／未知key、现存／冲突／读回失败、SELinux／capabilities失败、链接占位和内容ENOKEY。五份Recovery严格空白独立预检、组合应用及十个候选源文件比较通过；Vold新补丁在锁定原文件严格应用一致。完整15文件libtar主机编译无诊断；真实临时文件二进制载荷、UID/GID、权限往返通过，截断载荷预检失败且无目标内容写入。原锁定writer与新writer生成的v1/v2合成归档逐字节一致；安全内核接口仍为模拟回调。初次完整C编译发现本轮编辑过度删除另一函数的局部filefd声明，已在提交前修正，并由永久完整库检查防止仅函数级harness漏检。三份YAML、四份独立及38段内联Shell语法、actionlint1.7.7、普通差异及真实patch新增源码空白检查通过。没有完整Android编译或新实机结果。
+
+保留SDK32、首次Keymaster目标输入、原厂TEE客户端、正常启动、FBE／AVB／安全配置、fstab、源码锁615项和十项私有输入，Stock/Docker工作流不改。没有原始私密报告／日志／标识或输入进入公开树。详见docs/SELENE_BACKUP_PREFLIGHT.md，含Chat结论取舍、实现、重现方法、真实I/O／硬件回调边界、缺卷／中途失败限制、四场景FBE与独立只读视图的后续验收。本次仅提交main，由既有push规则验收，publish=false，只交付boot.img三天，不强推、不新建分支／PR、不额外dispatch、不查询或重试新运行。
