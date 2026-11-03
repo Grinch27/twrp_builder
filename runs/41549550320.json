@@ -2,22 +2,25 @@
   "schema": 1,
   "run_id": 41549550320,
   "builder_commit": "95e4f8def46f24aff270a6e671d5c51037d92156",
-  "stage": "checkout_verification",
+  "stage": "public_resources",
+  "exit_code": 1,
   "metrics": {
-    "elapsed_seconds": 498.5,
-    "disk_free_mib": 39169,
-    "log_idle_seconds": 497.8,
-    "swap_free_mib": 15246,
-    "memory_available_mib": 14958,
-    "load_1m": 4.35,
-    "log_bytes": 34,
-    "stage_elapsed_seconds": 0.7,
+    "elapsed_seconds": 575.3,
+    "swap_free_mib": 15255,
+    "disk_free_mib": 39158,
+    "memory_available_mib": 14910,
+    "log_bytes": 2525,
+    "log_idle_seconds": 3.3,
+    "stage_elapsed_seconds": 4.1,
+    "load_1m": 2.01,
     "stage_seconds": {
       "initialization": 0.078,
       "repo_tool": 0.695,
       "repo_initialization": 1.777,
       "repo_tool_verification": 0.06,
-      "source_sync": 495.135
+      "source_sync": 495.135,
+      "checkout_verification": 73.377,
+      "public_resources": 0.832
     }
   }
 }
