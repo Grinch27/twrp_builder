@@ -1,12 +1,62 @@
 # TWRP Selene Builder
 
+## 人工刷入与原厂回退（selene / boot_a）
+
+仅在 **Ubuntu USB 主机**上人工逐条执行；适用于已解锁 Bootloader、**当前槽位为 a** 的 selene（China MIUI `V14.0.4.0.TKUCNXM`）。只允许写入 `boot_a`，不得自动切槽、格式化或修改 `boot_b`、`userdata`、`metadata`、`vbmeta`。刷写前须人工确认 `test/boot.img` 是准备测试的最新 Native 产物，`stock/boot.img` 是匹配当前固件的原厂回退镜像。
+
+**1. 检查文件、进入 Bootloader 并核对设备：**
+
+```bash
+stat -c '%n | %s bytes' /home/user/github/aosp-builder/tmp/test/boot.img /home/user/github/aosp-builder/tmp/stock/boot.img
+adb reboot bootloader
+fastboot devices
+fastboot getvar product
+fastboot getvar current-slot
+fastboot getvar is-userspace
+fastboot getvar unlocked
+```
+
+仅在两个镜像均存在、大小均为 `67108864` bytes，且设备唯一、`product=selene`、`current-slot=a`、`is-userspace=no`、`unlocked=yes` 时继续。若已经处于 Bootloader，可跳过 `adb reboot bootloader`；若 `is-userspace=yes`，先执行 `fastboot reboot bootloader` 并重新核对。任何结果不符合预期都停止。
+
+**2. 刷入测试镜像：**
+
+```bash
+fastboot flash boot_a /home/user/github/aosp-builder/tmp/test/boot.img
+```
+
+只在 Sending 和 Writing 均显示 `OKAY` 后，单独执行：
+
+```bash
+fastboot reboot recovery
+```
+
+如不支持该 Recovery 重启命令，使用实体按键进入 Recovery。进入后先验收主菜单、触控和 ADB，不执行 Wipe 或 Restore。
+
+**3. 回写原厂镜像（测试结束或需要恢复时）：**
+
+通过 `adb reboot bootloader`（ADB 可用时）或实体按键重新进入 Bootloader，**再次核对上面的 Fastboot 设备、槽位、模式及解锁状态**，然后单独执行：
+
+```bash
+fastboot flash boot_a /home/user/github/aosp-builder/tmp/stock/boot.img
+```
+
+刷写确认 `OKAY` 后执行：
+
+```bash
+fastboot reboot
+```
+
+Android 启动后用 `adb shell getprop sys.boot_completed`（预期 `1`）和 `adb shell getprop ro.boot.slot_suffix`（预期 `_a`）核对。任一次刷写失败均停止，不自动重试或重启。
+
+**后续实机验收顺序：**先分别验证 Android 解锁后进入 Recovery、Recovery→Recovery、完整关机直接进入 Recovery、Recovery→Android→Recovery 的 metadata／DE／CE 解密和 `/data` 挂载；**通过跨重启 FBE 验收后**，再单独审批真实数据还原。当前操作说明不授权自动刷写或还原。
+
 当前集中使用 GitHub Actions 的 Ubuntu 原生路线，为 Xiaomi selene 构建 TWRP 12.1 `bootimage`。目标固件保持 China MIUI `V14.0.4.0.TKUCNXM`。
 
 本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**Native [41452626126](https://github.com/Grinch27/twrp_builder/actions/runs/41452626126) 已成功构建；用户提供的单次启动资料确认 metadata、用户 0 DE／CE、`/data` 挂载及三份非空日志导出成功，本轮未复现旧 `-33`。** 保留已验证的正常启动选择、[同版本原厂 TEE 客户端](public-prebuilts/selene-stock-v14/README.md)、[导出错误与 Vold guard](docs/SELENE_STORAGE_ERRORS.md)及[首次 Keymaster OS／SPL 输入](docs/SELENE_TARGET_VERSION_AND_STOCK_ANALYSIS.md)。
 
 [41549550320](https://github.com/Grinch27/twrp_builder/actions/runs/41549550320) 在公开测试资源恢复阶段失败，尚未进入补丁预检或 Android 编译；具体历史异常未公开留存。本轮增加资源请求有界重试与受限分类诊断，并修正备份／还原的整单预检、子归档校验路径、空间保护、fscrypt 二进制头解析及必要元数据错误传播，见[备份预检与失败诊断](docs/SELENE_BACKUP_PREFLIGHT.md)。Native 先统一检查十二份补丁，再执行完整 libtar 主机往返验证，之后进入原 Android 构建。
 
-保留[Recovery 布局修正](docs/SELENE_RECOVERY_LAYOUT.md)的稳定逻辑身份与 Find／Mount／UnMount 匹配、原有写入边界和 Android 合成视图明确跳过行为。新候选尚未取得完整 Android 编译或实机结果，跨重启 FBE、真实备份还原及 MIUI overlay 仍待验收。原始报告、日志和设备标识不进入本仓库；FBE、既有镜像验收及单文件 `boot.img` 交付规则保持，历史见 [AUDIT.md](AUDIT.md)。
+保留[Recovery 布局修正](docs/SELENE_RECOVERY_LAYOUT.md)的稳定逻辑身份与 Find／Mount／UnMount 匹配、原有写入边界和 Android 合成视图明确跳过行为。新候选已由 Native [41573432328](https://github.com/Grinch27/twrp_builder/actions/runs/41573432328) 与 [41572669191](https://github.com/Grinch27/twrp_builder/actions/runs/41572669191) 完成完整构建及静态验证，但跨重启 FBE、真实备份还原及 MIUI overlay 尚未实机验收。原始报告、日志和设备标识不进入本仓库；FBE、既有镜像验收及单文件 `boot.img` 交付规则保持，历史见 [AUDIT.md](AUDIT.md)。
 
 ## 构建方式
 
