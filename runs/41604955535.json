@@ -2,15 +2,21 @@
   "schema": 1,
   "run_id": 41604955535,
   "builder_commit": "74472cb678b4bbbe66b4a0be11e46fc521d7e694",
-  "stage": "initialization",
+  "stage": "source_sync",
   "metrics": {
-    "memory_available_mib": 14935,
-    "load_1m": 1.18,
-    "disk_free_mib": 100990,
+    "log_idle_seconds": 14.3,
+    "stage_elapsed_seconds": 14.4,
+    "log_bytes": 121,
+    "disk_free_mib": 100499,
+    "memory_available_mib": 14699,
     "swap_free_mib": 15359,
-    "log_idle_seconds": 0.0,
-    "log_bytes": 0,
-    "elapsed_seconds": 0.0,
-    "stage_seconds": {}
+    "load_1m": 1.73,
+    "elapsed_seconds": 16.8,
+    "stage_seconds": {
+      "initialization": 0.077,
+      "repo_tool": 0.374,
+      "repo_initialization": 1.835,
+      "repo_tool_verification": 0.052
+    }
   }
 }
