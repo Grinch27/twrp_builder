@@ -752,7 +752,7 @@ diff --git a/partitionmanager.cpp b/partitionmanager.cpp
  			if (flash_part != NULL) {
  				partition_count++;
  				if (partition_count > 1) {
-@@ -3551,63 +3725,110 @@
+@@ -3551,63 +3725,125 @@
  		return TWFunc::Remove_Beginning_Slash(Mount_Point);
  }
  
@@ -777,9 +777,17 @@ diff --git a/partitionmanager.cpp b/partitionmanager.cpp
 +}
 +
 +bool TWPartitionManager::Update_Logical_Alias(TWPartition* Part, const string& Device) {
-+	string source = Logical_Partition_Name(Part, false);
-+	if (source.empty())
++	auto failed = [](const char* operation) {
++		const int error = errno;
++		LOGINFO("Logical alias failed: op=%s errno=%d\n", operation, error);
++		errno = error;
 +		return false;
++	};
++	string source = Logical_Partition_Name(Part, false);
++	if (source.empty()) {
++		errno = EINVAL;
++		return failed("source");
++	}
 +	string path = "/dev/block/bootdevice/by-name/" + source;
 +	if (!Part->Logical_Alias_Target.empty()) {
 +		char target[4096];
@@ -788,21 +796,28 @@ diff --git a/partitionmanager.cpp b/partitionmanager.cpp
 +			if (!Device.empty() && Device == Part->Logical_Alias_Target)
 +				return true;
 +			if (unlink(path.c_str()) != 0)
-+				return false;
-+		} else if (length >= 0 || errno != ENOENT) {
++				return failed("unlink");
++		} else if (length >= 0 || errno == EINVAL) {
 +			// The entry was replaced externally. Never remove a foreign link/node.
 +			Part->Logical_Alias_Target.clear();
 +			return true;
++		} else if (errno != ENOENT) {
++			// A read error does not prove that an external entry replaced ours.
++			return failed("readlink");
 +		}
 +		Part->Logical_Alias_Target.clear();
 +	}
++	if (Device.empty())
++		return true;
 +	struct stat st;
-+	if (!Device.empty() && lstat(path.c_str(), &st) != 0 && errno == ENOENT) {
-+		if (symlink(Device.c_str(), path.c_str()) != 0)
-+			return false;
-+		Part->Logical_Alias_Target = Device;
-+		property_set("twrp.super.symlinks_created", "true");
-+	}
++	if (lstat(path.c_str(), &st) == 0)
++		return true; // An existing foreign entry is not ours to replace.
++	if (errno != ENOENT)
++		return failed("lstat");
++	if (symlink(Device.c_str(), path.c_str()) != 0)
++		return failed("symlink");
++	Part->Logical_Alias_Target = Device;
++	property_set("twrp.super.symlinks_created", "true");
 +	return true;
 +}
 +
@@ -899,7 +914,7 @@ diff --git a/partitionmanager.cpp b/partitionmanager.cpp
  	Update_System_Details();
  	return status;
  }
-@@ -3728,37 +3949,31 @@
+@@ -3728,37 +3964,31 @@
  }
  
  bool TWPartitionManager::Unmap_Super_Devices() {

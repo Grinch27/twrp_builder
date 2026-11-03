@@ -153,8 +153,50 @@ Native 启动器固定 `SELENE_RECOVERY_LAYOUT_FIXES=1`，调用环境不能关�
 - [AOSP 动态分区说明](https://source.android.com/docs/core/ota/dynamic_partitions/implement)：fstab 的逻辑源名、logical／slotselect 与 first-stage 语义；该通用文档不是 MIUI 专有 overlay 的实现证明。
 - [本次补丁](../patches/recovery-layout-paths.patch)、[实际函数行为测试](../tests/test_recovery_layout.py)、[先前存储错误修正](SELENE_STORAGE_ERRORS.md)、[先前 TEE 客户端证据](../public-prebuilts/selene-stock-v14/README.md)。
 
-当前最大不确定性：备份恢复、MIUI overlay 内容视角和跨重启 FBE 稳定性尚未实测。
+## 10. 2026-11-03：alias 错误传播的最小修正
+
+本节基线为 main `ae936f362f834c65b40b960716f70a2ad0dc1a98`，保留其 README 人工刷机／回退说明。用户补交 [41573432328](https://github.com/Grinch27/twrp_builder/actions/runs/41573432328) 对应 d3ae 的新诊断后，明确要求 commit 修正。本轮不重新查询构建或连接手机；私密报告、原始日志及标识不复制到仓库。
+
+### 10.1 已确认事实与边界
+
+新资料支持同一次启动中 Keymaster／keystore2、metadata、用户 0 DE／CE 密钥安装、真实 `/data` 挂载和日志导出成功，mi_ext 逻辑源／映射登记也正确。它不证明 mi_ext 实际挂载、跨重启 FBE、已知 CE 文件读取或真实备份还原通过。
+
+四条兼容 alias 警告与 legacy 父路径缺失一致：helper 固定写入 `/dev/block/bootdevice/by-name/`，采集时该路径缺失，而 `/dev/block/platform/bootdevice/by-name/` 存在。主机原函数复现得到 ENOENT，但设备启动时的原始 syscall errno 未记录，不能写成已经测得。旧代码也使用该路径并忽略创建结果，因此不能据新警告断言新映射回归。
+
+另外两类错误有直接源码证据：非 ENOENT 的 `lstat` 失败会落入成功返回；已拥有链接的 `readlink` 遇到权限／I/O 错误时，会被当作外部替换并丢失所有权记录。这两类均由错误注入复现；尚无证据证明设备本次触发。
+
+### 10.2 实现范围
+
+| 分支 | 修正后的行为 |
+| --- | --- |
+| 非法逻辑源 | 返回失败，errno 为 EINVAL，文件系统不发生调用 |
+| `lstat` 成功 | 保留既有外来节点，不取得所有权 |
+| `lstat` 返回 ENOENT | 只尝试建立叶链接；父目录缺失时真实失败 |
+| `lstat` 其他错误 | 返回失败，不创建链接或发布成功属性 |
+| 已拥有链接，`readlink` 返回不同目标或 EINVAL | 保留外来链接／真实节点，释放本对象的旧所有权记录 |
+| 已拥有链接，`readlink` 返回 ENOENT | 清除已不存在的所有权记录，按请求重建或结束清理 |
+| 已拥有链接，`readlink` 其他错误 | 返回失败，保留所有权记录与现存链接 |
+| `unlink`／`symlink` 失败 | 返回失败，不重试、不覆盖；创建竞争 EEXIST 也失败 |
+| 失败诊断 | 立即保存 errno，只记录固定操作类别与数字 errno，日志之后恢复 errno |
+
+只修改 `Update_Logical_Alias()`。fs_mgr 映射、实际 dm 设备设置、登记、槽位、Unmap 调用顺序和查询／写入目标边界保持；alias 的可选创建失败仍是映射成功后的警告，不升级为 FBE 失败。部分 remap 在旧叶链接已删除后可能创建失败，这不是原子回滚，记录和返回值须反映实际状态。
+
+本次没有建立 `/dev/block/bootdevice` 或额外父目录，没有把 alias 写入另一个目录，没有更换 TEE／HAL、修改 FBE／fstab／AVB 或启用 MIUI 合成视图。legacy 路径的具体消费者及完整兼容方案仍需另行确定；诊断改善不代表路径兼容已完成。
+
+### 10.3 验证与后续验收
+
+- 标准库全套：274 项完成，270 通过、4 项既有环境限制跳过。新增 14 项 alias 测试全部通过，没有新增实际跳过。
+- 新测试提取补丁中的完整实际 helper，以 g++ C++17、严格警告编译；路径回调映射至真实临时主机目录，覆盖缺父目录、非目录父项、创建／重映射／清理、外来目标和真实文件、所有权消失／替换、权限／I/O 错误、创建竞争及部分失败。没有访问真实块节点。
+- 日志回调故意破坏 errno，确认 lstat、readlink、unlink、symlink 的失败 errno 仍正确返回；诊断只含操作枚举和数字。
+- 五份 Recovery 补丁在锁定公开原始源码上独立严格预检查、顺序组合应用通过；受测四个相关完整函数与应用结果一致。与先前组合栈比较，生产源码只在这个 alias helper 内变化，其余布局、备份和 libtar 源文件相同。
+- 三份 YAML、四份独立 Shell 和 38 段内联 Shell 语法、actionlint 1.7.7 通过；全部十二项补丁先检查后应用的既有编排继续由全套测试覆盖。
+
+后续 Native 仍须完整编译及既有镜像验收；本次 push 沿用既有自动规则，不额外 dispatch、轮询或重试。若同一设备环境仍缺 legacy 父目录，允许保留四条兼容警告，但每条应有 `op=symlink errno=2` 的直接诊断，实际 dm 登记及 FBE 应继续成功。若出现其他 errno，应按其分支分析，不能靠屏蔽日志或覆盖外来节点处理。
+
+跨重启 FBE 继续优先于真实数据还原，设备重启／关机／还原仍分别需要具体授权。已有 d3ae 单会话成功不自动扩展为本次新候选成功，也不证明 MIUI overlay 完整支持。
+
+当前最大不确定性：新候选完整 Native 编译及实机行为、跨重启 FBE 和真实还原后的一致性。
 
 用户可能遗漏：本次明确跳过 Android 合成视图，并不等于 Recovery 已支持完整 MIUI overlay；单次解密成功也不证明还原安全。
 
-Q1：源码原因和主机修正已有证据。Q2：新候选仍须完整 Native 与设备验收。Q3：本次仅交付 main 修正，不连接手机、不额外 dispatch 或监测新构建。
+Q1：布局与 alias 错误传播有源码及主机证据。Q2：新候选仍须完整 Native 与设备验收。Q3：本次仅交付 main 修正，不连接手机、不额外 dispatch 或监测新构建。

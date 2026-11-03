@@ -58,6 +58,8 @@ Android 启动后用 `adb shell getprop sys.boot_completed`（预期 `1`）和 `
 
 保留[Recovery 布局修正](docs/SELENE_RECOVERY_LAYOUT.md)的稳定逻辑身份与 Find／Mount／UnMount 匹配、原有写入边界和 Android 合成视图明确跳过行为。新候选已由 Native [41573432328](https://github.com/Grinch27/twrp_builder/actions/runs/41573432328) 与 [41572669191](https://github.com/Grinch27/twrp_builder/actions/runs/41572669191) 完成完整构建及静态验证，但跨重启 FBE、真实备份还原及 MIUI overlay 尚未实机验收。原始报告、日志和设备标识不进入本仓库；FBE、既有镜像验收及单文件 `boot.img` 交付规则保持，历史见 [AUDIT.md](AUDIT.md)。
 
+41573432328 的用户新资料确认本次启动的 metadata、用户 0 DE／CE 密钥安装、`/data` 和日志导出成功，mi_ext 正确登记。随后修正兼容 alias 的 `lstat`／`readlink` 错误误报和所有权丢失，新增保留真实 errno 的固定诊断及 14 项主机行为测试，见[布局说明第 10 节](docs/SELENE_RECOVERY_LAYOUT.md#10-2026-11-03alias-错误传播的最小修正)。legacy 父路径缺失仍真实报告；本次不创建全局路径、不改 FBE／TEE。该 alias 新候选尚待 Native 和设备验收。
+
 ## 构建方式
 
 ```mermaid

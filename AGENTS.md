@@ -580,6 +580,8 @@ Read README.md, AUDIT.md and source.lock.json before changes. Use Chinese for us
 - 逻辑身份使用原 fstab 块源和最后成功映射名，不以挂载点或当前 dm 路径重新推导。只管理本对象创建的 by-name 链接；失败真实返回，保留错误上下文，不伪称原子回滚。
 - Find／Mount／UnMount 共用最长路径组件匹配并按同一对象分派；长／短对象及 flags 保留。存储备份／还原、刷写、USB LUN、SD 分区目标保留原根路径边界。Android bind／overlay 只识别为非块视图并明确跳过，不宣称完整支持 MIUI overlay；原 first-stage fstab 保持。
 - 详见 `docs/SELENE_RECOVERY_LAYOUT.md`。本次 push 由既有规则进入 Native；不额外 dispatch、不监测、不重试、不操作手机，Stock 工作流不变。主机测试不能替代完整编译和实机验收。
+- 2026-11-03 alias 修正：非 ENOENT 的 lstat／readlink 失败须真实返回并保留 syscall errno；读取失败不能被当作外部替换而释放所有权。只在已核实的外来入口或实际不存在时释放旧记录。诊断只记录固定操作及数字 errno，不输出外来目标或私密内容。
+- legacy 父路径缺失不授权建立全局兼容路径、覆盖外来节点或改 FBE／TEE。`tests/test_logical_alias.py` 用真实主机临时目录及注入回调验证缺父目录、权限／I/O、所有权和竞争；alias 可选失败保留实际 dm 登记成功，不宣称原子回滚或完整第三方兼容。
 
 ## Native 备份还原预检与资源失败分类（2026-11-03）
 

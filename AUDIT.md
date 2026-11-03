@@ -1023,3 +1023,19 @@ Recovery布局补丁增加一次解析的selection：全部必选目标／隐式
 验证：标准库260项完成，256通过、4项原环境限制跳过（两个/proc命名空间、Go、aria2）。实际目标计划及元数据／errno测试覆盖重复、隐式子分区、锁定用户、根边界、入口／只读流失败、v1/v2、NUL后capabilities、合法无policy、查询错误／未知key、现存／冲突／读回失败、SELinux／capabilities失败、链接占位和内容ENOKEY。五份Recovery严格空白独立预检、组合应用及十个候选源文件比较通过；Vold新补丁在锁定原文件严格应用一致。完整15文件libtar主机编译无诊断；真实临时文件二进制载荷、UID/GID、权限往返通过，截断载荷预检失败且无目标内容写入。原锁定writer与新writer生成的v1/v2合成归档逐字节一致；安全内核接口仍为模拟回调。初次完整C编译发现本轮编辑过度删除另一函数的局部filefd声明，已在提交前修正，并由永久完整库检查防止仅函数级harness漏检。三份YAML、四份独立及38段内联Shell语法、actionlint1.7.7、普通差异及真实patch新增源码空白检查通过。没有完整Android编译或新实机结果。
 
 保留SDK32、首次Keymaster目标输入、原厂TEE客户端、正常启动、FBE／AVB／安全配置、fstab、源码锁615项和十项私有输入，Stock/Docker工作流不改。没有原始私密报告／日志／标识或输入进入公开树。详见docs/SELENE_BACKUP_PREFLIGHT.md，含Chat结论取舍、实现、重现方法、真实I/O／硬件回调边界、缺卷／中途失败限制、四场景FBE与独立只读视图的后续验收。本次仅提交main，由既有push规则验收，publish=false，只交付boot.img三天，不强推、不新建分支／PR、不额外dispatch、不查询或重试新运行。
+
+## 2026-11-03 — logical alias 错误传播与真实父目录测试
+
+用户提供 Run 41573432328 的新诊断并要求 commit 修正。离线复核确认本次启动中 metadata、用户 0 DE／CE 密钥安装、真实 data 挂载及导出成功，mi_ext 正确登记；四条兼容 alias 警告与 legacy 父路径缺失一致。设备启动时原始 errno 未记录，不能将主机复现的 ENOENT 当作已测设备 errno。原始报告、日志、设备标识、密钥及安全存储资料不进入公开仓库。
+
+修正前读取远端 main，发现 ae936f362f834c65b40b960716f70a2ad0dc1a98 已在 d3ae 之上加入 README 人工操作说明；差异只有该文档。以此新父提交快进继续，完整保留人工刷机／回退部分，不回退并发文档进展。本轮不查询新构建、不额外 dispatch、重试或操作手机。
+
+只修改实际 Recovery 的 Update_Logical_Alias：非 ENOENT 的 lstat 错误不再误报成功；已拥有链接的 readlink 遇权限／I/O 错误时保留所有权并失败，而不是误当外部替换。外来链接和真实节点继续保护；成功重复、重映射、缺失所有权及清理保持。立即保存 errno 后记录固定操作类别与数字，日志之后恢复 errno；unlink／symlink 错误同样真实返回。EEXIST 竞争不覆盖、不自动重试。非法源返回 EINVAL。部分重映射失败不声称原子回滚。
+
+没有建立 legacy 父目录、全局 bootdevice 兼容链接或改投其他 by-name 路径。父目录仍缺失时继续报告警告，并增加 op=symlink errno=2 诊断；不能把这项错误传播修正称为路径兼容已实现。fs_mgr、实际 dm 登记、alias 可选失败策略、槽位、Unmap 顺序、根路径写入边界均保持；FBE／TEE／HAL、版本输入、fstab、安全验证、615项目源码锁、十项输入及 Stock/Docker 工作流不变。
+
+新增 tests/test_logical_alias.py 的 14 项测试，提取完整实际 helper，经真实临时主机文件系统及错误注入验证缺父目录、非目录父项、外来链接／文件／同目标链接、所有权消失／替换、lstat/readlink/unlink/symlink 的 EACCES/EIO、EEXIST竞争、空清理、非法源及部分重映射。日志回调故意破坏 errno，失败值仍保持；没有访问实际块节点。原布局测试的丢弃日志宏改为类型检查但不执行其参数，继续覆盖实际函数，备份计划复用 fixture 也通过。
+
+验证：标准库274项完成、270通过、4项既有环境限制跳过（两个/proc命名空间、Go、aria2），新增14项全部通过，无新增实际跳过。五份Recovery补丁在原锁定公开源码上独立严格空白预检查、顺序组合应用通过；四个相关完整函数与测试postimage一致。与d3ae组合栈比较，生产源码只在alias helper内变化，其余布局／备份／libtar源文件逐字节相同，因此未重复无关完整libtar往返。三份YAML、四份独立Shell及38段内联Shell语法、actionlint1.7.7通过。新候选完整Android编译、实机与跨重启FBE／真实还原仍未验收。
+
+详见docs/SELENE_RECOVERY_LAYOUT.md第10节。按本次明确授权提交main，由既有push规则验收，publish=false，仅boot.img三天；不强推、不新建分支/PR、不额外dispatch、不监测或重试新构建。手机重启、关机、主动解密和还原仍待具体独立授权。

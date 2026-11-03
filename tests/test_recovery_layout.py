@@ -30,6 +30,7 @@ COMMON = r'''
 #include <algorithm>
 #include <cassert>
 #include <cerrno>
+#include <cstdio>
 #include <cstring>
 #include <iostream>
 #include <map>
@@ -40,7 +41,7 @@ COMMON = r'''
 #include <unistd.h>
 #include <vector>
 using namespace std;
-#define LOGINFO(...) do {} while(0)
+#define LOGINFO(...) do { if (false) std::fprintf(stderr, __VA_ARGS__); } while(0)
 namespace msg { enum {kError}; }
 struct Msg {
     Msg(int, string) {}
