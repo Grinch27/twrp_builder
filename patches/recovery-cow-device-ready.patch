@@ -1,0 +1,83 @@
+diff --git a/fs_mgr/libsnapshot/snapshot.cpp b/fs_mgr/libsnapshot/snapshot.cpp
+--- a/fs_mgr/libsnapshot/snapshot.cpp
++++ b/fs_mgr/libsnapshot/snapshot.cpp
+@@ -3043,66 +3043,79 @@
+ Return SnapshotManager::InitializeUpdateSnapshots(
+         LockedFile* lock, MetadataBuilder* target_metadata,
+         const LpMetadata* exported_target_metadata, const std::string& target_suffix,
+         const std::map<std::string, SnapshotStatus>& all_snapshot_status) {
+     CHECK(lock);
+ 
+     CreateLogicalPartitionParams cow_params{
+             .block_device = LP_METADATA_DEFAULT_PARTITION_NAME,
+             .metadata = exported_target_metadata,
+             .timeout_ms = std::chrono::milliseconds::max(),
+             .partition_opener = &device_->GetPartitionOpener(),
+     };
+     for (auto* target_partition : ListPartitionsWithSuffix(target_metadata, target_suffix)) {
+         AutoDeviceList created_devices_for_cow;
+ 
+         if (!UnmapPartitionWithSnapshot(lock, target_partition->name())) {
+             LOG(ERROR) << "Cannot unmap existing COW devices before re-mapping them for zero-fill: "
+                        << target_partition->name();
+             return Return::Error();
+         }
+ 
+         auto it = all_snapshot_status.find(target_partition->name());
+         if (it == all_snapshot_status.end()) continue;
+         cow_params.partition_name = target_partition->name();
+         std::string cow_name;
+         if (!MapCowDevices(lock, cow_params, it->second, &created_devices_for_cow, &cow_name)) {
+             return Return::Error();
+         }
+ 
+         std::string cow_path;
+         if (!images_->GetMappedImageDevice(cow_name, &cow_path)) {
+             LOG(ERROR) << "Cannot determine path for " << cow_name;
+             return Return::Error();
+         }
+ 
++        // Recovery may map a file-only COW without waiting for ueventd. The
++        // dm-N path can be recycled while its old remove event is still pending.
++        // Wait on this mapping's UUID path before opening either COW format.
++        // First-stage init must retain its nonblocking/uevent-callback contract.
++        if (device_->IsRecovery() && !device_->IsFirstStageInit()) {
++            std::string unique_cow_path;
++            if (!DeviceMapper::Instance().GetDeviceUniquePath(cow_name, &unique_cow_path) ||
++                !android::fs_mgr::WaitForFile(unique_cow_path, 10s)) {
++                LOG(ERROR) << "Recovery COW device did not become ready: " << cow_name;
++                return Return::Error();
++            }
++        }
++
+         if (it->second.compression_enabled()) {
+             unique_fd fd(open(cow_path.c_str(), O_RDWR | O_CLOEXEC));
+             if (fd < 0) {
+                 PLOG(ERROR) << "open " << cow_path << " failed for snapshot "
+                             << cow_params.partition_name;
+                 return Return::Error();
+             }
+ 
+             CowOptions options;
+             if (device()->IsTestDevice()) {
+                 options.scratch_space = false;
+             }
+             options.compression = it->second.compression_algorithm();
+ 
+             CowWriter writer(options);
+             if (!writer.Initialize(fd) || !writer.Finalize()) {
+                 LOG(ERROR) << "Could not initialize COW device for " << target_partition->name();
+                 return Return::Error();
+             }
+         } else {
+             auto ret = InitializeKernelCow(cow_path);
+             if (!ret.is_ok()) {
+                 LOG(ERROR) << "Can't zero-fill COW device for " << target_partition->name() << ": "
+                            << cow_path;
+                 return AddRequiredSpace(ret, all_snapshot_status);
+             }
+         }
+         // Let destructor of created_devices_for_cow to unmap the COW devices.
+     };
+     return Return::Ok();
+ }

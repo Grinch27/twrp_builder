@@ -1039,3 +1039,19 @@ Recovery布局补丁增加一次解析的selection：全部必选目标／隐式
 验证：标准库274项完成、270通过、4项既有环境限制跳过（两个/proc命名空间、Go、aria2），新增14项全部通过，无新增实际跳过。五份Recovery补丁在原锁定公开源码上独立严格空白预检查、顺序组合应用通过；四个相关完整函数与测试postimage一致。与d3ae组合栈比较，生产源码只在alias helper内变化，其余布局／备份／libtar源文件逐字节相同，因此未重复无关完整libtar往返。三份YAML、四份独立Shell及38段内联Shell语法、actionlint1.7.7通过。新候选完整Android编译、实机与跨重启FBE／真实还原仍未验收。
 
 详见docs/SELENE_RECOVERY_LAYOUT.md第10节。按本次明确授权提交main，由既有push规则验收，publish=false，仅boot.img三天；不强推、不新建分支/PR、不额外dispatch、不监测或重试新构建。手机重启、关机、主动解密和还原仍待具体独立授权。
+
+## 2026-11-04 — Recovery COW UUID 节点就绪屏障
+
+用户要求先修正并 commit main，并询问 LOS20 安装后持续 device corrupt 的恢复方式。以远端 main 74472cb678b4bbbe66b4a0be11e46fc521d7e694 为父继续；本轮只实现锁定 system/core 中 Recovery 的 COW 消费前屏障并说明恢复边界，不连接或操作手机。原始私密日志、报告、设备标识、凭据与安全存储不进入公开树。
+
+已提供的离线日志表明：partition-only 与 mixed COW 后，第一个 file-only 的 system_ext COW 创建 DM 成功，随后打开节点 ENOENT，快照初始化失败，Recovery 安装器进入 overwrite fallback，目标 B 最终校验和安装 RC=0。super 元数据确认新 B 的四逻辑分区共3,999,805,440 bytes全部处于旧product_a范围；此状态下单独boot_a回写不能恢复原系统。B首启失败的完整根因仍未取得；B顶层vbmeta已有flags=3，A后续eio不能唯一定位B最初失败。该结论不授权进一步关闭校验或刷写。
+
+新增 recovery-cow-device-ready.patch，匹配 TeamWin/android_system_core@ac4f36c7eb076ea2c582061a21dfc49eaa71e623，只在 InitializeUpdateSnapshots 插入13行。现有映射和路径查询之后，运行时 Recovery 且非 FirstStageInit 才取得本次映射 UUID 路径并 WaitForFile(...,10s)，之后按原 cow_path 初始化压缩／非压缩 COW。dm-N 可复用，不能单凭旧 canonical 节点存在判断新映射就绪；锁定 ueventd 源码确认建立 by-uuid 链接。未全局修改 ImageManager 的零超时契约；未使用带删除副作用的 DM WaitForDevice，以保留现有 AutoDeviceList 清理所有权。失败真实返回，不保证清理失败后的资源已释放。
+
+沿用 Native 固定 layout flag，十三份补丁全部先检查后应用，新增两个固定公开阶段名。源码锁615项目、十项私有输入、四个设备覆盖、原厂TEE、OS/SPL、SDK32、FBE、AVB、SELinux及正常启动选择不变；Stock/Docker工作流不改。安装器原 overwrite fallback 仍存在，其他快照错误仍可能破坏旧槽回退；本次不扩为安装策略重写，也不声称修复已发生的LOS首启失败。
+
+tests/test_cow_readiness.py 从实际patch提取完整前后函数，以C++17 -Wall -Wextra -Werror编译。12项行为测试含旧函数延迟节点失败负对照、新UUID等待、旧canonical复用、partition/mixed/file-only、已就绪、压缩及writer失败、十秒参数、超时、UUID/映射/路径/unmap/消费方失败、清理及清理失败、Android/FirstStageInit非阻塞。主机执行真实临时文件打开和写入，DM/uevent/CowWriter/清理为回调，未访问块设备。初轮fixture编译失败后，补齐默认成员初始化、标记legacy未用回调并公开编译诊断；定向及全量测试均通过，没有放宽-Werror或新增实际跳过。
+
+实际验证：标准库286项完成，282通过、4项既有环境限制跳过（两个/proc命名空间、Go、aria2）。完整锁定snapshot.cpp严格空白预检查、应用及反向检查通过，结果与候选逐字节一致；实际受测前后完整函数与应用结果一致，生产源码只改一个函数。与既有core task-profiles补丁文件不相交。编排测试确认13检查先于13应用，新检查失败不发生补丁应用。三份YAML、四份独立及38段内联Shell语法、actionlint1.7.7通过。未重复无关完整libtar往返，未运行完整Android编译或新实机验收，未新增摘要、签名、证书、DEX或整包版本扫描。
+
+README保留原人工指令并在其前加明确适用限制；docs/SELENE_COW_RECOVERY.md给出已验证RAM TWRP的核对入口、个人数据备份及完整系统恢复的HIGH Gate。不生成未经审阅的多分区刷写指令。按明确授权提交main，由既有push规则进入Native，publish=false，仅boot.img三天；不新建分支/PR、不强推、不额外dispatch、不查询或重试新运行。手机刷写、切槽、格式化、还原及校验修改仍在停止点之外。

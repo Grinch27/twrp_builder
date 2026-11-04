@@ -163,6 +163,8 @@ if [[ "${SELENE_RECOVERY_LAYOUT_FIXES:-0}" == 1 ]]; then
   git -C bootable/recovery apply --check "${SELF}/patches/recovery-backup-integrity.patch"
   trace_public_command vold_fscrypt_errno_patch_check
   git -C system/vold apply --check "${SELF}/patches/vold-fscrypt-policy-errno.patch"
+  trace_public_command recovery_cow_ready_patch_check
+  git -C system/core apply --check "${SELF}/patches/recovery-cow-device-ready.patch"
 fi
 trace_public_command recovery_patch_apply
 git -C bootable/recovery apply "${SELF}/patches/recovery-required-modules.patch"
@@ -197,6 +199,8 @@ if [[ "${SELENE_RECOVERY_LAYOUT_FIXES:-0}" == 1 ]]; then
   git -C bootable/recovery apply "${SELF}/patches/recovery-backup-integrity.patch"
   trace_public_command vold_fscrypt_errno_patch_apply
   git -C system/vold apply "${SELF}/patches/vold-fscrypt-policy-errno.patch"
+  trace_public_command recovery_cow_ready_patch_apply
+  git -C system/core apply "${SELF}/patches/recovery-cow-device-ready.patch"
 fi
 trace_public_command disk_preflight
 [[ "$(df --output=avail -B1 "${WORK}" | tail -n 1)" -ge 19327352832 ]]

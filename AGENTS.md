@@ -586,11 +586,19 @@ Read README.md, AUDIT.md and source.lock.json before changes. Use Chinese for us
 ## Native 备份还原预检与资源失败分类（2026-11-03）
 
 - 用户授权诊断失败 Run 41549550320、继续 P0 修正并 commit main；已确认失败停在 public_resources，不能当作 C++ 编译失败。历史具体异常未知，后续仅发布绑定锁定 revision 的固定错误类别、HTTP 数字及次数，不公开异常、URL、路径或响应体。
-- SELENE_RECOVERY_LAYOUT_FIXES=1 统一供给布局、backup-integrity 和 Vold policy errno 补丁，全部十二份先检查后应用，避免半套实现。共享/Docker 默认关闭，Native 固定开启；源码锁、私有 allowlist、原厂 TEE、OS/SPL、SDK32、FBE、AVB 和正常启动选择保持。
+- SELENE_RECOVERY_LAYOUT_FIXES=1 统一供给布局、backup-integrity、Vold policy errno 和 Recovery COW readiness 补丁，全部十三份先检查后应用，避免半套实现。共享/Docker 默认关闭，Native 固定开启；源码锁、私有 allowlist、原厂 TEE、OS/SPL、SDK32、FBE、AVB 和正常启动选择保持。
 - 全部目标、隐式子分区、当前用户解密状态与归档入口先预检；使用固定 selection，不扩大旧根路径写入边界。tar 只读流预检在任何还原清理前运行，必要 policy／元数据失败真实传播；合法 ENODATA 与错误查询分开处理，不改合法归档编码。
 - Digest 的当前 UI 是 Enable，保留 >0 执行及现有默认，不按变量名误翻转；修正子分区实际归档路径，不添加无关摘要／版本扫描。预检不代表事务回滚、完整缺卷证明或硬件密钥恢复保证。
 - Native 在 Android 编译前，限三分钟运行 tests/host_libtar_integration.py，使用完整锁定公开 C 源码及合成安全回调／临时归档；不得引入真实设备数据。详见 docs/SELENE_BACKUP_PREFLIGHT.md。
 - 跨重启／正式还原仍需独立设备授权，MIUI 只读视图保持后续按需设计。本轮不额外 dispatch、不查询新运行、不重试构建，Stock/Docker 工作流不改。
+
+## Recovery COW readiness 与 LOS20 失败恢复（2026-11-04）
+
+- 用户授权先修正并 commit main；仅在锁定 system/core 的 InitializeUpdateSnapshots 内补充消费前屏障：运行时 Recovery 且非 FirstStageInit，取得本次 DM 映射 UUID 路径后等待最多十秒，再打开原 cow_path。不要全局修改 ImageManager 的零超时映射，也不要阻塞 first-stage uevent 回调。
+- 使用 UUID 而不是可能复用的 dm-N 判断节点就绪。等待失败返回原 Error，由现有 AutoDeviceList 清理；不得在屏障内额外删除映射或掩盖清理失败。保留压缩／非压缩 COW、原有错误传播、FBE、TEE、AVB、SELinux 和正常启动行为。
+- tests/test_cow_readiness.py 提取补丁中完整实际前后函数，以主机 C++ 和真实临时文件打开验证；DM／uevent／安全内核行为为模拟，不能替代 Android 编译或设备验收。修复未取消 update_engine 的 Recovery 覆盖回退，不承诺其他快照错误后仍可回退 A。
+- 本次旧 product_a 的范围已被新 B 逻辑分区复用；README 的单独 boot_a 回退不适用于该状态。device corrupt 警告本身不能唯一定位 B 首次启动失败，不得以通用空 vbmeta／关闭校验／格式化作为修复。先恢复已验证的 RAM TWRP 入口并备份数据，完整刷回系统须审阅精确分区计划并另获明确授权。
+- 公共说明仅保留去标识的技术结论与公开源码引用；私密日志、设备标识、密钥和安全存储不进入公开树。本次沿用既有 main push 构建规则，不额外 dispatch、不监测或重试、不连接手机；Stock/Docker 工作流及源码锁不变。详见 docs/SELENE_COW_RECOVERY.md。
 
 ## 官方原厂镜像解包与发布（2026-10-28）
 

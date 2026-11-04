@@ -131,11 +131,12 @@ git() {
         result = self.preflight('1', repairs='1', target_version='1', layout='1')
         self.assertEqual(result.returncode, 0, result.stderr)
         commands = result.stdout.splitlines()
-        self.assertEqual(len(commands), 24)
-        self.assertTrue(all('apply --check ' in c for c in commands[:12]))
+        self.assertEqual(len(commands), 26)
+        self.assertTrue(all('apply --check ' in c for c in commands[:13]))
+        self.assertTrue(all('apply --check ' not in c for c in commands[13:]))
         self.assertTrue(commands[9].endswith('/patches/recovery-layout-paths.patch'))
-        self.assertEqual(commands[-1], '-C system/vold apply /builder/patches/vold-fscrypt-policy-errno.patch')
-        for failed_check in commands[9:12]:
+        self.assertEqual(commands[-1], '-C system/core apply /builder/patches/recovery-cow-device-ready.patch')
+        for failed_check in commands[9:13]:
             result = self.preflight('1', failed_check, repairs='1', target_version='1', layout='1')
             self.assertEqual(result.returncode, 17)
             self.assertTrue(all('apply --check ' in c for c in result.stdout.splitlines()))

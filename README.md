@@ -2,6 +2,8 @@
 
 ## 人工刷入与原厂回退（selene / boot_a）
 
+**适用边界：以下 `boot_a` 回退只适用于底层系统仍完整的单独 boot 测试。2026-11-03 的 LOS20 sideload 已在快照创建失败后覆盖 super 中旧 `product_a` 的范围；该状态不适用仅回刷 `boot_a` 的回退步骤。遇到本次 `device corrupt`，先按[故障恢复入口](docs/SELENE_COW_RECOVERY.md#5-device-corrupt-的恢复入口)临时进入已验证的 TWRP、备份个人数据，再审阅完整系统恢复方案。不要执行本节第 3 步来尝试恢复该 LOS 安装后的旧系统。**
+
 仅在 **Ubuntu USB 主机**上人工逐条执行；适用于已解锁 Bootloader、**当前槽位为 a** 的 selene（China MIUI `V14.0.4.0.TKUCNXM`）。只允许写入 `boot_a`，不得自动切槽、格式化或修改 `boot_b`、`userdata`、`metadata`、`vbmeta`。刷写前须人工确认 `test/boot.img` 是准备测试的最新 Native 产物，`stock/boot.img` 是匹配当前固件的原厂回退镜像。
 
 **1. 检查文件、进入 Bootloader 并核对设备：**
@@ -54,11 +56,13 @@ Android 启动后用 `adb shell getprop sys.boot_completed`（预期 `1`）和 `
 
 本项目是新的干净构建入口。原始实验与证据仍由私有仓库 [twrp_selene](https://github.com/Grinch27/twrp_selene) 保存。**Native [41452626126](https://github.com/Grinch27/twrp_builder/actions/runs/41452626126) 已成功构建；用户提供的单次启动资料确认 metadata、用户 0 DE／CE、`/data` 挂载及三份非空日志导出成功，本轮未复现旧 `-33`。** 保留已验证的正常启动选择、[同版本原厂 TEE 客户端](public-prebuilts/selene-stock-v14/README.md)、[导出错误与 Vold guard](docs/SELENE_STORAGE_ERRORS.md)及[首次 Keymaster OS／SPL 输入](docs/SELENE_TARGET_VERSION_AND_STOCK_ANALYSIS.md)。
 
-[41549550320](https://github.com/Grinch27/twrp_builder/actions/runs/41549550320) 在公开测试资源恢复阶段失败，尚未进入补丁预检或 Android 编译；具体历史异常未公开留存。本轮增加资源请求有界重试与受限分类诊断，并修正备份／还原的整单预检、子归档校验路径、空间保护、fscrypt 二进制头解析及必要元数据错误传播，见[备份预检与失败诊断](docs/SELENE_BACKUP_PREFLIGHT.md)。Native 先统一检查十二份补丁，再执行完整 libtar 主机往返验证，之后进入原 Android 构建。
+[41549550320](https://github.com/Grinch27/twrp_builder/actions/runs/41549550320) 在公开测试资源恢复阶段失败，尚未进入补丁预检或 Android 编译；具体历史异常未公开留存。本轮增加资源请求有界重试与受限分类诊断，并修正备份／还原的整单预检、子归档校验路径、空间保护、fscrypt 二进制头解析及必要元数据错误传播，见[备份预检与失败诊断](docs/SELENE_BACKUP_PREFLIGHT.md)。Native 先统一检查十三份补丁，再执行完整 libtar 主机往返验证，之后进入原 Android 构建。
 
 保留[Recovery 布局修正](docs/SELENE_RECOVERY_LAYOUT.md)的稳定逻辑身份与 Find／Mount／UnMount 匹配、原有写入边界和 Android 合成视图明确跳过行为。新候选已由 Native [41573432328](https://github.com/Grinch27/twrp_builder/actions/runs/41573432328) 与 [41572669191](https://github.com/Grinch27/twrp_builder/actions/runs/41572669191) 完成完整构建及静态验证，但跨重启 FBE、真实备份还原及 MIUI overlay 尚未实机验收。原始报告、日志和设备标识不进入本仓库；FBE、既有镜像验收及单文件 `boot.img` 交付规则保持，历史见 [AUDIT.md](AUDIT.md)。
 
 41573432328 的用户新资料确认本次启动的 metadata、用户 0 DE／CE 密钥安装、`/data` 和日志导出成功，mi_ext 正确登记。随后修正兼容 alias 的 `lstat`／`readlink` 错误误报和所有权丢失，新增保留真实 errno 的固定诊断及 14 项主机行为测试，见[布局说明第 10 节](docs/SELENE_RECOVERY_LAYOUT.md#10-2026-11-03alias-错误传播的最小修正)。legacy 父路径缺失仍真实报告；本次不创建全局路径、不改 FBE／TEE。该 alias 新候选尚待 Native 和设备验收。
+
+2026-11-04：新增 [Recovery COW 节点等待修正](docs/SELENE_COW_RECOVERY.md)。LOS20 安装日志表明 file-only COW 映射成功后立即打开设备得到 ENOENT，随后安装器回退为覆盖写入。新补丁仅在 Recovery 的 COW 消费前等待本次映射的 UUID 节点，单次上限十秒，保留 FirstStageInit 的非阻塞行为及原清理路径。它不恢复已覆盖的旧系统、不改变安装器的覆盖回退策略，也不证明 LOS20 首次启动问题已解决；完整 Android 编译与新候选实机效果仍待验证。
 
 ## 构建方式
 

@@ -45,6 +45,8 @@ PUBLIC_COMMANDS = {
     "recovery_backup_integrity_patch_apply": "git -C bootable/recovery apply patches/recovery-backup-integrity.patch",
     "vold_fscrypt_errno_patch_check": "git -C system/vold apply --check patches/vold-fscrypt-policy-errno.patch",
     "vold_fscrypt_errno_patch_apply": "git -C system/vold apply patches/vold-fscrypt-policy-errno.patch",
+    "recovery_cow_ready_patch_check": "git -C system/core apply --check patches/recovery-cow-device-ready.patch",
+    "recovery_cow_ready_patch_apply": "git -C system/core apply patches/recovery-cow-device-ready.patch",
     "recovery_layout_patch_check": "git -C bootable/recovery apply --check patches/recovery-layout-paths.patch",
     "recovery_layout_patch_apply": "git -C bootable/recovery apply patches/recovery-layout-paths.patch",
     "target_keymaster_version_patch_check": "git -C build/make apply --check patches/recovery-target-keymaster-version.patch",
